@@ -1,0 +1,15 @@
+db/
+greybox_tmp/
+incremental_db/
+*.rpt
+*.qws
+output_files/
+simulation/
+ksm-firmware/*.map
+ksm-firmware/*.obj
+ksm-firmware/*.bin
+ksm-firmware/*.lst
+*.bak
+
+
+
