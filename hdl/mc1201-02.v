@@ -18,14 +18,12 @@
 //  111 - запуск теста
 //
 `define STARTUP 3'b001
-//
-// Начальное состояние таймера: 0 - выключен, 1 - включен
-`define timer_init 1'b1
+
 
 module mc1201_02 (
 // Синхросигналы  
-	input  clk_p,
-	input  clk_n,
+	input  clk_p,               // синхросигнал прмой фазы
+	input  clk_n,               // синхросигнал инверсной фазы
    input  cpuslow,             // Режим замедления процессора
 
 // Шина Wishbone                                       
@@ -193,7 +191,9 @@ end
 //**********************************
 //* Сигнал разрешения таймера
 //**********************************
+`ifdef timer_init
 initial timer_status=`timer_init;  // начальное состояние таймера
+`endif
 reg [1:0] tbshift;
 reg tbevent;
 

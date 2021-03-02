@@ -1,3 +1,10 @@
+//
+//  Интерфейсный модуль для плтаы A-ESTF V2
+//
+//
+
+`include "config.v"
+
 module aestf(
    input          clk50,        // clock input 50 MHz
    input    [3:0] button,       // кнопки 
@@ -55,21 +62,37 @@ module aestf(
 //************************************************
 //* тактовый генератор 
 //************************************************
+wire clk_p;
+wire clk_n;
+wire sdclock;
+wire clkrdy;
+wire pll_c0;
+wire pll_c1;
+
 pll100 corepll
 (
    .inclk0(clk50),
-   .c0(clk_p),     // 100МГц прямая фаза, основная тактовая частота
-   .c1(clk_n),     // 100МГц инверсная фаза
+   .c0(pll_c0),     // 100МГц прямая фаза, основная тактовая частота
+   .c1(pll_c1),     // 100МГц инверсная фаза
    .c2(sdclock),     // 12.5 МГц тактовый сигнал SD-карты
    .locked(clkrdy) // флаг готовности PLL
 );
+
+// Если PLL не используется - подключаем синхросигналы к 50МГц
+`ifdef nopll
+assign clk_p=clk50;
+assign clk_n=~clk50;
+`else
+// Иначе подключаем их к PLL
+assign clk_p=pll_c0;
+assign clk_n=pll_c1;
+`endif
 
 //**********************************
 //* Модуль динамической памяти
 //**********************************
 
 wire sdram_reset;
-wire clk_p;
 wire sdram_we;
 wire sdram_stb;
 wire [1:0] sdram_sel;

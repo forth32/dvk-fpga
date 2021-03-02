@@ -79,6 +79,7 @@ module rom055 (
             .rden_b (1'b1),
             .wren_a (1'b0),
             .wren_b (1'b0));
+`ifdef mc1201_02_board	
    defparam
       altsyncram_component.address_aclr_a = "NONE",
       altsyncram_component.clock_enable_input_a = "BYPASS",
@@ -94,7 +95,7 @@ module rom055 (
       altsyncram_component.widthad_a = 12,
       altsyncram_component.width_a = 16,
       altsyncram_component.width_byteena_a = 1;
-
+`endif
 
 endmodule
 

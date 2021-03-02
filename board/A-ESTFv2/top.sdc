@@ -44,7 +44,7 @@ create_clock -name {clk} -period 20.000 -waveform { 0.000 10.000 } [get_ports {c
 # Create Generated Clock
 #**************************************************************
 create_generated_clock -source [get_pins {corepll|altpll_component|auto_generated|pll1|inclk[0]}] -divide_by 1 -multiply_by 2 [get_pins {corepll|altpll_component|auto_generated|pll1|clk[0]}]
-create_generated_clock -source [get_pins {orepll|altpll_component|auto_generated|pll1|inclk[0]}] -divide_by 1 -multiply_by 2 -phase 180 [get_pins {corepll|altpll_component|auto_generated|pll1|clk[1]}]
+create_generated_clock -source [get_pins {corepll|altpll_component|auto_generated|pll1|inclk[0]}] -divide_by 1 -multiply_by 2 -phase 180 [get_pins {corepll|altpll_component|auto_generated|pll1|clk[1]}]
 create_generated_clock -source [get_pins {corepll|altpll_component|auto_generated|pll1|inclk[0]}] -divide_by 4 -multiply_by 1 [get_pins {corepll|altpll_component|auto_generated|pll1|clk[2]}]
 
 

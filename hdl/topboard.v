@@ -8,10 +8,9 @@
 // Процессорная плата выбирается из нескольких доступных, остальные модули общие для всех используемых процессоров
 // и включаются в конфигурацию по выбору, сделанному в файле конфигурации config.v
 //
-//  Между этим модулем и физическими выводами FPGA находится модуль адаптации под конкретную плату.
-//  Модуль адаптации объявляется корневым модулем проекта.
+//  Между этим модулем и физическими выводами FPGA находится интерфейсный  модуль под конкретную плату.
+//  Интерфейсный модуль объявляется корневым модулем проекта.
 //
-`include "config.v"
 
 module topboard (
 
@@ -269,14 +268,15 @@ wbc_rst reset
    .global_reset(global_reset)  // выход кнопки сброса 
 );
 
-// сигнал сброса модуля SDRAM
-assign sdram_reset=global_reset;
-// тактовый сигнал SDRAM
-assign sdram_clk=wb_clk;
-assign sdram_we=wb_we;
-assign sdram_sel=wb_sel;
-assign sdram_adr={6'o0, wb_adr[15:1]};
-assign sdram_out=wb_out;
+//*********************************************
+//*  Интерфейс к модулю SDRAM
+//*********************************************
+
+assign sdram_reset=global_reset;    // сигнал сброса модуля SDRAM
+assign sdram_we=wb_we;              // признак транзакции записи
+assign sdram_sel=wb_sel;            // выбор байтов
+assign sdram_adr={6'o0, wb_adr[15:1]}; // шина адреса
+assign sdram_out=wb_out;               // выходная шина данных
 
 //**********************************************************
 //*       Процессорная плата
@@ -400,7 +400,7 @@ assign uart2_speed = baud2;
 //**********************************
 //*     ирпс1 (консоль)
 //**********************************
-wbc_uart #(.REFCLK(`uart_clkref)) uart1
+wbc_uart #(.REFCLK(`clkref)) uart1
 (
    .wb_clk_i(wb_clk),
    .wb_rst_i(sys_init),
@@ -432,7 +432,7 @@ wbc_uart #(.REFCLK(`uart_clkref)) uart1
 //*     ирпс2
 //**********************************
 `ifdef IRPS2_module
-wbc_uart #(.REFCLK(`uart_clkref)) uart2
+wbc_uart #(.REFCLK(`clkref)) uart2
 (
    .wb_clk_i(wb_clk),
    .wb_rst_i(sys_init),
