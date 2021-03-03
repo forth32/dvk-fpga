@@ -51,13 +51,23 @@ module aestf(
    output         irps_txd,
    input          irps_rxd,
    
-   // LPT
+   // принтер
    output [7:0]   lp_data,    // данные для передачи к принтеру
    output         lp_stb_n,   // строб записи в принтер
    output         lp_init_n,  // строб сброса
    input          lp_busy,    // сигнал занятости принтера
    input          lp_err_n    // сигнал ошибки
 );
+
+//********************************************
+//* Светодиоды
+//********************************************
+wire rk_led, dw_led, my_led, dx_led, timer_led;
+
+assign led[0]=rk_led;        // запрос обмена диска RK
+assign led[1]=dw_led;        // запрос обмена диска DW
+assign led[2]=my_led|dx_led; // запрос обмена диска MY или DX
+assign led[3]=timer_led;     // индикация включения таймера
 
 //************************************************
 //* тактовый генератор 
@@ -187,16 +197,28 @@ assign vgar = (vgared == 1'b1) ? 5'b11110 : 5'b00000 ;
 //************************************
 topboard kernel(
 
-   .clk50(clk50),   
-	.clk_p(clk_p),
-	.clk_n(clk_n),
-	.sdclock(sdclock),
-	.clkrdy(clkrdy),
+   .clk50(clk50),                   // 50 МГц
+	.clk_p(clk_p),                   // тактовая частота процессора, прямая фаза
+	.clk_n(clk_n),                   // тактовая частота процессора, инверсная фаза
+	.sdclock(sdclock),               // тактовая частота SD-карты
+	.clkrdy(clkrdy),                 // готовность PLL
 	
+	.bt_reset(~button[0]),            // общий сброс
+	.bt_halt(~button[1]),             // режим программа-пульт
+	.bt_terminal_rst(~button[2]),     // сброс терминальной подсистемы
+	.bt_timer(~button[3]),            // выключатель таймера
 	
-   .button(button),       // кнопки 
-   .sw(sw),           // переключатели конфигурации
+	.sw_diskbank({2'b00,sw[1:0]}),   // выбор дискового банка
+	.sw_console(sw[2]),              // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
+	.sw_cpuslow(sw[3]),              // режим замедления процессора
    
+   // индикаторные светодиоды      
+   .rk_led(rk_led),               // запрос обмена диска RK
+   .dw_led(dw_led),               // запрос обмена диска DW
+   .my_led(my_led),               // запрос обмена диска MY
+   .dx_led(dx_led),               // запрос обмена диска DX
+   .timer_led(timer_led),         // индикация включения таймера
+	
    // Интерфейс SDRAM
    .sdram_reset(sdram_reset),
    .sdram_stb(sdram_stb),
@@ -214,9 +236,6 @@ topboard kernel(
    .sdcard_sclk(sdcard_sclk), 
    .sdcard_miso(sdcard_miso), 
 
-   // индикаторные светодиоды   
-   .led(led),                                  
-   
    // VGA
    .vgah(vgah),         // горизонтальная синхронизация
    .vgav(vgav),         // вертикакльная синхронизация

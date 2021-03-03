@@ -92,7 +92,7 @@ assign cpu_adr_o=full_adr[15:0];
 //***********************************************
 wire [15:0] startup_reg = {13'o14000, `STARTUP};        // регистр начального пуска
 assign vector=(una)? startup_reg : ivec ;  // коммутатор вектора прерывания/регистра начального пуска
-assign istb=(una)? 1'b0: cpu_istb;         // блокировка выдача подвердления контроллеру прерываний
+assign istb=(una)? 1'b0: cpu_istb;         // блокировка выдача подверждения контроллеру прерываний
                                            // при выполнении безадресного чтения
 //*************************************
 // счетчик замедления процессора
@@ -101,7 +101,7 @@ reg [4:0] cpudelay;
 reg cpu_clk_enable;
 
 always @ (posedge clk_p) begin
-    if (cpudelay != 5'd21) begin
+    if (cpudelay != 5'd`CPUSLOW) begin
         cpudelay <= cpudelay + 1'b1;  // считаем от 0 до 22
         cpu_clk_enable <= 1'b0;
     end     
