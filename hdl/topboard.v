@@ -15,21 +15,21 @@
 module topboard (
 
    input          clk50,        // Тактовый сигнал 50 MHz
-	input 			clk_p,
-	input 			clk_n,
-	input          sdclock,
-	input          clkrdy,
-	
-	// кнопки
-	input          bt_reset,
-	input          bt_halt,
-	input          bt_terminal_rst,
-	input          bt_timer,
-	
-	// переключатели конфигурации
-	input [3:0]    sw_diskbank,
-	input          sw_console,   // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
-	input          sw_cpuslow,
+   input          clk_p,
+   input          clk_n,
+   input          sdclock,
+   input          clkrdy,
+   
+   // кнопки
+   input          bt_reset,
+   input          bt_halt,
+   input          bt_terminal_rst,
+   input          bt_timer,
+   
+   // переключатели конфигурации
+   input [3:0]    sw_diskbank,
+   input          sw_console,   // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
+   input          sw_cpuslow,
 
    // индикаторные светодиоды      
    output         rk_led,               // запрос обмена диска RK
@@ -37,19 +37,19 @@ module topboard (
    output         my_led,               // запрос обмена диска MY
    output         dx_led,               // запрос обмена диска DX
    output         timer_led,            // индикация включения таймера
-	
+   
    // Интерфейс SDRAM
-   output 			sdram_reset,
-	// стробы чтения-записи
+   output          sdram_reset,
+   // стробы чтения-записи
    output         sdram_stb,
    output         sdram_we,
    output [1:0]   sdram_sel,
-	input          sdram_ack,
-	output [21:1]  sdram_adr,
-	output [15:0]  sdram_out,
-	input  [15:0]  sdram_dat,
-	input          sdram_ready,
-	
+   input          sdram_ack,
+   output [21:1]  sdram_adr,
+   output [15:0]  sdram_out,
+   input  [15:0]  sdram_dat,
+   input          sdram_ready,
+   
    // интерфейс SD-карты
    output         sdcard_cs, 
    output         sdcard_mosi, 

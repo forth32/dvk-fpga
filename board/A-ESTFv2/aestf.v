@@ -1,14 +1,16 @@
+//  Проект DVK-FPGA
 //
-//  Интерфейсный модуль для плтаы A-ESTF V2
-//
+//  Интерфейсный модуль для платы A-ESTF V2
+//=================================================================
 //
 
 `include "config.v"
 
 module aestf(
    input          clk50,        // clock input 50 MHz
-   input    [3:0] button,       // кнопки 
-   input    [3:0] sw,           // переключатели конфигурации
+   input  [3:0]   button,       // кнопки 
+   input  [3:0]   sw,           // переключатели конфигурации
+   output [3:0]   led,          // индикаторные светодиоды   
    
    // Интерфейс SDRAM
    inout  [15:0]  DRAM_DQ,      //   SDRAM Data bus 16 Bits
@@ -30,8 +32,7 @@ module aestf(
    output         sdcard_sclk, 
    input          sdcard_miso, 
 
-   // индикаторные светодиоды   
-   output [3:0]   led,                                  
+   
    
    // VGA
    output         vgah,         // горизонтальная синхронизация
@@ -81,7 +82,7 @@ pll pll1 (
    .inclk0(clk50),
    .c0(clk_p),     // 100МГц прямая фаза, основная тактовая частота
    .c1(clk_n),     // 100МГц инверсная фаза
-   .c2(sdclock),     // 12.5 МГц тактовый сигнал SD-карты
+   .c2(sdclock),   // 12.5 МГц тактовый сигнал SD-карты
    .locked(clkrdy) // флаг готовности PLL
 );
 
@@ -111,19 +112,21 @@ begin
    dreset[0] <= sdram_reset; // 1 - сброс
    dreset[1] <= dreset[0];
    if (dreset[1] == 1) begin
-     drs<=0;
-     dr_cnt<=2'b0;
+     // системный сброс активен
+     drs<=0;         // активируем сброс DRAM
+     dr_cnt<=2'b0;   // запускаем счетчик задержки
    end  
    else 
-     if (dr_cnt != 2'd3) dr_cnt<=dr_cnt+1'b1;
-     else drs<=1'b1;
+     // системный сброс снят
+     if (dr_cnt != 2'd3) dr_cnt<=dr_cnt+1'b1; // счетчик задержки ++
+     else drs<=1'b1;                          // задержка окончена - снимаем сигнал сброса DRAM
 end
 
 
 // стробы подтверждения
 wire sdr_wr_ack,sdr_rd_ack;
-// тактовый сигнал на память
-assign DRAM_CLK=~clk_p;
+// тактовый сигнал на память - инверсия синхросигнала шины
+assign DRAM_CLK=clk_n;
 
 // стробы чтения и записи в sdram
 assign sdram_wr=sdram_we & sdram_stb;
@@ -148,6 +151,8 @@ end
 assign DRAM_UDQM=dram_h; 
 assign DRAM_LDQM=dram_l; 
 
+// контроллер SDRAM
+
 sdram_top sdram(
     .clk(clk_p),
     .rst_n(drs), // запускаем модуль, как только pll выйдет в рабочий режим, запуска процессора не ждем
@@ -170,13 +175,14 @@ sdram_top sdram(
     .sdram_ba({DRAM_BA_1,DRAM_BA_0}),
     .sdram_addr(DRAM_ADDR[12:0]),
     .sdram_data(DRAM_DQ),
-    .sdram_init_done(sdram_ready)
+    .sdram_init_done(sdram_ready)     // выход готовности SDRAM
 );
          
 // формирователь сигнала подверждения транзакции
 reg [1:0]dack;
 
 assign sdram_ack = sdram_stb & (dack[1]);
+
 // задержка сигнала подтверждения на 1 такт clk
 always @ (posedge clk_p)  begin
    dack[0] <= sdram_stb & (sdr_rd_ack | sdr_wr_ack);
@@ -189,8 +195,8 @@ end
 wire vgagreen,vgared,vgablue;
 // выбор яркости каждого цвета  - сигнал, подаваемый на видео-ЦАП для светящейся и темной точки.   
 assign vgag = (vgagreen == 1'b1) ? 6'b111111 : 6'b000000 ;
-assign vgab = (vgablue == 1'b1) ? 5'b11111 : 5'b00000 ;
-assign vgar = (vgared == 1'b1) ? 5'b11110 : 5'b00000 ;
+assign vgab = (vgablue == 1'b1)  ? 5'b11111  : 5'b00000 ;
+assign vgar = (vgared == 1'b1)   ? 5'b11110  : 5'b00000 ;
 
 //************************************
 //* Соединительная плата
@@ -198,19 +204,19 @@ assign vgar = (vgared == 1'b1) ? 5'b11110 : 5'b00000 ;
 topboard kernel(
 
    .clk50(clk50),                   // 50 МГц
-	.clk_p(clk_p),                   // тактовая частота процессора, прямая фаза
-	.clk_n(clk_n),                   // тактовая частота процессора, инверсная фаза
-	.sdclock(sdclock),               // тактовая частота SD-карты
-	.clkrdy(clkrdy),                 // готовность PLL
-	
-	.bt_reset(~button[0]),            // общий сброс
-	.bt_halt(~button[1]),             // режим программа-пульт
-	.bt_terminal_rst(~button[2]),     // сброс терминальной подсистемы
-	.bt_timer(~button[3]),            // выключатель таймера
-	
-	.sw_diskbank({2'b00,sw[1:0]}),   // выбор дискового банка
-	.sw_console(sw[2]),              // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
-	.sw_cpuslow(sw[3]),              // режим замедления процессора
+   .clk_p(clk_p),                   // тактовая частота процессора, прямая фаза
+   .clk_n(clk_n),                   // тактовая частота процессора, инверсная фаза
+   .sdclock(sdclock),               // тактовая частота SD-карты
+   .clkrdy(clkrdy),                 // готовность PLL
+   
+   .bt_reset(~button[0]),            // общий сброс
+   .bt_halt(~button[1]),             // режим программа-пульт
+   .bt_terminal_rst(~button[2]),     // сброс терминальной подсистемы
+   .bt_timer(~button[3]),            // выключатель таймера
+   
+   .sw_diskbank({2'b00,sw[1:0]}),   // выбор дискового банка
+   .sw_console(sw[2]),              // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
+   .sw_cpuslow(sw[3]),              // режим замедления процессора
    
    // индикаторные светодиоды      
    .rk_led(rk_led),               // запрос обмена диска RK
@@ -218,18 +224,18 @@ topboard kernel(
    .my_led(my_led),               // запрос обмена диска MY
    .dx_led(dx_led),               // запрос обмена диска DX
    .timer_led(timer_led),         // индикация включения таймера
-	
+   
    // Интерфейс SDRAM
-   .sdram_reset(sdram_reset),
-   .sdram_stb(sdram_stb),
-   .sdram_we(sdram_we),
-   .sdram_sel(sdram_sel),
-	.sdram_ack(sdram_ack),
-	.sdram_adr(sdram_adr),
-	.sdram_out(sdram_out),
-	.sdram_dat(sdram_dat),
-	.sdram_ready(sdram_ready),
-	
+   .sdram_reset(sdram_reset),     // сброс
+   .sdram_stb(sdram_stb),         // строб начала транзакции
+   .sdram_we(sdram_we),           // разрешение записи
+   .sdram_sel(sdram_sel),         // выбор байтов
+   .sdram_ack(sdram_ack),         // подтверждение транзакции
+   .sdram_adr(sdram_adr),         // шина адреса
+   .sdram_out(sdram_out),         // выход шины данных
+   .sdram_dat(sdram_dat),         // вход шины данных
+   .sdram_ready(sdram_ready),     // флаг готовности SDRAM
+   
    // интерфейс SD-карты
    .sdcard_cs(sdcard_cs), 
    .sdcard_mosi(sdcard_mosi), 

@@ -555,10 +555,10 @@ always @(posedge sdcard_sclk)  begin
                            if (read_start == 1'b1 | write_start == 1'b1) begin
                               if (read_ack == 1'b1 | write_ack == 1'b1)  sd_state <= sd_idle ; 
                               else     sd_state <= sd_reset ; 
-									end
-								   else
-								      if (mode == 1)	sd_state <= sd_reset; 
-										else sd_state <= sd_idle;
+                           end
+                           else
+                              if (mode == 1)   sd_state <= sd_reset; 
+                              else sd_state <= sd_idle;
                         end
             endcase 
          end 

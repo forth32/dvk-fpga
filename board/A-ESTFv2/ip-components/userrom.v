@@ -83,9 +83,9 @@ module user_rom (
       altsyncram_component.address_aclr_a = "NONE",
       altsyncram_component.clock_enable_input_a = "BYPASS",
       altsyncram_component.clock_enable_output_a = "BYPASS",
-`ifdef userrom		
+`ifdef userrom      
       altsyncram_component.init_file = `userrom,
-`endif		
+`endif      
       altsyncram_component.intended_device_family = "Cyclone IV E",
       altsyncram_component.lpm_hint = "ENABLE_RUNTIME_MOD=NO",
       altsyncram_component.lpm_type = "altsyncram",
