@@ -6,7 +6,7 @@
 
 `include "config.v"
 
-module ax4010(
+module omdazz(
    input          clk50,        // clock input 50 MHz
    input  [3:0]   button,       // кнопки 
 //   input  [3:0]   sw,           // переключатели конфигурации
@@ -37,9 +37,9 @@ module ax4010(
    // VGA
    output         vgah,         // горизонтальная синхронизация
    output         vgav,         // вертикакльная синхронизация
-   output         [4:0]vgar,    // красный видеосигнал
-   output         [5:0]vgag,    // зеленый видеосигнал
-   output         [4:0]vgab,    // синий видеосигнал
+   output         vgar,         // красный видеосигнал
+   output         vgag,         // зеленый видеосигнал
+   output         vgab,         // синий видеосигнал
 
    // PS/2
    input          ps2_clk, 
@@ -201,9 +201,9 @@ end
 //************************************
 wire vgagreen,vgared,vgablue;
 // выбор яркости каждого цвета  - сигнал, подаваемый на видео-ЦАП для светящейся и темной точки.   
-assign vgag = (vgagreen == 1'b1) ? 6'b111111 : 6'b000000 ;
-assign vgab = (vgablue == 1'b1)  ? 5'b11111  : 5'b00000 ;
-assign vgar = (vgared == 1'b1)   ? 5'b11110  : 5'b00000 ;
+assign vgag = vgagreen;
+assign vgab = vgablue;
+assign vgar = vgared;
 
 //************************************
 //* Соединительная плата
