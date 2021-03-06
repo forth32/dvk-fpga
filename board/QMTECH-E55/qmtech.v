@@ -10,7 +10,7 @@ module qmtech(
    input          clk50,        // clock input 50 MHz
    input  [3:0]   button,       // кнопки 
    input  [3:0]   sw,           // переключатели конфигурации
-   output [3:0]   led,          // индикаторные светодиоды   
+   output [4:0]   led,          // индикаторные светодиоды   
    
    // Интерфейс SDRAM
    inout  [15:0]  DRAM_DQ,      //   SDRAM Data bus 16 Bits
@@ -66,9 +66,10 @@ module qmtech(
 wire rk_led, dw_led, my_led, dx_led, timer_led;
 
 assign led[0]=rk_led;        // запрос обмена диска RK
-assign led[1]=dw_led;        // запрос обмена диска DW
-assign led[2]=my_led|dx_led; // запрос обмена диска MY или DX
-assign led[3]=timer_led;     // индикация включения таймера
+assign led[1]=dx_led;        // запрос обмена диска DX
+assign led[2]=my_led;        // запрос обмена диска MY 
+assign led[3]=dw_led;        // запрос обмена диска DW
+assign led[4]=timer_led;     // индикация включения таймера
 
 //************************************************
 //* тактовый генератор 
