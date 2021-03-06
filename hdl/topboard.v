@@ -39,8 +39,7 @@ module topboard (
    output         timer_led,            // индикация включения таймера
    
    // Интерфейс SDRAM
-   output          sdram_reset,
-   // стробы чтения-записи
+   output         sdram_reset,
    output         sdram_stb,
    output         sdram_we,
    output [1:0]   sdram_sel,
