@@ -12,27 +12,11 @@ module ae115fb(
    input  [3:0]   sw,           // переключатели конфигурации
    output [3:0]   led,          // индикаторные светодиоды   
    
-   // Интерфейс SDRAM
-   inout  [15:0]  DRAM_DQ,      //   SDRAM Data bus 16 Bits
-   output [12:0]  DRAM_ADDR,    //   SDRAM Address bus 12 Bits
-   output         DRAM_LDQM,    //   SDRAM Low-byte Data Mask 
-   output         DRAM_UDQM,    //   SDRAM High-byte Data Mask
-   output         DRAM_WE_N,    //   SDRAM Write Enable
-   output         DRAM_CAS_N,   //   SDRAM Column Address Strobe
-   output         DRAM_RAS_N,   //   SDRAM Row Address Strobe
-   output         DRAM_CS_N,    //   SDRAM Chip Select
-   output         DRAM_BA_0,    //   SDRAM Bank Address 0
-   output         DRAM_BA_1,    //   SDRAM Bank Address 0
-   output         DRAM_CLK,     //   SDRAM Clock
-   output         DRAM_CKE,     //   SDRAM Clock Enable
-
    // интерфейс SD-карты
    output         sdcard_cs, 
    output         sdcard_mosi, 
    output         sdcard_sclk, 
    input          sdcard_miso, 
-
-   
    
    // VGA
    output         vgah,         // горизонтальная синхронизация
@@ -40,9 +24,9 @@ module ae115fb(
    output         [7:0]vgar,    // красный видеосигнал
    output         [7:0]vgag,    // зеленый видеосигнал
    output         [7:0]vgab,    // синий видеосигнал
-	output         vgasync,
-	output         vgaclk,
-	output         vgablank,
+   output         vgasync,      // дополнительный синхросигнал зеленого канала
+   output         vgaclk,       // пиксельный синхросигнал внешнего DAC
+   output         vgablank,     // сигнал отключения видеопотока
 
    // PS/2
    input          ps2_clk, 
@@ -83,11 +67,11 @@ wire clkrdy;
 wire clk50;
 
 pll pll1 (
-   .inclk0(clk25),
+   .inclk0(clk25), // вход 25 МГц
    .c0(clk_p),     // clk_p прямая фаза, основная тактовая частота
    .c1(clk_n),     // clk_n инверсная фаза
    .c2(sdclock),   // 12.5 МГц тактовый сигнал SD-карты
-	.c3(clk50),     // 50 МГц, тактовый сигнал терминальной подсистемы
+   .c3(clk50),     // 50 МГц, тактовый сигнал терминальной подсистемы
    .locked(clkrdy) // флаг готовности PLL
 );
 
@@ -95,8 +79,8 @@ pll pll1 (
 //* Модуль статической внутренней памяти
 //******************************************
 
-wire sdram_reset;
-wire sdram_we;
+wire sdram_reset;       // не используется
+wire sdram_we;     
 wire sdram_stb;
 wire [1:0] sdram_sel;
 wire sdram_ack;
@@ -107,12 +91,13 @@ wire sdram_ready;
 wire sdram_wr;
 wire sdram_rd;
 
-assign sdram_ready=1'b1;
+assign sdram_ready=1'b1;  // модуль всегда готов
 
 // стробы чтения и записи 
-assign sdram_wr=sdram_we & sdram_stb;
-assign sdram_rd=(~sdram_we) & sdram_stb;
+assign sdram_wr=sdram_we & sdram_stb;      // строб записи
+assign sdram_rd=(~sdram_we) & sdram_stb;   // строб чтения
 
+// Модуль altsyncram размером 64К
 baseram ram (
    .address(sdram_adr[15:1]),
    .byteena(sdram_sel),
@@ -121,7 +106,7 @@ baseram ram (
    .rden(sdram_rd),
    .wren(sdram_wr),
    .q(sdram_dat)
-	);
+   );
          
 // формирователь сигнала подверждения транзакции
 reg [1:0]dack;
@@ -135,7 +120,7 @@ always @ (posedge clk_p)  begin
 end
 
 //************************************
-//*  Управление VGA DAC
+//*  Управление VGA DAC (ADV7123)
 //************************************
 wire vgagreen,vgared,vgablue;
 // выбор яркости каждого цвета  - сигнал, подаваемый на видео-ЦАП для светящейся и темной точки.   
@@ -143,9 +128,9 @@ assign vgag = (vgagreen == 1'b1) ? 8'b11111111 : 8'b00000000 ;
 assign vgab = (vgablue == 1'b1)  ? 8'b11111111 : 8'b00000000 ;
 assign vgar = (vgared == 1'b1)   ? 8'b11111111 : 8'b00000000 ;
 
-assign vgaclk=clk50;
-assign vgablank=1'b1;
-assign vgasync=1'b0;
+assign vgaclk=clk50;    // пиксельная частота
+assign vgablank=1'b1;   // затемнение не используется
+assign vgasync=1'b0;    // дополнительный синхросигнал не используется
 
 //************************************
 //* Соединительная плата
@@ -160,12 +145,12 @@ topboard kernel(
    
    .bt_reset(~button[0]),            // общий сброс
    .bt_halt(~button[1]),             // режим программа-пульт
-   .bt_terminal_rst(1'b0), //~button[2]),     // сброс терминальной подсистемы
+   .bt_terminal_rst(~button[2]),     // сброс терминальной подсистемы
    .bt_timer(~button[3]),            // выключатель таймера
    
-   .sw_diskbank({2'b00,2'b00}),   // выбор дискового банка
-   .sw_console(1'b0),              // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
-   .sw_cpuslow(1'b0),              // режим замедления процессора
+   .sw_diskbank({2'b00,sw[1:0]}),   // выбор дискового банка
+   .sw_console(sw[2]),              // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
+   .sw_cpuslow(sw[3]),              // режим замедления процессора
    
    // индикаторные светодиоды      
    .rk_led(rk_led),               // запрос обмена диска RK

@@ -49,11 +49,10 @@ set_global_assignment -name SMART_RECOMPILE ON
 # ==========================
 set_location_assignment PIN_AB11 -to clk25
 
-
-#set_location_assignment PIN_J2 -to sdcard_cs
-#set_location_assignment PIN_L8 -to sdcard_miso
-#set_location_assignment PIN_P6 -to sdcard_mosi
-#set_location_assignment PIN_K2 -to sdcard_sclk
+set_location_assignment PIN_C7 -to sdcard_cs
+set_location_assignment PIN_B9 -to sdcard_miso
+set_location_assignment PIN_B8 -to sdcard_mosi
+set_location_assignment PIN_A8 -to sdcard_sclk
 
 set_location_assignment PIN_J3 -to vgab[0]
 set_location_assignment PIN_J4 -to vgab[1]
@@ -87,21 +86,21 @@ set_location_assignment PIN_A4 -to vgav
 set_location_assignment PIN_H2 -to vgablank
 set_location_assignment PIN_H1 -to vgasync
 
-#set_location_assignment PIN_ -to buzzer
+set_location_assignment PIN_B6 -to buzzer
 
-#set_location_assignment PIN_ -to ps2_clk
-#set_location_assignment PIN_ -to ps2_data
+set_location_assignment PIN_B15 -to ps2_clk
+set_location_assignment PIN_B16 -to ps2_data
 
-set_location_assignment PIN_N21 -to button[0]
-set_location_assignment PIN_T1 -to button[1]
-#set_location_assignment PIN_ -to button[2]
-set_location_assignment PIN_N22 -to button[3]
+set_location_assignment PIN_F8 -to button[0]
+set_location_assignment PIN_F10 -to button[1]
+set_location_assignment PIN_A10 -to button[2]
+set_location_assignment PIN_A13 -to button[3]
 
 
-#set_location_assignment PIN_ -to sw[3]
-#set_location_assignment PIN_ -to sw[2]
-#set_location_assignment PIN_ -to sw[1]
-#set_location_assignment PIN_ -to sw[0]
+set_location_assignment PIN_B10 -to sw[3]
+set_location_assignment PIN_F9 -to sw[2]
+set_location_assignment PIN_F7 -to sw[1]
+set_location_assignment PIN_A9 -to sw[0]
 
 set_location_assignment PIN_H5 -to irps_rxd
 set_location_assignment PIN_N1 -to irps_txd
@@ -160,7 +159,7 @@ set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
 
 # Signal Tap Assignments
 # ======================
-set_global_assignment -name ENABLE_SIGNALTAP ON
+set_global_assignment -name ENABLE_SIGNALTAP OFF
 set_global_assignment -name USE_SIGNALTAP_FILE output_files/stp1.stp
 
 # Power Estimation Assignments
@@ -367,8 +366,11 @@ set_global_assignment -name VERILOG_FILE "ip-components/rom055.v"
 set_global_assignment -name VERILOG_FILE "ip-components/rom000.v"
 set_global_assignment -name QIP_FILE "ip-components/kgdvram.qip"
 set_global_assignment -name SDC_FILE top.sdc
-set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
 
 set_location_assignment PIN_M4 -to vgaclk
+
+
+
+
 
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
