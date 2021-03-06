@@ -15,21 +15,21 @@
 module topboard (
 
    input          clk50,        // Тактовый сигнал 50 MHz
-   input          clk_p,
-   input          clk_n,
-   input          sdclock,
-   input          clkrdy,
+   input          clk_p,        // основной синхросигнал, прямая фаза
+   input          clk_n,        // основной синхросигнал, инверсная фаза
+   input          sdclock,      // синхросигнал Sd-карты
+   input          clkrdy,       // готовность PLL
    
    // кнопки
-   input          bt_reset,
-   input          bt_halt,
-   input          bt_terminal_rst,
-   input          bt_timer,
+   input          bt_reset,         // общий сброс
+   input          bt_halt,          // пультовое прерывание
+   input          bt_terminal_rst,  // сброс терминальной подсистемы
+   input          bt_timer,         // выключатель таймера
    
    // переключатели конфигурации
-   input [3:0]    sw_diskbank,
+   input [3:0]    sw_diskbank,  // дисковый банк
    input          sw_console,   // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
-   input          sw_cpuslow,
+   input          sw_cpuslow,   // замедление процессора
 
    // индикаторные светодиоды      
    output         rk_led,               // запрос обмена диска RK
@@ -39,15 +39,15 @@ module topboard (
    output         timer_led,            // индикация включения таймера
    
    // Интерфейс SDRAM
-   output         sdram_reset,
-   output         sdram_stb,
-   output         sdram_we,
-   output [1:0]   sdram_sel,
-   input          sdram_ack,
-   output [21:1]  sdram_adr,
-   output [15:0]  sdram_out,
-   input  [15:0]  sdram_dat,
-   input          sdram_ready,
+   output         sdram_reset,       // сброс/переинициализация SDRAM
+   output         sdram_stb,         // строб транзакции
+   output         sdram_we,          // разрешение записи
+   output [1:0]   sdram_sel,         // выбор байтов
+   input          sdram_ack,         // подтверждение транзакции
+   output [21:1]  sdram_adr,         // шина адреса
+   output [15:0]  sdram_out,         // шина данных хост -> память
+   input  [15:0]  sdram_dat,         // шина данных память -> хост  
+   input          sdram_ready,       // готовность SDRAM
    
    // интерфейс SD-карты
    output         sdcard_cs, 
@@ -242,7 +242,7 @@ wbc_rst reset
 (
    .osc_clk(clk50),             // основной клок 50 МГц
    .sys_clk(wb_clk),            // сигнал синхронизации  wishbone
-   .pll_lock(clkrdy),        // сигнал готовности PLL
+   .pll_lock(clkrdy),           // сигнал готовности PLL
    .button(~bt_reset),          // кнопка сброса
    .sys_ready(sdram_ready),     // вход готовности системных компонентов (влияет на sys_rst)
    .sys_dclo(vm_dclo_in),   
@@ -254,9 +254,9 @@ wbc_rst reset
 //*  Интерфейс к модулю SDRAM
 //*********************************************
 
-assign sdram_reset=global_reset;    // сигнал сброса модуля SDRAM
-assign sdram_we=wb_we;              // признак транзакции записи
-assign sdram_sel=wb_sel;            // выбор байтов
+assign sdram_reset=global_reset;       // сигнал сброса модуля SDRAM
+assign sdram_we=wb_we;                 // признак транзакции записи
+assign sdram_sel=wb_sel;               // выбор байтов
 assign sdram_adr={6'o0, wb_adr[15:1]}; // шина адреса
 assign sdram_out=wb_out;               // выходная шина данных
 
