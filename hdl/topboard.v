@@ -27,7 +27,7 @@ module topboard (
    input          bt_timer,         // выключатель таймера
    
    // переключатели конфигурации
-   input [3:0]    sw_diskbank,  // дисковый банк
+   input [6:0]    sw_diskbank,  // дисковый банк
    input          sw_console,   // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
    input          sw_cpuslow,   // замедление процессора
 
@@ -607,7 +607,7 @@ rk11 rkdisk (
    .sdmode(`RK_sdmode),           // режим ведущего-ведомого
    
 // Адрес массива дисков на карте
-   .start_offset({4'b0000,sw_diskbank,18'h0}),
+   .start_offset({1'b0,sw_diskbank,18'h0}),
 
 // отладочные сигналы
    .sdcard_debug(rksddebug)
@@ -658,7 +658,7 @@ dw hdd(
    .sdmode(`DW_sdmode),          
 
 // Адрес массива дисков на карте
-   .start_offset({4'b0000,sw_diskbank,18'hc000}),
+   .start_offset({1'b0,sw_diskbank,18'hc000}),
    
 // отладочные сигналы
    .sdcard_debug(dwsddebug)
@@ -708,7 +708,7 @@ rx01 dxdisk (
    .sdclock(sdclock),
    
 // Адрес массива дисков на карте
-   .start_offset({4'b0000,sw_diskbank,18'h2c000}),
+   .start_offset({1'b0,sw_diskbank,18'h2c000}),
    
 // отладочные сигналы
    .sdcard_debug(rxsddebug)
@@ -779,7 +779,7 @@ fdd_my mydisk (
    .sdmode(`MY_sdmode),          
    
 // Адрес массива дисков на карте
-   .start_offset({4'b0000,sw_diskbank,18'h2e000}),
+   .start_offset({1'b0,sw_diskbank,18'h2e000}),
 
 // отладочные сигналы
    .sdcard_debug(mysddebug)
