@@ -123,10 +123,10 @@ set_location_assignment PIN_A10 -to button[1]
 set_location_assignment PIN_B10 -to button[2]
 set_location_assignment PIN_A9 -to button[3]
 
-#set_location_assignment PIN_A9 -to sw[3]
-#set_location_assignment PIN_B10 -to sw[2]
-#set_location_assignment PIN_A10 -to sw[1]
-#set_location_assignment PIN_AA13 -to sw[0]
+set_location_assignment PIN_B18 -to sw[3]
+set_location_assignment PIN_B19 -to sw[2]
+set_location_assignment PIN_A18 -to sw[1]
+set_location_assignment PIN_A19 -to sw[0]
 
 set_location_assignment PIN_J2 -to irps_rxd
 set_location_assignment PIN_J1 -to irps_txd
@@ -136,6 +136,12 @@ set_location_assignment PIN_B8 -to led[1]
 set_location_assignment PIN_A7 -to led[2]
 set_location_assignment PIN_B7 -to led[3]
 
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ps2_clk
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ps2_data
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw[2]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw[3]
 
 # Classic Timing Assignments
 # ==========================
@@ -324,8 +330,6 @@ set_global_assignment -name EDA_TEST_BENCH_FILE tb/mc1201_02_tbench.v -section_i
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ps2_clk
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ps2_data
 set_global_assignment -name VERILOG_FILE qmtech.v
 set_global_assignment -name VERILOG_FILE config.v
 set_global_assignment -name VERILOG_FILE ../../hdl/topboard.v
@@ -386,5 +390,6 @@ set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
 
 
 set_location_assignment PIN_A6 -to led[4]
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
