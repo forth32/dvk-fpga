@@ -319,7 +319,7 @@ always @(posedge sdcard_sclk)  begin
                            end 
                            
                            // запуск записи
-                           if (write_start == 1'b1 
+                           else if (write_start == 1'b1 
                             & read_done == 1'b0 
                             & write_done == 1'b0 
                             & read_ack == 1'b0 
