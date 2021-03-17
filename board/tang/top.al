@@ -2,7 +2,7 @@
 <Project>
     <Project_Created_Time>2021-03-10 07:42:39</Project_Created_Time>
     <TD_Version>4.6.18154</TD_Version>
-    <UCode>10100010</UCode>
+    <UCode>11010110</UCode>
     <Name>top</Name>
     <HardWare>
         <Family>EG4</Family>
@@ -39,12 +39,13 @@
             <File>ip-components/pll.v</File>
             <File>ip-components/tang_rom055.v</File>
             <File>memory_adapter.v</File>
-            <File>ip-components/sdram.v</File>
             <File>../../hdl/sdram_ip/sdram_cmd.v</File>
             <File>../../hdl/sdram_ip/sdram_ctrl.v</File>
             <File>../../hdl/sdram_ip/sdram_para.v</File>
             <File>../../hdl/sdram_ip/sdram_top.v</File>
             <File>../../hdl/sdram_ip/sdram_wr_data.v</File>
+            <File>ip-components/tang_vtmem.v</File>
+            <File>ip-components/tang_fontrom.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
@@ -56,8 +57,8 @@
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
     <Project_Settings>
-        <Step_Last_Change>2021-03-16 20:56:02</Step_Last_Change>
-        <Current_Step>60</Current_Step>
+        <Step_Last_Change>2021-03-17 07:30:44</Step_Last_Change>
+        <Current_Step>30</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>
