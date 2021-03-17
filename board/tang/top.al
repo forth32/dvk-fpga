@@ -2,7 +2,7 @@
 <Project>
     <Project_Created_Time>2021-03-10 07:42:39</Project_Created_Time>
     <TD_Version>4.6.18154</TD_Version>
-    <UCode>10010000</UCode>
+    <UCode>11110110</UCode>
     <Name>top</Name>
     <HardWare>
         <Family>EG4</Family>
@@ -56,8 +56,12 @@
         <MODULE>tang</MODULE>
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
+    <Property>
+        <GlobalProperty/>
+        <RtlProperty/>
+    </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-03-17 08:31:23</Step_Last_Change>
+        <Step_Last_Change>2021-03-17 21:27:07</Step_Last_Change>
         <Current_Step>60</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>

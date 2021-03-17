@@ -36,7 +36,7 @@ for(adr=0;adr<32768;adr++) {
     bit=(ch>>bitpos)&1;            // выделяем очередной бит
     fprintf(out,"\n%04x: %1i;",adr,bit); // и выводим в mif его значение
   }
-  else fprintf(out,"\n%04x: 0",adr); // заполняем неиспользуемый хвост нулями
+  else fprintf(out,"\n%04x: 0;",adr); // заполняем неиспользуемый хвост нулями
 }
 // MIF-терминатор
 fprintf(out,"\nEND;\n");
