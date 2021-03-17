@@ -20,11 +20,12 @@ set_pin_assignment	{ sw[0] }	{ LOCATION = A4; IOSTANDARD = LVTTL33; }
 set_pin_assignment	{ sw[1] }	{ LOCATION = A3; IOSTANDARD = LVTTL33; }
 set_pin_assignment	{ sw[2] }	{ LOCATION = C5; IOSTANDARD = LVTTL33; }
 set_pin_assignment	{ sw[3] }	{ LOCATION = B6; IOSTANDARD = LVTTL33; }
-set_pin_assignment	{ vgab }	{ LOCATION = M12; IOSTANDARD = LVTTL33; }
+set_pin_assignment	{ vgab }	{ LOCATION = N12; IOSTANDARD = LVTTL33; }
 set_pin_assignment	{ vgag }	{ LOCATION = R16; IOSTANDARD = LVTTL33; }
-set_pin_assignment	{ vgah }	{ LOCATION = N11; IOSTANDARD = LVTTL33; }
-set_pin_assignment	{ vgar }	{ LOCATION = N12; IOSTANDARD = LVTTL33; }
-set_pin_assignment	{ vgav }	{ LOCATION = P12; IOSTANDARD = LVTTL33; }
+set_pin_assignment	{ vgah }	{ LOCATION = P12; IOSTANDARD = LVTTL33; }
+set_pin_assignment	{ vgar }	{ LOCATION = M12; IOSTANDARD = LVTTL33; }
+set_pin_assignment	{ vgav }	{ LOCATION = N11; IOSTANDARD = LVTTL33; }
+
 
 
 
