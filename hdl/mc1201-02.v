@@ -193,8 +193,12 @@ end
 //**********************************
 //* Сигнал разрешения таймера
 //**********************************
+
+// начальное состояние таймера
 `ifdef timer_init
-initial timer_status=`timer_init;  // начальное состояние таймера
+initial timer_status=`timer_init;  
+`else
+initial timer_status=1'b1;  
 `endif
 reg [1:0] tbshift;
 reg tbevent;

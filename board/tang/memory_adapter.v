@@ -61,3 +61,37 @@ tang_fontrom rom(
 );  
 	
 endmodule
+
+
+
+//*********************************************************
+//*   Двухпортовое ОЗУ графической подсистемы КГД
+//*********************************************************
+module kgdvram (
+   input   [13:0]  address_a,
+   input   [16:0]  address_b,
+   input     clock_a,
+   input     clock_b,
+   input   [7:0]  data_a,
+   input   [0:0]  data_b,
+   input     wren_a,
+   input     wren_b,
+   output   [7:0]  q_a,
+   output   [0:0]  q_b
+);
+
+
+tang_kgdvram vram( 
+.doa(q_a),
+.dob(q_b),
+.dia(data_a),
+.dib(data_b),
+.addra(address_a),
+.addrb(address_b),
+.wea(wren_a),
+.web(wren_b),
+.clka(clock_a),
+.clkb(clock_b)
+);
+
+endmodule

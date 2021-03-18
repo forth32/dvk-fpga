@@ -2,7 +2,7 @@
 <Project>
     <Project_Created_Time>2021-03-10 07:42:39</Project_Created_Time>
     <TD_Version>4.6.18154</TD_Version>
-    <UCode>11110110</UCode>
+    <UCode>11111000</UCode>
     <Name>top</Name>
     <HardWare>
         <Family>EG4</Family>
@@ -46,10 +46,11 @@
             <File>../../hdl/sdram_ip/sdram_wr_data.v</File>
             <File>ip-components/tang_vtmem.v</File>
             <File>ip-components/tang_fontrom.v</File>
+            <File>ip-components/tang_kgdvram.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
-        <CWC_FILE>top.cwc</CWC_FILE>
+        <CWC_FILE/>
     </Source_Files>
     <TOP_MODULE>
         <LABEL/>
@@ -61,8 +62,8 @@
         <RtlProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-03-17 21:27:07</Step_Last_Change>
-        <Current_Step>60</Current_Step>
+        <Step_Last_Change>2021-03-18 07:11:47</Step_Last_Change>
+        <Current_Step>0</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>
