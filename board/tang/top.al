@@ -47,6 +47,11 @@
             <File>ip-components/tang_vtmem.v</File>
             <File>ip-components/tang_fontrom.v</File>
             <File>ip-components/tang_kgdvram.v</File>
+            <File>../../hdl/vm1/vm1_wb.v</File>
+            <File>../../hdl/vm1/vm1_tve.v</File>
+            <File>../../hdl/vm1/vm1_reg.v</File>
+            <File>../../hdl/vm1/vm1_plm.v</File>
+            <File>ip-components/tang_rom000.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
@@ -62,8 +67,8 @@
         <RtlProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-03-18 07:11:47</Step_Last_Change>
-        <Current_Step>0</Current_Step>
+        <Step_Last_Change>2021-03-18 07:23:00</Step_Last_Change>
+        <Current_Step>60</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>

@@ -16,6 +16,24 @@ tang_rom055 rom(
 	
 endmodule
 
+//*********************************************************
+//*   Теневое ПЗУ платы МС1201.01
+//*********************************************************
+module rom000(
+ input [11:0] address,
+ input clock,
+ output [15:0] q
+ );
+
+tang_rom000 rom(
+  .addra(address), 
+  .doa(q),
+  .clka(clock),
+  .rsta(1'b0)
+);  
+	
+endmodule
+
 
 //*********************************************************
 //*   ОЗУ контроллера КСМ с управляющей микропрограммой
@@ -70,14 +88,14 @@ endmodule
 module kgdvram (
    input   [13:0]  address_a,
    input   [16:0]  address_b,
-   input     clock_a,
-   input     clock_b,
+   input   clock_a,
+   input   clock_b,
    input   [7:0]  data_a,
    input   [0:0]  data_b,
-   input     wren_a,
-   input     wren_b,
-   output   [7:0]  q_a,
-   output   [0:0]  q_b
+   input   wren_a,
+   input   wren_b,
+   output  [7:0]  q_a,
+   output  [0:0]  q_b
 );
 
 
