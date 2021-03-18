@@ -2,7 +2,7 @@
 <Project>
     <Project_Created_Time>2021-03-10 07:42:39</Project_Created_Time>
     <TD_Version>4.6.18154</TD_Version>
-    <UCode>00100010</UCode>
+    <UCode>10111000</UCode>
     <Name>top</Name>
     <HardWare>
         <Family>EG4</Family>
@@ -52,6 +52,11 @@
             <File>../../hdl/vm1/vm1_plm.v</File>
             <File>ip-components/tang_rom000.v</File>
             <File>ip-components/tang_vm1_vcram.v</File>
+            <File>../../hdl/m2/lsi_wb.v</File>
+            <File>../../hdl/m2/mcp_plm.v</File>
+            <File>../../hdl/m2/mcp1611.v</File>
+            <File>../../hdl/m2/mcp1621.v</File>
+            <File>../../hdl/m2/mcp1631.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
@@ -67,8 +72,8 @@
         <RtlProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-03-18 20:22:28</Step_Last_Change>
-        <Current_Step>0</Current_Step>
+        <Step_Last_Change>2021-03-18 21:38:53</Step_Last_Change>
+        <Current_Step>60</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>

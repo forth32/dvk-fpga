@@ -136,7 +136,7 @@ assign wea[0] = wren_a & byteena_a[0];
 assign wea[1] = wren_a & byteena_a[1];
 
 assign web[0] = wren_b;
-assign wea[1] = wren_b;
+assign web[1] = wren_b;
 
 
 tang_vm1_vcram vcram(
