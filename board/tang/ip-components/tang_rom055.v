@@ -34,7 +34,7 @@ module tang_rom055 ( doa, addra, clka, rsta );
 				.IMPLEMENT("9K"),
 				.DEBUGGABLE("NO"),
 				.PACKABLE("NO"),
-				.INIT_FILE("../../../rom/279.mif"),
+				.INIT_FILE(`mc1201_02_rom),
 				.FILL_ALL("NONE"))
 			inst(
 				.dia({16{1'b0}}),

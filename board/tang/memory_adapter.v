@@ -158,3 +158,21 @@ tang_vm1_vcram vcram(
 );
 
 endmodule
+
+//*********************************************************
+//*   ПЗУ пользователя 140000-157777 для всех плат
+//*********************************************************
+module user_rom(
+ input [11:0] address,
+ input clock,
+ output [15:0] q
+ );
+
+tang_user_rom rom(
+  .addra(address), 
+  .doa(q),
+  .clka(clock),
+  .rsta(1'b0)
+);  
+	
+endmodule
