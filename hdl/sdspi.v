@@ -123,14 +123,14 @@ always @(posedge controller_clk) begin
          if (sdcard_xfer_write == 1'b1)  wsector[sdcard_xfer_addr] <= sdcard_xfer_in; // запись слова в буфер записи
          
          // сдвиговые регистры фильтров интерфейсных сигналов
-         idle_filter <= {idle_filter[2:0], idle} ;  // фильтр сигнала готовности
-         read_start_filter <= {read_start_filter[2:0], sdcard_read_start} ; // фильтр строба чтения
-         read_ack_filter <= {read_ack_filter[2:0], sdcard_read_ack} ;       // фильтр подтверждения чтения
-         read_done_filter <= {read_done_filter[2:0], read_done} ;           // фильтр сигнала окончания записи
-         write_start_filter <= {write_start_filter[2:0], sdcard_write_start} ; // фильтр строба записи
-         write_ack_filter <= {write_ack_filter[2:0], sdcard_write_ack} ; 
-         write_done_filter <= {write_done_filter[2:0], write_done} ; 
-         card_error_filter <= {card_error_filter[2:0], card_error} ; 
+         idle_filter <= {idle_filter[1:0], idle} ;  // фильтр сигнала готовности
+         read_start_filter <= {read_start_filter[1:0], sdcard_read_start} ; // фильтр строба чтения
+         read_ack_filter <= {read_ack_filter[1:0], sdcard_read_ack} ;       // фильтр подтверждения чтения
+         read_done_filter <= {read_done_filter[1:0], read_done} ;           // фильтр сигнала окончания записи
+         write_start_filter <= {write_start_filter[1:0], sdcard_write_start} ; // фильтр строба записи
+         write_ack_filter <= {write_ack_filter[1:0], sdcard_write_ack} ; 
+         write_done_filter <= {write_done_filter[1:0], write_done} ; 
+         card_error_filter <= {card_error_filter[1:0], card_error} ; 
          
          // сброс контроллера
          if (reset == 1'b1)  begin
@@ -147,36 +147,36 @@ always @(posedge controller_clk) begin
          // фильтры интерфейсных сигналов
          else  begin
             // сигнал готовности к обмену
-            if (idle_filter == {4{1'b0}})     sdcard_idle <= 1'b0 ; 
-            else if (idle_filter == {4{1'b1}}) sdcard_idle <= 1'b1 ;
+            if (idle_filter == {3{1'b0}})     sdcard_idle <= 1'b0 ; 
+            else if (idle_filter == {3{1'b1}}) sdcard_idle <= 1'b1 ;
             
             // сигнал начала чтения
-            if (read_start_filter == {4{1'b0}}) read_start <= 1'b0 ; 
-            else if (read_start_filter == {4{1'b1}})  read_start <= 1'b1 ; 
+            if (read_start_filter == {3{1'b0}}) read_start <= 1'b0 ; 
+            else if (read_start_filter == {3{1'b1}})  read_start <= 1'b1 ; 
 
             // сигнал подтверждения чтения
-            if (read_ack_filter == {4{1'b0}})      read_ack <= 1'b0 ; 
-            else if (read_ack_filter == {4{1'b1}}) read_ack <= 1'b1 ; 
+            if (read_ack_filter == {3{1'b0}})      read_ack <= 1'b0 ; 
+            else if (read_ack_filter == {3{1'b1}}) read_ack <= 1'b1 ; 
 
             // строб окончания чтения
-            if (read_done_filter == {4{1'b0}}) sdcard_read_done <= 1'b0 ; 
-            else if (read_done_filter == {4{1'b1}})  sdcard_read_done <= 1'b1 ; 
+            if (read_done_filter == {3{1'b0}}) sdcard_read_done <= 1'b0 ; 
+            else if (read_done_filter == {3{1'b1}})  sdcard_read_done <= 1'b1 ; 
 
             // сигнал начала записи
-            if (write_start_filter == {4{1'b0}})     write_start <= 1'b0 ; 
-            else if (write_start_filter == {4{1'b1}})  write_start <= 1'b1 ; 
+            if (write_start_filter == {3{1'b0}})     write_start <= 1'b0 ; 
+            else if (write_start_filter == {3{1'b1}})  write_start <= 1'b1 ; 
 
             // строб подтверждения записи
-            if (write_ack_filter == {4{1'b0}})       write_ack <= 1'b0 ; 
-            else if (write_ack_filter == {4{1'b1}})  write_ack <= 1'b1 ; 
+            if (write_ack_filter == {3{1'b0}})       write_ack <= 1'b0 ; 
+            else if (write_ack_filter == {3{1'b1}})  write_ack <= 1'b1 ; 
 
             // строб окончания записи
-            if (write_done_filter == {4{1'b0}}) sdcard_write_done <= 1'b0 ; 
-            else if (write_done_filter == {4{1'b1}}) sdcard_write_done <= 1'b1 ; 
+            if (write_done_filter == {3{1'b0}}) sdcard_write_done <= 1'b0 ; 
+            else if (write_done_filter == {3{1'b1}}) sdcard_write_done <= 1'b1 ; 
 
             // сигнал ошибки карты
-            if (card_error_filter == {4{1'b0}}) sdcard_error <= 1'b0 ; 
-            else if (card_error_filter == {4{1'b1}}) sdcard_error <= 1'b1 ; 
+            if (card_error_filter == {3{1'b0}}) sdcard_error <= 1'b0 ; 
+            else if (card_error_filter == {3{1'b1}}) sdcard_error <= 1'b1 ; 
          end 
 end 
 

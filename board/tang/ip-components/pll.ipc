@@ -37,8 +37,8 @@
 			</clock>
 			<clock>
 				<id>2</id>
-				<clock_division_factor>96</clock_division_factor>
-				<clock_frequency>10.0000000000000000Mhz</clock_frequency>
+				<clock_division_factor>80</clock_division_factor>
+				<clock_frequency>12.0000000000000000Mhz</clock_frequency>
 				<phase_shift>0.0000000000000000deg</phase_shift>
 			</clock>
 			<clock>

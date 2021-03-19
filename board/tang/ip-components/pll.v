@@ -17,7 +17,7 @@
 //		Clock name	| Frequency 	| Phase shift
 //		C0        	| 60.000000 MHZ	| 0  DEG     
 //		C1        	| 60.000000 MHZ	| 180DEG     
-//		C2        	| 10.000000 MHZ	| 0  DEG     
+//		C2        	| 12.000000 MHZ	| 0  DEG     
 //		C3        	| 48.000000 MHZ	| 0  DEG     
 //		C4        	| 96.000000 MHZ	| 0  DEG     
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,8 +71,8 @@ module pll(refclk,
 		.CLKC1_CPHASE(7),
 		.CLKC1_FPHASE(0),
 		.CLKC2_ENABLE("ENABLE"),
-		.CLKC2_DIV(96),
-		.CLKC2_CPHASE(95),
+		.CLKC2_DIV(80),
+		.CLKC2_CPHASE(79),
 		.CLKC2_FPHASE(0),
 		.CLKC3_ENABLE("ENABLE"),
 		.CLKC3_DIV(20),
