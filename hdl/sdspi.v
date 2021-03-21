@@ -79,6 +79,7 @@ module sdspi (
    parameter[4:0] sd_wait = 24; 
    parameter[4:0] sd_error = 25; 
    parameter[4:0] sd_idle = 26; 
+   parameter[4:0] sd_waitidle = 27; 
 
    reg[4:0] sd_state; 
    reg[4:0] sd_nextstate; 
@@ -229,7 +230,7 @@ always @(posedge sdcard_sclk)  begin
                sd_reset :         
                         begin
                            counter <= 10'd500 ; // счетчик ожидания перед инициализацией
-                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
+//                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
                            do_readr3 <= 1'b0 ; 
                            do_readr7 <= 1'b0 ; 
                            sdcard_cs <= 1'b1 ;     // CS=1
@@ -289,6 +290,7 @@ always @(posedge sdcard_sclk)  begin
                sd_checkacmd41 :
                         begin
                            if (sd_r1 == 7'b0000000) begin
+//                              sd_state <= sd_waitidle ; // Правильный ответ - переходим к рабочему циклу обработки команд                           
                               sd_state <= sd_idle ; // Правильный ответ - переходим к рабочему циклу обработки команд                           
                               sdslow <= 1'b1;       // устанавилваем полную скорость SPI-интерфейса
                            end   
@@ -299,15 +301,16 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            sdcard_debug[0] <= 1'b0 ;   
                            sdcard_debug[1] <= 1'b0;
-                           sdcard_debug[3:2] <= 2'b00 ; 
-                           idle <= 1'b1 ;   // флаг готовности к обмену 
+                           sdcard_debug[3] <= 1'b0 ; 
+									if ((read_start | write_start) == 1'b0) begin
+                             idle <= 1'b1 ;   // флаг готовности к обмену 
+									  sdcard_cs <= 1'b1;
+                             sdcard_debug[2] <= 1'b0 ; 
+									end  
 
                            // запуск чтения
-                           if (read_start == 1'b1 
-                            & read_done == 1'b0 
-                            & write_done == 1'b0 
-                            & read_ack == 1'b0 
-                            & write_ack == 1'b0)  begin
+                           if (read_start == 1'b1)  begin
+    									 sdcard_cs <= 1'b0;
                                card_error <= 1'b0 ; 
                                idle <= 1'b0 ;    // снимаем флаг готовности
                                counter <= 48 ;   // длина команды
@@ -319,11 +322,8 @@ always @(posedge sdcard_sclk)  begin
                            end 
                            
                            // запуск записи
-                           else if (write_start == 1'b1 
-                            & read_done == 1'b0 
-                            & write_done == 1'b0 
-                            & read_ack == 1'b0 
-                            & write_ack == 1'b0)  begin
+                           else if (write_start == 1'b1)  begin
+    									 sdcard_cs <= 1'b0;
                                card_error <= 1'b0 ; 
                                idle <= 1'b0 ; 
                                counter <= 48 ; 
@@ -331,18 +331,6 @@ always @(posedge sdcard_sclk)  begin
                                sd_state <= sd_send_cmd ; 
                                sd_nextstate <= sd_write_checkresponse ; 
                                sdcard_debug[3] <= 1'b1 ; 
-                           end 
-
-                           // хост подтвержил окончание чтения
-                           if (read_ack == 1'b1)  begin
-                              read_done <= 1'b0 ;  // снимаем строб готовности данных
-                              card_error <= 1'b0 ; 
-                           end 
-
-                           // хост подтвердил окончание записи
-                           if (write_ack == 1'b1) begin
-                              write_done <= 1'b0 ; 
-                              card_error <= 1'b0 ; 
                            end 
                         end
                         
@@ -422,7 +410,7 @@ always @(posedge sdcard_sclk)  begin
                               counter <= 7 ; 
                               sd_state <= sd_wait ; 
                               write_done <= 1'b1 ;         // поднимаем строб окончания записи
-                              sd_nextstate <= sd_idle ; 
+                              sd_nextstate <= sd_waitidle ; 
                            end 
                         end
                // ожидание начала потока данных         
@@ -457,7 +445,7 @@ always @(posedge sdcard_sclk)  begin
                            if (counter == 0)  begin
                               counter <= 15 ; 
                               sd_state <= sd_wait ; 
-                              sd_nextstate <= sd_idle ; 
+                              sd_nextstate <= sd_waitidle ; 
                               read_done <= 1'b1 ;       // поднимаем флаг окончания 
                            end
                            else  begin
@@ -548,17 +536,25 @@ always @(posedge sdcard_sclk)  begin
                            if (counter != 0) counter <= counter - 1'b1 ; 
                            else    sd_state <= sd_nextstate ; 
                         end
+		         // ожидание снятия запроса ввода-вывода
+					sd_waitidle:
+					         begin
+                           // хост подтвержил окончание чтения
+									 if (read_ack == 1'b1) read_done <= 1'b0 ;  // снимаем строб готовности данных
+
+                           // хост подтвердил окончание записи
+                            if (write_ack == 1'b1) write_done <= 1'b0 ; 
+									 
+									// хост снял запрос ввода-вывода - переходим в idle 
+									 if ((read_ack|write_ack|read_start|write_start) == 1'b0) sd_state <= sd_idle;
+					         end
                // обработка ошибочных состояний          
                sd_error :
                         begin
                            card_error <= 1'b1 ; 
-                           if (read_start == 1'b1 | write_start == 1'b1) begin
-                              if (read_ack == 1'b1 | write_ack == 1'b1)  sd_state <= sd_idle ; 
-                              else     sd_state <= sd_reset ; 
-                           end
-                           else
-                              if (mode == 1)   sd_state <= sd_reset; 
-                              else sd_state <= sd_idle;
+                           sd_state <= sd_reset;
+//									write_done <= write_start;
+//									read_done <= read_start;
                         end
             endcase 
          end 

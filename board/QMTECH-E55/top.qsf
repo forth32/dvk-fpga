@@ -391,5 +391,137 @@ set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
 
 set_location_assignment PIN_A6 -to led[4]
 
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_clk -to "pll:pll1|c2" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|card_error" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[0] -to "topboard:kernel|rx01:dxdisk|sdack" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[1] -to "topboard:kernel|rx01:dxdisk|sdcard_cs" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[2] -to "topboard:kernel|rx01:dxdisk|sdcard_miso" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[3] -to "topboard:kernel|rx01:dxdisk|sdcard_mosi" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[4] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|card_error" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_BLOCK_TYPE=AUTO" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_BITS=1" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_NODE_INFO=805334529" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_POWER_UP_TRIGGER=0" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_INVERSION_MASK_LENGTH=0" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ATTRIBUTE_MEM_MODE=OFF" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_FLOW_USE_GENERATED=0" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_BITS=11" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_BUFFER_FULL_STOP=1" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_CURRENT_RESOURCE_WIDTH=1" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INCREMENTAL_ROUTING=1" -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[7] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[8] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[14] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[16] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[20] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL=1" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_IN_ENABLED=0" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_PIPELINE=0" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_PIPELINE=0" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_COUNTER_PIPELINE=0" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ADVANCED_TRIGGER_ENTITY=basic,1," -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL_PIPELINE=1" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ENABLE_ADVANCED_TRIGGER=0" -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[0] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[1] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[10] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[12] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[5] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[0]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[6] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[1]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[7] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[2]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[8] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[3]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[9] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[4]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[10] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[5]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[11] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[6]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[12] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[7]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[13] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[8]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[14] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|counter[9]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[15] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|idle" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[16] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|read_ack" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[17] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|read_done" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[18] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|read_start" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_checkacmd41" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_checkcmd0" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_checkcmd55" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[22] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_checkcmd8" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[23] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_error" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[24] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_idle" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[25] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_read_crc" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[26] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_read_data" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[27] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_read_data_waitstart" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[28] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_read_dr" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[29] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_readr1" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[30] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_readr1wait" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[31] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_readr3" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[32] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_readr7" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[33] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_reset" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[34] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_send_cmd" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[35] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_sendcmd0" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[36] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_wait" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[37] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_waitidle" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[38] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_waitwritedone" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[39] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_write" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[40] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_write_checkresponse" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[41] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_write_crc" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[42] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_write_data_startblock" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[43] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sd_state.sd_write_last" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[44] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[0]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[45] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[10]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[46] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[11]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[47] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[12]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[48] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[13]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[49] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[14]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[50] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[15]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[51] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[16]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[52] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[17]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[53] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[18]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[54] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[19]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[55] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[1]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[56] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[20]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[57] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[21]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[58] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[22]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[59] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[23]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[60] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[24]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[61] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[25]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[62] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[26]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[63] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[2]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[64] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[3]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[65] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[4]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[66] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[5]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[67] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[6]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[68] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[7]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[69] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[8]" -section_id sdspi_2ddx
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[70] -to "topboard:kernel|rx01:dxdisk|sdspi:sd1|sdcard_addr[9]" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=71" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=76" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=0000000000000000000000000000000" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=31" -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SEGMENT_SIZE=16384" -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[2] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[4] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[9] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[18] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[19] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[21] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[25] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to sdspi_2ddx|vcc -section_id sdspi_2ddx
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to sdspi_2ddx|gnd -section_id sdspi_2ddx
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=16384" -section_id sdspi_2ddx
 set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
