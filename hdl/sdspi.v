@@ -230,7 +230,7 @@ always @(posedge sdcard_sclk)  begin
                sd_reset :         
                         begin
                            counter <= 10'd500 ; // счетчик ожидания перед инициализацией
-//                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
+                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
                            do_readr3 <= 1'b0 ; 
                            do_readr7 <= 1'b0 ; 
                            sdcard_cs <= 1'b1 ;     // CS=1
@@ -537,17 +537,17 @@ always @(posedge sdcard_sclk)  begin
                            else    sd_state <= sd_nextstate ; 
                         end
 		         // ожидание снятия запроса ввода-вывода
-					sd_waitidle:
-					         begin
+			   sd_waitidle:
+				        begin
                            // хост подтвержил окончание чтения
-									 if (read_ack == 1'b1) read_done <= 1'b0 ;  // снимаем строб готовности данных
+						  if (read_ack == 1'b1) read_done <= 1'b0 ;  // снимаем строб готовности данных
 
                            // хост подтвердил окончание записи
-                            if (write_ack == 1'b1) write_done <= 1'b0 ; 
+                           if (write_ack == 1'b1) write_done <= 1'b0 ; 
 									 
-									// хост снял запрос ввода-вывода - переходим в idle 
-									 if ((read_ack|write_ack|read_start|write_start) == 1'b0) sd_state <= sd_idle;
-					         end
+						   // хост снял запрос ввода-вывода - переходим в idle 
+						   if ((read_ack|write_ack|read_start|write_start) == 1'b0) sd_state <= sd_idle;
+					    end
                // обработка ошибочных состояний          
                sd_error :
                         begin
