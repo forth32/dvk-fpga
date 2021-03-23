@@ -383,7 +383,6 @@ set_global_assignment -name VERILOG_FILE "ip-components/rom055.v"
 set_global_assignment -name VERILOG_FILE "ip-components/rom000.v"
 set_global_assignment -name QIP_FILE "ip-components/kgdvram.qip"
 set_global_assignment -name SDC_FILE top.sdc
-set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
 
 
 

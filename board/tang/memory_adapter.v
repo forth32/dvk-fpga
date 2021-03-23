@@ -18,7 +18,7 @@ tang_rom055 rom(
   .clka(clock),
   .rsta(1'b0)
 );  
-	
+   
 endmodule
 
 //*********************************************************
@@ -36,7 +36,7 @@ tang_rom000 rom(
   .clka(clock),
   .rsta(1'b0)
 );  
-	
+   
 endmodule
 
 
@@ -58,12 +58,12 @@ assign writeenable[0]=wren & byteena[0];
 assign writeenable[1]=wren & byteena[1];
 
 tang_vtmem vram(
-	.doa(q),
-	.dia(data),
-	.addra(address),
-	.wea(writeenable),
-	.clka(clock)
-);	
+   .doa(q),
+   .dia(data),
+   .addra(address),
+   .wea(writeenable),
+   .clka(clock)
+);   
 
 endmodule
 
@@ -82,7 +82,7 @@ tang_fontrom rom(
   .clka(clock),
   .rsta(1'b0)
 );  
-	
+   
 endmodule
 
 
@@ -174,5 +174,5 @@ tang_user_rom rom(
   .clka(clock),
   .rsta(1'b0)
 );  
-	
+   
 endmodule

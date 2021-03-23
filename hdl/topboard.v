@@ -864,7 +864,31 @@ assign sdcard_sclk =
          my_sdack? my_sclk:   // MY
          rk_sdack? rk_sclk:   // RK
                    `def_sclk;   // по умолчанию - контроллер с ведущим SDSPI
-   
+/*
+
+wire sdidle = ~(dw_sdack | rk_sdack | dx_sdack | my_sdack);
+
+assign sdcard_mosi =
+         dw_sdack? dw_mosi: 1'b0 // DW
+       | dx_sdack? dx_mosi: 1'b0 // DX
+       | my_sdack? my_mosi: 1'b0 // MY
+       | rk_sdack? rk_mosi: 1'b0 // RK
+       | sdidle  ? `def_mosi: 1'b0; // по умолчанию - контроллер с ведущим SDSPI
+assign sdcard_cs =
+       | dw_sdack? dw_cs: 1'b0  // DW
+       | dx_sdack? dx_cs: 1'b0  // DX
+       | my_sdack? my_cs: 1'b0  // MY
+       | rk_sdack? rk_cs: 1'b0  // RK
+       | sdidle  ? `def_cs: 1'b0;   // по умолчанию - контроллер с ведущим SDSPI
+                   
+assign sdcard_sclk =                    
+         dw_sdack? dw_sclk: 1'b0   // DW
+       | dx_sdack? dx_sclk: 1'b0   // DX
+       | my_sdack? my_sclk: 1'b0   // MY
+       | rk_sdack? rk_sclk: 1'b0   // RK
+       | sdidle  ? `def_sclk: 1'b0;   // по умолчанию - контроллер с ведущим SDSPI
+	*/			
+				
 //**********************************
 //*  Контроллер прерываний
 //**********************************

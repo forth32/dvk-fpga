@@ -302,15 +302,15 @@ always @(posedge sdcard_sclk)  begin
                            sdcard_debug[0] <= 1'b0 ;   
                            sdcard_debug[1] <= 1'b0;
                            sdcard_debug[3] <= 1'b0 ; 
-									if ((read_start | write_start) == 1'b0) begin
+                           if ((read_start | write_start) == 1'b0) begin
                              idle <= 1'b1 ;   // флаг готовности к обмену 
-									  sdcard_cs <= 1'b1;
+                             sdcard_cs <= 1'b1;
                              sdcard_debug[2] <= 1'b0 ; 
-									end  
+                           end  
 
                            // запуск чтения
                            if (read_start == 1'b1)  begin
-    									 sdcard_cs <= 1'b0;
+                                sdcard_cs <= 1'b0;
                                card_error <= 1'b0 ; 
                                idle <= 1'b0 ;    // снимаем флаг готовности
                                counter <= 48 ;   // длина команды
@@ -323,7 +323,7 @@ always @(posedge sdcard_sclk)  begin
                            
                            // запуск записи
                            else if (write_start == 1'b1)  begin
-    									 sdcard_cs <= 1'b0;
+                                sdcard_cs <= 1'b0;
                                card_error <= 1'b0 ; 
                                idle <= 1'b0 ; 
                                counter <= 48 ; 
@@ -536,25 +536,25 @@ always @(posedge sdcard_sclk)  begin
                            if (counter != 0) counter <= counter - 1'b1 ; 
                            else    sd_state <= sd_nextstate ; 
                         end
-		         // ожидание снятия запроса ввода-вывода
-			   sd_waitidle:
-				        begin
+               // ожидание снятия запроса ввода-вывода
+            sd_waitidle:
+                    begin
                            // хост подтвержил окончание чтения
-						  if (read_ack == 1'b1) read_done <= 1'b0 ;  // снимаем строб готовности данных
+                    if (read_ack == 1'b1) read_done <= 1'b0 ;  // снимаем строб готовности данных
 
                            // хост подтвердил окончание записи
                            if (write_ack == 1'b1) write_done <= 1'b0 ; 
-									 
-						   // хост снял запрос ввода-вывода - переходим в idle 
-						   if ((read_ack|write_ack|read_start|write_start) == 1'b0) sd_state <= sd_idle;
-					    end
+                            
+                     // хост снял запрос ввода-вывода - переходим в idle 
+                     if ((read_ack|write_ack|read_start|write_start) == 1'b0) sd_state <= sd_idle;
+                   end
                // обработка ошибочных состояний          
                sd_error :
                         begin
                            card_error <= 1'b1 ; 
                            sd_state <= sd_reset;
-//									write_done <= write_start;
-//									read_done <= read_start;
+//                           write_done <= write_start;
+//                           read_done <= read_start;
                         end
             endcase 
          end 
