@@ -68,6 +68,15 @@ reg            rx_csr_ie, rx_csr_flg, rx_csr_perr, rx_csr_ovf, rx_csr_brk;
 wire           rx_load, rx_stb;
 reg            rx_frame, rx_start, rx_par;
 
+
+reg [15:0] div1;
+reg [15:0] div2;
+
+always @(posedge wb_clk_i) begin
+  div1 <= cfg_bdiv;
+  div2 <= div1;
+end
+  
 //______________________________________________________________________________
 //
 // Caution note: the arithmetic expressions should be calculated in 64-bit width
@@ -99,7 +108,7 @@ begin
    else
    begin
       if (baud_ref)
-         if (baud_div == cfg_bdiv)
+         if (baud_div == div2)
             baud_div <= 16'h0000;
          else
             baud_div <= baud_div + 16'h0001;

@@ -27,13 +27,16 @@ if (out == 0) {
 }    
 
 // MIF-заголовок
-fprintf(out,"WIDTH=1;\nDEPTH=24576;\nADDRESS_RADIX=HEX;\nDATA_RADIX=BIN;\n\nCONTENT BEGIN");
+fprintf(out,"WIDTH=1;\nDEPTH=32768;\nADDRESS_RADIX=HEX;\nDATA_RADIX=BIN;\n\nCONTENT BEGIN");
 
-for(adr=0;adr<24576;adr++) {
-  bitpos=adr&7;
-  if (bitpos == 0) ch=fgetc(in); // через каждые обработанные 8 бит загружаем очередной байт
-  bit=(ch>>bitpos)&1;            // выделяем очередной бит
-  fprintf(out,"\n%04x: %1i;",adr,bit); // и выводим в mif его значение
+for(adr=0;adr<32768;adr++) { 
+  if (adr<24576) {
+    bitpos=adr&7;
+    if (bitpos == 0) ch=fgetc(in); // через каждые обработанные 8 бит загружаем очередной байт
+    bit=(ch>>bitpos)&1;            // выделяем очередной бит
+    fprintf(out,"\n%04x: %1i;",adr,bit); // и выводим в mif его значение
+  }
+  else fprintf(out,"\n%04x: 0;",adr); // заполняем неиспользуемый хвост нулями
 }
 // MIF-терминатор
 fprintf(out,"\nEND;\n");
