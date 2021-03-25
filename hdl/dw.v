@@ -122,8 +122,7 @@ reg rstreq;  // триггер запроса на программный сбр
       
 // интерфейс к SDSPI
 wire [26:0] sdcard_addr;  // адрес сектора карты
-wire sdcard_read_done;    // флаг окончагия чтения
-wire sdcard_write_done;   // флаг окончания записи
+wire sdcard_io_done;    // флаг окончагия чтения
 wire sdcard_error;        // флаг ошибки
 wire [15:0] sdcard_xfer_out;  // слово; читаемое из буфера чтения
 wire sdcard_idle;         // признак готовности контроллера
@@ -159,14 +158,11 @@ sdspi sd1 (
       .sdcard_addr(sdcard_addr),                  // адрес блока на карте
       .sdcard_idle(sdcard_idle),                  // сигнал готовности модуля к обмену
       
-      // сигналы управления чтением 
+      // сигналы управления чтением - записью
       .sdcard_read_start(read_start),             // строб начала чтения
-      .sdcard_read_done(sdcard_read_done),        // флаг окончагия чтения
-      
-      // сигналы управления записью
-      .sdcard_write_start(write_start),            // строб начала записи
-      .sdcard_write_done(sdcard_write_done),       // флаг окончания записи
-      .sdcard_error(sdcard_error),                 // флаг ошибки
+      .sdcard_io_done(sdcard_io_done),            // флаг окончагия чтения
+      .sdcard_write_start(write_start),           // строб начала записи
+      .sdcard_error(sdcard_error),                // флаг ошибки
 
       // интерфейс к буферной памяти контроллера
       .sdcard_xfer_addr(sdcard_xfer_addr),         // текущий адрес в буферах чтения и записи
@@ -349,12 +345,12 @@ always @(posedge wb_clk_i)
                            sdreq <= 1'b1;
                            if (sdack) // подтверждение получено
                               // если SD-модуль свободен, чтение еще не запущено и не завершено
-                              if (sdcard_idle == 1'b1 & read_start == 1'b0 & sdcard_read_done == 1'b0) begin
+                              if (sdcard_idle == 1'b1 & read_start == 1'b0 & sdcard_io_done == 1'b0) begin
                                        read_start <= 1'b1 ; 
                                        busy <= 1'b1;
                               end
 										// чтение окончено
-                              else if (sdcard_read_done == 1'b1 & read_start == 1'b1) begin  
+                              else if (sdcard_io_done == 1'b1 & read_start == 1'b1) begin  
                                       read_start <= 1'b0 ;        // снимаем запрос чтения
                                       busy <= 1'b0;
                                       start <= 1'b0;
@@ -399,7 +395,7 @@ always @(posedge wb_clk_i)
                                     
                                  // ожидание окончание заиси сектора на карту   
                                  w_wait:
-                                       if (sdcard_write_done == 1'b1) begin
+                                       if (sdcard_io_done == 1'b1) begin
                                           wstate <= w_done;
                                        end   
                                        

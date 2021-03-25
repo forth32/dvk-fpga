@@ -15,9 +15,8 @@ module sdspi (
    input[26:0]     sdcard_addr,        // адрес сектора карты
    output reg      sdcard_idle,        // признак готовности контроллера
    input           sdcard_read_start,  // строб начала чтения
-   output reg      sdcard_read_done,   // флаг окончагия чтения
+   output reg      sdcard_io_done,   // флаг окончагия чтения
    input           sdcard_write_start, // строб начала записи
-   output reg      sdcard_write_done,  // флаг окончания записи
    output reg      sdcard_error,       // флаг ошибки
    input[7:0]      sdcard_xfer_addr,   // адрес в буфере чтния/записи
    output reg[15:0]sdcard_xfer_out,    // слово, читаемое из буфера чтения
@@ -34,9 +33,9 @@ module sdspi (
 //  host            sdspi                           host            sdspi
 //-------------------------------                   -------------------------------
 //  write_start=1                                   read_start=1
-//                  write_done=1                                     read_done=1
+//                  io_done=1                                     io_done=1
 //  write_start=0                                   read_start=0 
-//                  write_done=0                                     read_done=0
+//                  io_done=0                                     io_done=0
 
    //****************************
     // буферная память
@@ -94,16 +93,14 @@ module sdspi (
    reg[15:0] sd_word; 
    reg[3:0] idle_filter; 
    reg[3:0] read_start_filter; 
-   reg[3:0] read_done_filter; 
+   reg[3:0] io_done_filter; 
    reg[3:0] write_start_filter; 
-   reg[3:0] write_done_filter; 
    reg[3:0] card_error_filter; 
    
    reg idle; 
    reg read_start; 
-   reg read_done; 
+   reg io_done; 
    reg write_start; 
-   reg write_done; 
    reg card_error; 
 
 //*******************************************   
@@ -118,18 +115,16 @@ always @(posedge controller_clk) begin
          // сдвиговые регистры фильтров интерфейсных сигналов
          idle_filter <= {idle_filter[2:0], idle} ;  // фильтр сигнала готовности
          read_start_filter <= {read_start_filter[2:0], sdcard_read_start} ; // фильтр строба чтения
-         read_done_filter <= {read_done_filter[2:0], read_done} ;           // фильтр сигнала окончания записи
+         io_done_filter <= {io_done_filter[2:0], io_done} ;           // фильтр сигнала окончания записи
          write_start_filter <= {write_start_filter[2:0], sdcard_write_start} ; // фильтр строба записи
-         write_done_filter <= {write_done_filter[2:0], write_done} ; 
          card_error_filter <= {card_error_filter[2:0], card_error} ; 
          
          // сброс контроллера
          if (reset == 1'b1)  begin
             sdcard_idle <= 1'b0 ; 
             read_start <= 1'b0 ; 
-            sdcard_read_done <= 1'b0 ; 
+            sdcard_io_done <= 1'b0 ; 
             write_start <= 1'b0 ; 
-            sdcard_write_done <= 1'b0 ; 
             sdcard_error <= 1'b0 ; 
          end
          
@@ -144,16 +139,12 @@ always @(posedge controller_clk) begin
             else if (read_start_filter == {4{1'b1}})  read_start <= 1'b1 ; 
 
             // строб окончания чтения
-            if (read_done_filter == {4{1'b0}}) sdcard_read_done <= 1'b0 ; 
-            else if (read_done_filter == {4{1'b1}})  sdcard_read_done <= 1'b1 ; 
+            if (io_done_filter == {4{1'b0}}) sdcard_io_done <= 1'b0 ; 
+            else if (io_done_filter == {4{1'b1}})  sdcard_io_done <= 1'b1 ; 
 
             // сигнал начала записи
             if (write_start_filter == {4{1'b0}})     write_start <= 1'b0 ; 
             else if (write_start_filter == {4{1'b1}})  write_start <= 1'b1 ; 
-
-            // строб окончания записи
-            if (write_done_filter == {4{1'b0}}) sdcard_write_done <= 1'b0 ; 
-            else if (write_done_filter == {4{1'b1}}) sdcard_write_done <= 1'b1 ; 
 
             // сигнал ошибки карты
             if (card_error_filter == {4{1'b0}}) sdcard_error <= 1'b0 ; 
@@ -199,8 +190,7 @@ always @(posedge sdcard_sclk)  begin
                   sdcard_cs <= 1'b0;      // CS=0
                end
                do_readr3 <= 1'b0 ; 
-               read_done <= 1'b0 ;       // снимаем флаг окончания чтения
-               write_done <= 1'b0 ;      // и записи
+               io_done <= 1'b0 ;       // снимаем флаг окончания чтения
                card_error <= 1'b0 ;      // снимаем флаг ошибки
                sdcard_debug <= 4'b0011 ; 
          end
@@ -390,7 +380,7 @@ always @(posedge sdcard_sclk)  begin
                            begin
                               counter <= 7 ; 
                               sd_state <= sd_wait ; 
-                              write_done <= 1'b1 ;         // поднимаем строб окончания записи
+                              io_done <= 1'b1 ;         // поднимаем строб окончания записи
                               sd_nextstate <= sd_waitidle ; 
                            end 
                         end
@@ -427,7 +417,7 @@ always @(posedge sdcard_sclk)  begin
                               counter <= 15 ; 
                               sd_state <= sd_wait ; 
                               sd_nextstate <= sd_waitidle ; 
-                              read_done <= 1'b1 ;       // поднимаем флаг окончания 
+                              io_done <= 1'b1 ;       // поднимаем флаг окончания 
                            end
                            else  begin
                               sd_word <= {sd_word[14:0], sdcard_miso} ; 
@@ -523,8 +513,7 @@ always @(posedge sdcard_sclk)  begin
                      // хост снял запрос ввода-вывода - переходим в idle 
                      if ((read_start|write_start) == 1'b0) begin
 							   sd_state <= sd_idle;
-								read_done <= 1'b0;
-								write_done <= 1'b0;
+								io_done <= 1'b0;
 							end	
                    end
                // обработка ошибочных состояний          
@@ -532,8 +521,6 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            card_error <= 1'b1 ; 
                            sd_state <= sd_reset;
-//                           write_done <= write_start;
-//                           read_done <= read_start;
                         end
             endcase 
          end 
