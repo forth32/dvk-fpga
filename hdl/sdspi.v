@@ -14,9 +14,9 @@ module sdspi (
 
    input[26:0]     sdcard_addr,        // адрес сектора карты
    output reg      sdcard_idle,        // признак готовности контроллера
-   input           sdcard_read_start,  // строб начала чтения
-   output reg      sdcard_io_done,   // флаг окончагия чтения
-   input           sdcard_write_start, // строб начала записи
+   input           sdcard_start,       // строб начала чтения
+   output reg      sdcard_io_done,     // флаг окончагия чтения
+   input           sdcard_write_mode,  // 0-чтение, 1-запись
    output reg      sdcard_error,       // флаг ошибки
    input  [7:0]    sdcard_xfer_addr,   // адрес в буфере чтния/записи
    output [15:0]   sdcard_xfer_out,    // слово, читаемое из буфера чтения
@@ -32,9 +32,9 @@ module sdspi (
 //   - заполняем буфер
 //  host            sdspi                           host            sdspi
 //-------------------------------                   -------------------------------
-//  write_start=1                                   read_start=1
+//  start=1, write_mode=1                           start=1, write_mode=0
 //                  io_done=1                                     io_done=1
-//  write_start=0                                   read_start=0 
+//  start=0                                         start=0 
 //                  io_done=0                                     io_done=0
 
 //***********************************
@@ -105,15 +105,15 @@ sectorbuf sbuf(
    reg[7:0] sectorindex; 
    reg[15:0] sd_word; 
    reg[3:0] idle_filter; 
-   reg[3:0] read_start_filter; 
+   reg[3:0] start_filter; 
    reg[3:0] io_done_filter; 
-   reg[3:0] write_start_filter; 
+   reg[3:0] write_mode_filter; 
    reg[3:0] card_error_filter; 
    
    reg idle; 
-   reg read_start; 
+   reg start; 
    reg io_done; 
-   reg write_start; 
+   reg write_mode; 
    reg card_error; 
 
 //*******************************************   
@@ -123,17 +123,17 @@ always @(posedge controller_clk) begin
          
          // сдвиговые регистры фильтров интерфейсных сигналов
          idle_filter <= {idle_filter[2:0], idle} ;  // фильтр сигнала готовности
-         read_start_filter <= {read_start_filter[2:0], sdcard_read_start} ; // фильтр строба чтения
+         start_filter <= {start_filter[2:0], sdcard_start} ; // фильтр строба чтения
          io_done_filter <= {io_done_filter[2:0], io_done} ;           // фильтр сигнала окончания записи
-         write_start_filter <= {write_start_filter[2:0], sdcard_write_start} ; // фильтр строба записи
+         write_mode_filter <= {write_mode_filter[2:0], sdcard_write_mode} ; // фильтр строба записи
          card_error_filter <= {card_error_filter[2:0], card_error} ; 
          
          // сброс контроллера
          if (reset == 1'b1)  begin
             sdcard_idle <= 1'b0 ; 
-            read_start <= 1'b0 ; 
+            start <= 1'b0 ; 
             sdcard_io_done <= 1'b0 ; 
-            write_start <= 1'b0 ; 
+            write_mode <= 1'b0 ; 
             sdcard_error <= 1'b0 ; 
          end
          
@@ -144,16 +144,16 @@ always @(posedge controller_clk) begin
             else if (idle_filter == {4{1'b1}}) sdcard_idle <= 1'b1 ;
             
             // сигнал начала чтения
-            if (read_start_filter == {4{1'b0}}) read_start <= 1'b0 ; 
-            else if (read_start_filter == {4{1'b1}})  read_start <= 1'b1 ; 
+            if (start_filter == {4{1'b0}}) start <= 1'b0 ; 
+            else if (start_filter == {4{1'b1}})  start <= 1'b1 ; 
 
             // строб окончания чтения
             if (io_done_filter == {4{1'b0}}) sdcard_io_done <= 1'b0 ; 
             else if (io_done_filter == {4{1'b1}})  sdcard_io_done <= 1'b1 ; 
 
             // сигнал начала записи
-            if (write_start_filter == {4{1'b0}})     write_start <= 1'b0 ; 
-            else if (write_start_filter == {4{1'b1}})  write_start <= 1'b1 ; 
+            if (write_mode_filter == {4{1'b0}})     write_mode <= 1'b0 ; 
+            else if (write_mode_filter == {4{1'b1}})  write_mode <= 1'b1 ; 
 
             // сигнал ошибки карты
             if (card_error_filter == {4{1'b0}}) sdcard_error <= 1'b0 ; 
@@ -272,7 +272,6 @@ always @(posedge sdcard_sclk)  begin
                sd_checkacmd41 :
                         begin
                            if (sd_r1 == 7'b0000000) begin
-//                              sd_state <= sd_waitidle ; // Правильный ответ - переходим к рабочему циклу обработки команд                           
                               sd_state <= sd_idle ; // Правильный ответ - переходим к рабочему циклу обработки команд                           
                               sdslow <= 1'b1;       // устанавилваем полную скорость SPI-интерфейса
                            end   
@@ -284,14 +283,14 @@ always @(posedge sdcard_sclk)  begin
                            sdcard_debug[0] <= 1'b0 ;   
                            sdcard_debug[1] <= 1'b0;
                            sdcard_debug[3] <= 1'b0 ; 
-                           if ((read_start | write_start) == 1'b0) begin
+                           if (start == 1'b0) begin
                              idle <= 1'b1 ;   // флаг готовности к обмену 
                              sdcard_cs <= 1'b1;
                              sdcard_debug[2] <= 1'b0 ; 
                            end  
 
                            // запуск чтения
-                           if (read_start == 1'b1)  begin
+                           if ((start == 1'b1) && (write_mode == 1'b0))  begin
                                 sdcard_cs <= 1'b0;
                                card_error <= 1'b0 ; 
                                idle <= 1'b0 ;    // снимаем флаг готовности
@@ -304,8 +303,8 @@ always @(posedge sdcard_sclk)  begin
                            end 
                            
                            // запуск записи
-                           else if (write_start == 1'b1)  begin
-                                sdcard_cs <= 1'b0;
+                           else if ((start == 1'b1) && (write_mode == 1'b1))  begin
+                               sdcard_cs <= 1'b0;
                                card_error <= 1'b0 ; 
                                idle <= 1'b0 ; 
                                counter <= 48 ; 
@@ -527,7 +526,7 @@ always @(posedge sdcard_sclk)  begin
             sd_waitidle:
                     begin
                      // хост снял запрос ввода-вывода - переходим в idle 
-                     if ((read_start|write_start) == 1'b0) begin
+                     if (start == 1'b0) begin
 							   sd_state <= sd_idle;
 								io_done <= 1'b0;
 							end	

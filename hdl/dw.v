@@ -126,8 +126,8 @@ wire sdcard_io_done;    // флаг окончагия чтения
 wire sdcard_error;        // флаг ошибки
 wire [15:0] sdcard_xfer_out;  // слово; читаемое из буфера чтения
 wire sdcard_idle;         // признак готовности контроллера
-reg read_start;           // строб начала чтения
-reg write_start;          // строб начала записи
+reg sdcard_start;           // строб начала чтения
+reg sdcard_write_mode;          // строб начала записи
 reg [7:0] sdcard_xfer_addr;    // адрес в буфере чтния/записи
 reg [15:0] sdcard_xfer_in;     // слово; записываемое в буфер записи
 reg write_error;
@@ -160,9 +160,9 @@ sdspi sd1 (
       .sdcard_idle(sdcard_idle),                  // сигнал готовности модуля к обмену
       
       // сигналы управления чтением - записью
-      .sdcard_read_start(read_start),             // строб начала чтения
+      .sdcard_start(sdcard_start),             // строб начала чтения
       .sdcard_io_done(sdcard_io_done),            // флаг окончания чтения
-      .sdcard_write_start(write_start),           // строб начала записи
+      .sdcard_write_mode(sdcard_write_mode),           // строб начала записи
       .sdcard_error(sdcard_error),                // флаг ошибки
 
       // интерфейс к буферной памяти контроллера
@@ -241,8 +241,8 @@ always @(posedge wb_clk_i)
          cyl <= 10'o0;
          hd <= 3'o0;
          sec <= 5'o0;
-         read_start <= 1'b0;
-         write_start <= 1'b0;
+         sdcard_start <= 1'b0;
+         sdcard_write_mode <= 1'b0;
          wstate <= w_prepare;
          write_error <= 1'b0;
          sdreq <= 1'b0;
@@ -347,13 +347,14 @@ always @(posedge wb_clk_i)
                            sdreq <= 1'b1;
                            if (sdack) // подтверждение получено
                               // если SD-модуль свободен, чтение еще не запущено и не завершено
-                              if (sdcard_idle == 1'b1 & read_start == 1'b0 & sdcard_io_done == 1'b0) begin
-                                       read_start <= 1'b1 ; 
+                              if (sdcard_idle == 1'b1 & sdcard_start == 1'b0 & sdcard_io_done == 1'b0) begin
+										         sdcard_write_mode <= 1'b0; 
+                                       sdcard_start <= 1'b1 ; 
                                        busy <= 1'b1;
                               end
 										// чтение окончено
-                              else if (sdcard_io_done == 1'b1 & read_start == 1'b1) begin  
-                                      read_start <= 1'b0 ;        // снимаем запрос чтения
+                              else if (sdcard_io_done == 1'b1 & sdcard_start == 1'b1) begin  
+                                      sdcard_start <= 1'b0 ;        // снимаем запрос чтения
                                       busy <= 1'b0;
                                       start <= 1'b0;
                                       if (sdcard_error == 1'b0)   begin        
@@ -391,7 +392,8 @@ always @(posedge wb_clk_i)
                                  w_start: begin
                                        sdreq <= 1'b1;   // запрос доступа к карте
                                        if (sdack & (sdcard_idle == 1)) begin
-                                          write_start <= 1'b1 ; 
+                                          sdcard_write_mode <= 1'b1 ; 
+														sdcard_start <= 1'b1;
                                           busy <= 1'b1;
                                           wstate <= w_wait;
                                        end   
@@ -405,7 +407,7 @@ always @(posedge wb_clk_i)
                                        
                                  // запись подтверждена - освобождаем sdspi
                                  w_done: begin
-                                    write_start <= 1'b0 ;              // снимаем строб записи
+                                    sdcard_start <= 1'b0 ;              // снимаем строб записи
                                     rqa <= 1'b1;                       // флаг завершения команды
                                     start <= 1'b0;                     // заканчиваем обработку команды
                                     busy <= 1'b0;
