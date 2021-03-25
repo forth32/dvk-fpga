@@ -128,9 +128,7 @@ wire sdcard_error;        // флаг ошибки
 wire [15:0] sdcard_xfer_out;  // слово; читаемое из буфера чтения
 wire sdcard_idle;         // признак готовности контроллера
 reg read_start;           // строб начала чтения
-reg sdcard_read_ack;      // флаг подтверждения окончания чтения
 reg write_start;          // строб начала записи
-reg sdcard_write_ack;     // флаг подтверждения команды записи
 reg [7:0] sdcard_xfer_addr;    // адрес в буфере чтния/записи
 reg [15:0] sdcard_xfer_in;     // слово; записываемое в буфер записи
 reg write_error;
@@ -163,12 +161,10 @@ sdspi sd1 (
       
       // сигналы управления чтением 
       .sdcard_read_start(read_start),             // строб начала чтения
-      .sdcard_read_ack(sdcard_read_ack),          // флаг подтверждения команды чтения
       .sdcard_read_done(sdcard_read_done),        // флаг окончагия чтения
       
       // сигналы управления записью
       .sdcard_write_start(write_start),            // строб начала записи
-      .sdcard_write_ack(sdcard_write_ack),         // флаг подтверждения команды записи
       .sdcard_write_done(sdcard_write_done),       // флаг окончания записи
       .sdcard_error(sdcard_error),                 // флаг ошибки
 
@@ -249,9 +245,7 @@ always @(posedge wb_clk_i)
          hd <= 3'o0;
          sec <= 5'o0;
          read_start <= 1'b0;
-         sdcard_read_ack <= 1'b0;
          write_start <= 1'b0;
-         sdcard_write_ack <= 1'b0;
          wstate <= w_prepare;
          write_error <= 1'b0;
          sdreq <= 1'b0;

@@ -15,10 +15,8 @@ module sdspi (
    input[26:0]     sdcard_addr,        // адрес сектора карты
    output reg      sdcard_idle,        // признак готовности контроллера
    input           sdcard_read_start,  // строб начала чтения
-   input           sdcard_read_ack,    // флаг подтверждения окончания чтения
    output reg      sdcard_read_done,   // флаг окончагия чтения
    input           sdcard_write_start, // строб начала записи
-   input           sdcard_write_ack,   // флаг подтверждения команды записи
    output reg      sdcard_write_done,  // флаг окончания записи
    output reg      sdcard_error,       // флаг ошибки
    input[7:0]      sdcard_xfer_addr,   // адрес в буфере чтния/записи
@@ -37,10 +35,8 @@ module sdspi (
 //-------------------------------                   -------------------------------
 //  write_start=1                                   read_start=1
 //                  write_done=1                                     read_done=1
-//  write_ack=1                                      read_ack=1 
+//  write_start=0                                   read_start=0 
 //                  write_done=0                                     read_done=0
-//  write_ack=0                                     read_ack=0
-//
 
    //****************************
     // буферная память
@@ -98,19 +94,15 @@ module sdspi (
    reg[15:0] sd_word; 
    reg[3:0] idle_filter; 
    reg[3:0] read_start_filter; 
-   reg[3:0] read_ack_filter; 
    reg[3:0] read_done_filter; 
    reg[3:0] write_start_filter; 
-   reg[3:0] write_ack_filter; 
    reg[3:0] write_done_filter; 
    reg[3:0] card_error_filter; 
    
    reg idle; 
    reg read_start; 
-   reg read_ack; 
    reg read_done; 
    reg write_start; 
-   reg write_ack; 
    reg write_done; 
    reg card_error; 
 
@@ -126,10 +118,8 @@ always @(posedge controller_clk) begin
          // сдвиговые регистры фильтров интерфейсных сигналов
          idle_filter <= {idle_filter[2:0], idle} ;  // фильтр сигнала готовности
          read_start_filter <= {read_start_filter[2:0], sdcard_read_start} ; // фильтр строба чтения
-         read_ack_filter <= {read_ack_filter[2:0], sdcard_read_ack} ;       // фильтр подтверждения чтения
          read_done_filter <= {read_done_filter[2:0], read_done} ;           // фильтр сигнала окончания записи
          write_start_filter <= {write_start_filter[2:0], sdcard_write_start} ; // фильтр строба записи
-         write_ack_filter <= {write_ack_filter[2:0], sdcard_write_ack} ; 
          write_done_filter <= {write_done_filter[2:0], write_done} ; 
          card_error_filter <= {card_error_filter[2:0], card_error} ; 
          
@@ -137,10 +127,8 @@ always @(posedge controller_clk) begin
          if (reset == 1'b1)  begin
             sdcard_idle <= 1'b0 ; 
             read_start <= 1'b0 ; 
-            read_ack <= 1'b0 ; 
             sdcard_read_done <= 1'b0 ; 
             write_start <= 1'b0 ; 
-            write_ack <= 1'b0 ; 
             sdcard_write_done <= 1'b0 ; 
             sdcard_error <= 1'b0 ; 
          end
@@ -155,10 +143,6 @@ always @(posedge controller_clk) begin
             if (read_start_filter == {4{1'b0}}) read_start <= 1'b0 ; 
             else if (read_start_filter == {4{1'b1}})  read_start <= 1'b1 ; 
 
-            // сигнал подтверждения чтения
-            if (read_ack_filter == {4{1'b0}})      read_ack <= 1'b0 ; 
-            else if (read_ack_filter == {4{1'b1}}) read_ack <= 1'b1 ; 
-
             // строб окончания чтения
             if (read_done_filter == {4{1'b0}}) sdcard_read_done <= 1'b0 ; 
             else if (read_done_filter == {4{1'b1}})  sdcard_read_done <= 1'b1 ; 
@@ -166,10 +150,6 @@ always @(posedge controller_clk) begin
             // сигнал начала записи
             if (write_start_filter == {4{1'b0}})     write_start <= 1'b0 ; 
             else if (write_start_filter == {4{1'b1}})  write_start <= 1'b1 ; 
-
-            // строб подтверждения записи
-            if (write_ack_filter == {4{1'b0}})       write_ack <= 1'b0 ; 
-            else if (write_ack_filter == {4{1'b1}})  write_ack <= 1'b1 ; 
 
             // строб окончания записи
             if (write_done_filter == {4{1'b0}}) sdcard_write_done <= 1'b0 ; 
