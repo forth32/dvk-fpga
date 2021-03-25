@@ -46,7 +46,7 @@ reg [15:0] sdbufdata;
 
 sectorbuf sbuf(
 	.address_a(sdcard_xfer_addr),
-	.address_b(sectorindex[7:0]),
+	.address_b(sectorindex),
 	.clock_a(controller_clk),
 	.clock_b(sdclk),
 	.data_a(sdcard_xfer_in),
@@ -102,7 +102,7 @@ sectorbuf sbuf(
    reg do_readr7; 
 
    reg[9:0] counter; 
-   reg[8:0] sectorindex; 
+   reg[7:0] sectorindex; 
    reg[15:0] sd_word; 
    reg[3:0] idle_filter; 
    reg[3:0] read_start_filter; 
@@ -211,7 +211,7 @@ always @(posedge sdcard_sclk)  begin
                sd_reset :         
                         begin
                            counter <= 10'd500 ; // счетчик ожидания перед инициализацией
-//                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
+                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
 								   sbuf_write_en <= 1'b0;
                            do_readr3 <= 1'b0 ; 
                            do_readr7 <= 1'b0 ; 
@@ -330,7 +330,7 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            if (counter != 0)  begin
                               counter <= counter - 1'b1 ; 
-                              sectorindex <= 9'o0 ; 
+                              sectorindex <= 8'o0 ; 
                               sdcard_mosi <= 1'b1 ; 
                            end
                            else begin
@@ -349,7 +349,7 @@ always @(posedge sdcard_sclk)  begin
                            counter <= counter - 1'b1 ; 
                            if (counter == 0) begin
                               sd_word <= {bufdata_out[7:0], bufdata_out[15:8]} ; 
-                              if (sectorindex == 9'o255)  sd_state <= sd_write_last ; 
+                              if (sectorindex == 8'd255)  sd_state <= sd_write_last ; 
                               sectorindex <= sectorindex + 1'b1 ; 
                               counter <= 15 ; 
                            end 
@@ -403,7 +403,7 @@ always @(posedge sdcard_sclk)  begin
                                  sd_state <= sd_read_data ; 
                                  counter <= 15 ; 
   										   sbuf_write_en <= 1'b0;
-                                 sectorindex <= 9'b111111111 ; 
+                                 sectorindex <= 8'b11111111 ; 
                               end 
                            end
                            else  sd_state <= sd_error ; 
@@ -417,9 +417,7 @@ always @(posedge sdcard_sclk)  begin
 										sbuf_write_en <= 1'b1;
 								   	sectorindex <= sectorindex + 1'b1 ; 
 									   sbuf_write_en <= 1'b1;
-                              if (sectorindex == 9'b011111110)  begin
-										   sd_state <= sd_read_crc ; 
-										end	
+                              if (sectorindex == 8'b11111110) sd_state <= sd_read_crc ; 
                            end
                            else   begin
 										sbuf_write_en <= 1'b0;
