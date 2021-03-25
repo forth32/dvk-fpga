@@ -280,39 +280,31 @@ always @(posedge sdcard_sclk)  begin
                // Ожидание команды обмена
                sd_idle :
                         begin
-                           sdcard_debug[0] <= 1'b0 ;   
-                           sdcard_debug[1] <= 1'b0;
-                           sdcard_debug[3] <= 1'b0 ; 
+								   // бездействие
                            if (start == 1'b0) begin
                              idle <= 1'b1 ;   // флаг готовности к обмену 
                              sdcard_cs <= 1'b1;
-                             sdcard_debug[2] <= 1'b0 ; 
                            end  
-
-                           // запуск чтения
-                           if ((start == 1'b1) && (write_mode == 1'b0))  begin
-                                sdcard_cs <= 1'b0;
+                           // запуск ввода-вывода
+                           if (start == 1'b1) begin
+                               sdcard_cs <= 1'b0;
                                card_error <= 1'b0 ; 
                                idle <= 1'b0 ;    // снимаем флаг готовности
                                counter <= 48 ;   // длина команды
-                               // команда чтения сектора для SDHC
-                               sd_cmd <= {8'h51, 5'b00000, sdcard_addr, 8'h01} ; 
                                sd_state <= sd_send_cmd ; // отправляем команду
-                               sd_nextstate <= sd_read_data_waitstart ; // и переходим к ожиданию стартового токена
-                               sdcard_debug[2] <= 1'b1 ; 
-                           end 
+                               // запуск чтения
+ 									    if (write_mode == 1'b0)  begin
+                                 // команда чтения сектора для SDHC
+                                 sd_cmd <= {8'h51, 5'b00000, sdcard_addr, 8'h01} ; 
+                                 sd_nextstate <= sd_read_data_waitstart ; // и переходим к ожиданию стартового токена
+                               end 
                            
-                           // запуск записи
-                           else if ((start == 1'b1) && (write_mode == 1'b1))  begin
-                               sdcard_cs <= 1'b0;
-                               card_error <= 1'b0 ; 
-                               idle <= 1'b0 ; 
-                               counter <= 48 ; 
-                               sd_cmd <= {8'h58 , 5'b00000, sdcard_addr, 8'h01 } ; 
-                               sd_state <= sd_send_cmd ; 
-                               sd_nextstate <= sd_write_checkresponse ; 
-                               sdcard_debug[3] <= 1'b1 ; 
-                           end 
+                               // запуск записи
+                               else  begin
+                                 sd_cmd <= {8'h58 , 5'b00000, sdcard_addr, 8'h01 } ; 
+                                 sd_nextstate <= sd_write_checkresponse ; 
+                               end 
+									end 
                         end
                         
                // ожидание готовности карты принять данные для записи
