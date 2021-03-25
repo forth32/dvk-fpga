@@ -25,13 +25,13 @@
 //
 
 `define KSM_module        // текстовый контроллер КСМ
-`define KGD_module        // графический контроллер КГД
-`define IRPS2_module      // второй последовательный порт ИРПС
-`define IRPR_module       // параллельный порт ИРПР
-`define RK_module         // диск RK-11/RK05
+//`define KGD_module        // графический контроллер КГД
+//`define IRPS2_module      // второй последовательный порт ИРПС
+//`define IRPR_module       // параллельный порт ИРПР
+//`define RK_module         // диск RK-11/RK05
 `define DW_module         // жесткий диск DW
-`define DX_module         // гибкий диск RX01
-`define MY_module         // гибкий диск двойной плотности MY
+//`define DX_module         // гибкий диск RX01
+//`define MY_module         // гибкий диск двойной плотности MY
 
 //======================================================================================================
 //

@@ -289,7 +289,7 @@ always @(posedge wb_clk_i)
                                  rqa <= 1'b0;
                               end
                   4'b1000 :   begin
-                                 wb_dat_o <= {busy, 7'b0000000, 1'b1/*готовность буфера к обмену*/, ide, 5'b00000, rqa}; // 174020 -  DWSTRS
+                                 wb_dat_o <= {busy|(~sdcard_idle), 7'b0000000, 1'b1/*готовность буфера к обмену*/, ide, 5'b00000, rqa}; // 174020 -  DWSTRS
                               end   
                   4'b1001 :   begin
                                  wb_dat_o <= sdcard_xfer_addr; // 174022 - текущий адрес в буфере SDSPI, для отладки, этого регистра в настоящем контроллере нет
@@ -359,12 +359,8 @@ always @(posedge wb_clk_i)
                                        read_start <= 1'b1 ; 
                                        busy <= 1'b1;
                               end
-                              else if (sdcard_read_done == 1'b1) sdcard_read_ack <= 1'b1;
-                              else if (sdcard_read_ack == 1'b1 &             // чтение окончено
-                                          sdcard_read_done == 1'b0 &         // но еще не подтверждено
-                                          read_start == 1'b1) begin   // и идет операция чтения
-                                          
-                                      sdcard_read_ack <= 1'b0;   
+										// чтение окончено
+                              else if (sdcard_read_done == 1'b1 & read_start == 1'b1) begin  
                                       read_start <= 1'b0 ;        // снимаем запрос чтения
                                       busy <= 1'b0;
                                       start <= 1'b0;
@@ -410,17 +406,8 @@ always @(posedge wb_clk_i)
                                  // ожидание окончание заиси сектора на карту   
                                  w_wait:
                                        if (sdcard_write_done == 1'b1) begin
-                                          wstate <= w_ack;
-                                          sdcard_write_ack <= 1'b1;
-                                       end   
-                                       
-                                 // подтверждение окончания записи
-                                 w_ack:
-                                       if (sdcard_write_done == 1'b0) begin
-                                          sdcard_write_ack <= 1'b0;
                                           wstate <= w_done;
-                                       end
-                                         
+                                       end   
                                        
                                  // запись подтверждена - освобождаем sdspi
                                  w_done: begin

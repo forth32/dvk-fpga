@@ -194,7 +194,7 @@ always @ (posedge sdclk) sdcounter <= sdcounter + 1'b1;
 reg sdslow;  
 
 // тактовый сигнал карты
-assign sdcard_sclk = sdslow? sdclk : sdcounter[5];
+assign sdcard_sclk =/* sdslow?*/ sdclk /*: sdcounter[5]*/;
 
 //*******************************************   
 //* Обработка обмена данными с картой по SPI
@@ -206,6 +206,7 @@ always @(posedge sdcard_sclk)  begin
                   // режим ведущего  - переходим к инициализации карты
                   sd_state <= sd_reset ; 
                   sdslow <= 1'b0;       // инициализация идет на низкой скорости
+						idle <= 1'b0;
                end   
                else begin 
                   // режим ведомого - переходим в состояние ожидания
@@ -230,13 +231,13 @@ always @(posedge sdcard_sclk)  begin
                sd_reset :         
                         begin
                            counter <= 10'd500 ; // счетчик ожидания перед инициализацией
-                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
+//                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
                            do_readr3 <= 1'b0 ; 
                            do_readr7 <= 1'b0 ; 
                            sdcard_cs <= 1'b1 ;     // CS=1
                            sdcard_mosi <= 1'b1 ;   // MOSI=1
                            sd_state <= sd_sendcmd0 ; // следующий этап - CMD0
-                           idle <= 1'b0 ; 
+//                           idle <= 1'b0 ; 
                            sdcard_debug <= 4'b0011 ; 
                         end
                // Отправка cmd0
@@ -539,14 +540,12 @@ always @(posedge sdcard_sclk)  begin
                // ожидание снятия запроса ввода-вывода
             sd_waitidle:
                     begin
-                           // хост подтвержил окончание чтения
-                    if (read_ack == 1'b1) read_done <= 1'b0 ;  // снимаем строб готовности данных
-
-                           // хост подтвердил окончание записи
-                           if (write_ack == 1'b1) write_done <= 1'b0 ; 
-                            
                      // хост снял запрос ввода-вывода - переходим в idle 
-                     if ((read_ack|write_ack|read_start|write_start) == 1'b0) sd_state <= sd_idle;
+                     if ((read_start|write_start) == 1'b0) begin
+							   sd_state <= sd_idle;
+								read_done <= 1'b0;
+								write_done <= 1'b0;
+							end	
                    end
                // обработка ошибочных состояний          
                sd_error :
