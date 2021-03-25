@@ -131,6 +131,7 @@ reg write_start;          // строб начала записи
 reg [7:0] sdcard_xfer_addr;    // адрес в буфере чтния/записи
 reg [15:0] sdcard_xfer_in;     // слово; записываемое в буфер записи
 reg write_error;
+reg sdbuf_write;
 
 // состояния процесса записи
 reg [2:0] wstate;
@@ -160,7 +161,7 @@ sdspi sd1 (
       
       // сигналы управления чтением - записью
       .sdcard_read_start(read_start),             // строб начала чтения
-      .sdcard_io_done(sdcard_io_done),            // флаг окончагия чтения
+      .sdcard_io_done(sdcard_io_done),            // флаг окончания чтения
       .sdcard_write_start(write_start),           // строб начала записи
       .sdcard_error(sdcard_error),                // флаг ошибки
 
@@ -168,7 +169,7 @@ sdspi sd1 (
       .sdcard_xfer_addr(sdcard_xfer_addr),         // текущий адрес в буферах чтения и записи
       .sdcard_xfer_out(sdcard_xfer_out),           // слово, читаемое из буфера чтения
       .sdcard_xfer_in(sdcard_xfer_in),             // слово, записываемое в буфер записи
-      .sdcard_xfer_write(drq),                     // разрешение записи буфера
+      .sdcard_xfer_write(sdbuf_write),             // разрешение записи буфера
       .mode(sdmode),                               // режим ведущего-ведомого контроллера
       .controller_clk(wb_clk_i),                   // синхросигнал общей шины
       .reset(reset),                               // сброс
@@ -184,7 +185,7 @@ wire reply=wb_cyc_i & wb_stb_i & ~wb_ack_o;
 //*  Сигнал ответа 
 //**************************************
 always @(posedge wb_clk_i or posedge wb_rst_i)
-    if (wb_rst_i == 1) wb_ack_o <= 0;
+    if (wb_rst_i == 1'b1) wb_ack_o <= 1'b0;
     else wb_ack_o <= reply;
 
 //**************************************************
@@ -206,14 +207,14 @@ always @(posedge wb_clk_i)
               i_idle :
                         begin
                      //  Если поднят флаг A или B - поднимаем триггер прерывания
-                           if ((ide ==1) & (rqa == 1 | drq== 1))  begin
+                           if ((ide ==1'b1) & (rqa == 1'b1 | drq== 1'b1))  begin
                               interrupt_state <= i_req ; 
                               irq <= 1'b1 ;    // запрос на прерывание
                            end 
                            else   irq <= 1'b0 ;    // снимаем запрос на прерывания
                         end
                // Формирование запроса на прерывание         
-               i_req :     if (ide == 0) interrupt_state <= i_idle ;    
+               i_req :     if (ide == 1'b0) interrupt_state <= i_idle ;    
                            else if (iack == 1'b1) begin
                               // если получено подтверждение прерывания от процессора
                               irq <= 1'b0 ;               // снимаем запрос
@@ -245,6 +246,7 @@ always @(posedge wb_clk_i)
          wstate <= w_prepare;
          write_error <= 1'b0;
          sdreq <= 1'b0;
+			sdbuf_write <= 1'b0;
       end
       
       // рабочие состояния
@@ -370,6 +372,7 @@ always @(posedge wb_clk_i)
                                  // подготовка к приему секторного буфера
                                  w_prepare: begin
                                           drq <= 1'b1;
+														sdbuf_write <= 1'b1;
                                           sdcard_xfer_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
                                           wstate <= w_skip;
                                        end   
@@ -379,6 +382,7 @@ always @(posedge wb_clk_i)
                                  // ожидание заполнения секторного буфера 
                                  w_waitdata:
                                        if (&sdcard_xfer_addr == 1'b1) begin
+														sdbuf_write <= 1'b0;
                                           drq <= 1'b0;
                                           wstate <= w_start;
                                        end

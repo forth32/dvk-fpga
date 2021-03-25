@@ -18,8 +18,8 @@ module sdspi (
    output reg      sdcard_io_done,   // флаг окончагия чтения
    input           sdcard_write_start, // строб начала записи
    output reg      sdcard_error,       // флаг ошибки
-   input[7:0]      sdcard_xfer_addr,   // адрес в буфере чтния/записи
-   output reg[15:0]sdcard_xfer_out,    // слово, читаемое из буфера чтения
+   input  [7:0]    sdcard_xfer_addr,   // адрес в буфере чтния/записи
+   output [15:0]   sdcard_xfer_out,    // слово, читаемое из буфера чтения
    input           sdcard_xfer_write,  // строб записи буфера
    input[15:0]     sdcard_xfer_in,     // слово, записываемое в буфер записи
    input           controller_clk,     // тактирование буферных операций - тактовый сигнал процессорной шины
@@ -37,12 +37,25 @@ module sdspi (
 //  write_start=0                                   read_start=0 
 //                  io_done=0                                     io_done=0
 
-   //****************************
-    // буферная память
-   //****************************
-   reg[15:0] rsector[0:255]; // буфер чтения
-   reg[15:0] wsector[0:255]; // буфер записи
+//***********************************
+//*    буферная память
+//***********************************
+wire [15:0] bufdata_out;
+reg sbuf_write_en;
+reg [15:0] sdbufdata;
 
+sectorbuf sbuf(
+	.address_a(sdcard_xfer_addr),
+	.address_b(sectorindex[7:0]),
+	.clock_a(controller_clk),
+	.clock_b(sdclk),
+	.data_a(sdcard_xfer_in),
+	.data_b(sdbufdata),
+	.wren_a(sdcard_xfer_write),
+	.wren_b(sbuf_write_en),
+	.q_a(sdcard_xfer_out),
+	.q_b(bufdata_out)
+);
    
    //****************************
    // Машина состояний SDкарты
@@ -89,7 +102,7 @@ module sdspi (
    reg do_readr7; 
 
    reg[9:0] counter; 
-   reg[7:0] sectorindex; 
+   reg[8:0] sectorindex; 
    reg[15:0] sd_word; 
    reg[3:0] idle_filter; 
    reg[3:0] read_start_filter; 
@@ -107,10 +120,6 @@ module sdspi (
 //* Интерфейс к хост-модулю
 //*******************************************   
 always @(posedge controller_clk) begin
-         
-         // операции с буферами
-         sdcard_xfer_out <= rsector[sdcard_xfer_addr] ; // слово, читаемое из буфера чтения
-         if (sdcard_xfer_write == 1'b1)  wsector[sdcard_xfer_addr] <= sdcard_xfer_in; // запись слова в буфер записи
          
          // сдвиговые регистры фильтров интерфейсных сигналов
          idle_filter <= {idle_filter[2:0], idle} ;  // фильтр сигнала готовности
@@ -178,6 +187,7 @@ always @(posedge sdcard_sclk)  begin
                   sd_state <= sd_reset ; 
                   sdslow <= 1'b0;       // инициализация идет на низкой скорости
 						idle <= 1'b0;
+    				   sbuf_write_en <= 1'b0;
                end   
                else begin 
                   // режим ведомого - переходим в состояние ожидания
@@ -202,6 +212,7 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            counter <= 10'd500 ; // счетчик ожидания перед инициализацией
 //                           sdslow <= 1'b0;      // инициализация идет на низкой скорости
+								   sbuf_write_en <= 1'b0;
                            do_readr3 <= 1'b0 ; 
                            do_readr7 <= 1'b0 ; 
                            sdcard_cs <= 1'b1 ;     // CS=1
@@ -319,12 +330,12 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            if (counter != 0)  begin
                               counter <= counter - 1'b1 ; 
-                              sectorindex <= 0 ; 
+                              sectorindex <= 9'o0 ; 
                               sdcard_mosi <= 1'b1 ; 
                            end
                            else begin
                               sdcard_mosi <= 1'b0 ; 
-                              sd_word <= {wsector[sectorindex][7:0], wsector[sectorindex][15:8]} ; 
+                              sd_word <= {bufdata_out[7:0], bufdata_out[15:8]} ; 
                               sectorindex <= sectorindex + 1'b1 ; 
                               sd_state <= sd_write ; 
                               counter <= 15 ; 
@@ -337,8 +348,8 @@ always @(posedge sdcard_sclk)  begin
                            sd_word <= {sd_word[14:0], 1'b0} ; 
                            counter <= counter - 1'b1 ; 
                            if (counter == 0) begin
-                              sd_word <= {wsector[sectorindex][7:0], wsector[sectorindex][15:8]} ; 
-                              if (sectorindex == 255)  sd_state <= sd_write_last ; 
+                              sd_word <= {bufdata_out[7:0], bufdata_out[15:8]} ; 
+                              if (sectorindex == 9'o255)  sd_state <= sd_write_last ; 
                               sectorindex <= sectorindex + 1'b1 ; 
                               counter <= 15 ; 
                            end 
@@ -391,7 +402,8 @@ always @(posedge sdcard_sclk)  begin
                               if (sdcard_miso == 1'b0) begin
                                  sd_state <= sd_read_data ; 
                                  counter <= 15 ; 
-                                 sectorindex <= 0 ; 
+  										   sbuf_write_en <= 1'b0;
+                                 sectorindex <= 9'b111111111 ; 
                               end 
                            end
                            else  sd_state <= sd_error ; 
@@ -401,11 +413,16 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            if (counter == 0)  begin
                               counter <= 15 ; 
-                              rsector[sectorindex] <= {sd_word[6:0], sdcard_miso, sd_word[14:7]}; 
-                              if (sectorindex == 255)  sd_state <= sd_read_crc ; 
-                              else    sectorindex <= sectorindex + 1'b1 ; 
+										sdbufdata <=  {sd_word[6:0], sdcard_miso, sd_word[14:7]};
+										sbuf_write_en <= 1'b1;
+								   	sectorindex <= sectorindex + 1'b1 ; 
+									   sbuf_write_en <= 1'b1;
+                              if (sectorindex == 9'b011111110)  begin
+										   sd_state <= sd_read_crc ; 
+										end	
                            end
                            else   begin
+										sbuf_write_en <= 1'b0;
                               sd_word <= {sd_word[14:0], sdcard_miso} ; 
                               counter <= counter - 1'b1 ; 
                            end 
@@ -413,6 +430,7 @@ always @(posedge sdcard_sclk)  begin
                // чтение поля CRC после блока даннх
                sd_read_crc :
                         begin
+								   sbuf_write_en <= 1'b0;
                            if (counter == 0)  begin
                               counter <= 15 ; 
                               sd_state <= sd_wait ; 

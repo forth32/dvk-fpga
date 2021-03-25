@@ -392,21 +392,10 @@ set_location_assignment PIN_A6 -to led[4]
 
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_clk -to "pll:pll1|c2" -section_id dw_2dsdspi
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[0] -to "topboard:kernel|dw:hdd|busy" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "topboard:kernel|dw:hdd|start" -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[1] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[10] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[16] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[2] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[8] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[0] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[12] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id dw_2dsdspi
@@ -430,59 +419,125 @@ set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_COUNTER_PIPELINE=
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ADVANCED_TRIGGER_ENTITY=basic,1," -section_id dw_2dsdspi
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL_PIPELINE=1" -section_id dw_2dsdspi
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ENABLE_ADVANCED_TRIGGER=0" -section_id dw_2dsdspi
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=00000000000000000000000000000000" -section_id dw_2dsdspi
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=32" -section_id dw_2dsdspi
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SEGMENT_SIZE=32768" -section_id dw_2dsdspi
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=32768" -section_id dw_2dsdspi
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[1] -to "topboard:kernel|dw:hdd|read_start" -section_id dw_2dsdspi
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[2] -to "topboard:kernel|dw:hdd|rstreq" -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[7] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[9] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[18] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[5] -to "topboard:kernel|dw:hdd|sdspi:sd1|reset" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[6] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_checkacmd41" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[7] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_checkcmd0" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[8] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_checkcmd55" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[9] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_checkcmd8" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[10] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_error" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[11] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_idle" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[12] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_read_crc" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[13] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_read_data" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[14] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_read_data_waitstart" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[15] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_read_dr" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[16] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_readr1" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[17] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_readr1wait" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[18] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_readr3" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_readr7" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_reset" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_send_cmd" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[22] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_sendcmd0" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[23] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_wait" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[24] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_waitidle" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[25] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_waitwritedone" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[26] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[27] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write_checkresponse" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[28] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write_crc" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[29] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write_data_startblock" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[30] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write_last" -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[4] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[20] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[21] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[14] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[19] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[25] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=58" -section_id dw_2dsdspi
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[3] -to "topboard:kernel|dw:hdd|sdreq" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[4] -to "topboard:kernel|dw:hdd|sdspi:sd1|read_done" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[31] -to "topboard:kernel|dw:hdd|sdspi:sd1|sdcard_idle" -section_id dw_2dsdspi
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[32] -to "topboard:kernel|dw:hdd|start" -section_id dw_2dsdspi
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=33" -section_id dw_2dsdspi
+set_global_assignment -name QIP_FILE "ip-components/sectorbuf.qip"
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[2] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[8] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[16] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[0] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[4] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[7] -to dw_2dsdspi|vcc -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "topboard:kernel|dw:hdd|read_start" -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[1] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[18] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[4] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[0]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[5] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[1]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[6] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[2]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[7] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[3]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[8] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[4]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[9] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[5]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[10] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[6]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[11] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[7]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[12] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[8]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[13] -to "topboard:kernel|dw:hdd|sdspi:sd1|counter[9]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[14] -to "topboard:kernel|dw:hdd|sdspi:sd1|io_done" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[15] -to "topboard:kernel|dw:hdd|sdspi:sd1|reset" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[16] -to "topboard:kernel|dw:hdd|sdspi:sd1|sbuf_write_en" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[17] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_checkacmd41" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[18] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_checkcmd0" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_checkcmd55" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_checkcmd8" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_error" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[22] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_idle" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[23] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_read_crc" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[24] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_read_data" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[25] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_read_data_waitstart" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[26] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_read_dr" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[27] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_readr1" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[28] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_readr1wait" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[29] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_readr3" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[30] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_readr7" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[31] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_reset" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[32] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_send_cmd" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[33] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_sendcmd0" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[34] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_wait" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[35] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_waitidle" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[36] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_waitwritedone" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[37] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[38] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write_checkresponse" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[39] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write_crc" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[40] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write_data_startblock" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[41] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_state.sd_write_last" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[42] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[0]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[43] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[10]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[44] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[11]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[45] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[12]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[46] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[13]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[47] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[14]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[48] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[15]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[49] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[1]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[50] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[2]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[51] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[3]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[52] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[4]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[53] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[5]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[54] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[6]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[55] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[7]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[56] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[8]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[57] -to "topboard:kernel|dw:hdd|sdspi:sd1|sd_word[9]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[58] -to "topboard:kernel|dw:hdd|sdspi:sd1|sdcard_idle" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[59] -to "topboard:kernel|dw:hdd|sdspi:sd1|sdcard_miso" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[60] -to "topboard:kernel|dw:hdd|sdspi:sd1|sdcard_mosi" -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to dw_2dsdspi|gnd -section_id dw_2dsdspi
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=0000000000000000000000000000000" -section_id dw_2dsdspi
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=31" -section_id dw_2dsdspi
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SEGMENT_SIZE=16384" -section_id dw_2dsdspi
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=16384" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[61] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[0]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[62] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[10]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[63] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[11]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[64] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[12]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[65] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[13]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[66] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[14]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[67] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[15]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[68] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[1]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[69] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[2]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[70] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[3]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[71] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[4]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[72] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[5]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[73] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[6]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[74] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[7]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[75] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[8]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[76] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorbuf:sbuf|data_b[9]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[77] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[0]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[78] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[1]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[79] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[2]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[80] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[3]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[81] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[4]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[82] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[5]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[83] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[6]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[84] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[7]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[85] -to "topboard:kernel|dw:hdd|sdspi:sd1|sectorindex[8]" -section_id dw_2dsdspi
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[86] -to "topboard:kernel|dw:hdd|start" -section_id dw_2dsdspi
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=87" -section_id dw_2dsdspi
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=112" -section_id dw_2dsdspi
 set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
