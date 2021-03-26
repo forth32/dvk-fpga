@@ -160,9 +160,9 @@ sdspi sd1 (
       .sdcard_idle(sdcard_idle),                  // сигнал готовности модуля к обмену
       
       // сигналы управления чтением - записью
-      .sdcard_start(sdcard_start),             // строб начала чтения
-      .sdcard_io_done(sdcard_io_done),            // флаг окончания чтения
-      .sdcard_write_mode(sdcard_write_mode),           // строб начала записи
+      .sdcard_start(sdcard_start),                // строб запуска ввода вывода
+      .sdcard_io_done(sdcard_io_done),            // флаг окончания обмена данными
+      .sdcard_write_mode(sdcard_write_mode),      // режим: 0 - чтение, 1 - запись
       .sdcard_error(sdcard_error),                // флаг ошибки
 
       // интерфейс к буферной памяти контроллера
