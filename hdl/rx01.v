@@ -287,6 +287,7 @@ always @(posedge wb_clk_i)   begin
                                 // принят бит GO при незапущенной операции
                                 if ((start == 1'b0) && (wb_dat_i[0] == 1'b1)) begin 
                                     // Ввод новой команды
+											   sdbuf_write <= 1'b0;
                                     start <= 1'b1;              // признак активной команды
                                     done <= 1'b0;               // сбрасываем признак завершения команды
                                     drq <= 1'b0;
@@ -308,13 +309,12 @@ always @(posedge wb_clk_i)   begin
                              case(cmd)
                               // запись буфера
                               3'b000:  begin
-                                 sdcard_xfer_in<= {8'b00000000, wb_dat_i[7:0]}; 
                                  if (drq) begin
+                                  sdcard_xfer_in<= {8'b00000000, wb_dat_i[7:0]}; 
  										    sdbuf_write <= 1'b1;
                                   if (!reply) sdcard_xfer_addr <= sdcard_xfer_addr + 1'b1;
                                   else  begin  
                                     if (sdcard_xfer_addr == 8'b01111111) begin
-												   sdbuf_write <= 1'b0;
                                        drq <= 1'b0;
                                        done <= 1'b1;
                                        interrupt_trigger <= 1'b1;
