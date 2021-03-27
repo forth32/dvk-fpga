@@ -63,6 +63,7 @@
             <File>../../hdl/m4/am4_seq.v</File>
             <File>../../hdl/m4/am4_wb.v</File>
             <File>ip-components/tang_user_rom.v</File>
+            <File>ip-components/tang_sectorbuf.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
@@ -78,7 +79,7 @@
         <RtlProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-03-23 18:32:05</Step_Last_Change>
+        <Step_Last_Change>2021-03-27 17:50:26</Step_Last_Change>
         <Current_Step>0</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>

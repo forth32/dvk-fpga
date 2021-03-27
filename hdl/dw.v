@@ -122,14 +122,14 @@ reg rstreq;  // триггер запроса на программный сбр
       
 // интерфейс к SDSPI
 wire [26:0] sdcard_addr;  // адрес сектора карты
-wire sdcard_io_done;    // флаг окончагия чтения
+wire sdspi_io_done;    // флаг окончагия чтения
 wire sdcard_error;        // флаг ошибки
-wire [15:0] sdcard_xfer_out;  // слово; читаемое из буфера чтения
+wire [15:0] sdbuf_dataout;  // слово; читаемое из буфера чтения
 wire sdcard_idle;         // признак готовности контроллера
-reg sdcard_start;           // строб начала чтения
-reg sdcard_write_mode;          // строб начала записи
-reg [7:0] sdcard_xfer_addr;    // адрес в буфере чтния/записи
-reg [15:0] sdcard_xfer_in;     // слово; записываемое в буфер записи
+reg sdspi_start;           // строб начала чтения
+reg sdspi_write_mode;          // строб начала записи
+reg [7:0] sdbuf_addr;    // адрес в буфере чтния/записи
+reg [15:0] sdbuf_datain;     // слово; записываемое в буфер записи
 reg write_error;
 reg sdbuf_write;
 
@@ -160,16 +160,16 @@ sdspi sd1 (
       .sdcard_idle(sdcard_idle),                  // сигнал готовности модуля к обмену
       
       // сигналы управления чтением - записью
-      .sdcard_start(sdcard_start),                // строб запуска ввода вывода
-      .sdcard_io_done(sdcard_io_done),            // флаг окончания обмена данными
-      .sdcard_write_mode(sdcard_write_mode),      // режим: 0 - чтение, 1 - запись
+      .sdspi_start(sdspi_start),                // строб запуска ввода вывода
+      .sdspi_io_done(sdspi_io_done),            // флаг окончания обмена данными
+      .sdspi_write_mode(sdspi_write_mode),      // режим: 0 - чтение, 1 - запись
       .sdcard_error(sdcard_error),                // флаг ошибки
 
       // интерфейс к буферной памяти контроллера
-      .sdcard_xfer_addr(sdcard_xfer_addr),         // текущий адрес в буферах чтения и записи
-      .sdcard_xfer_out(sdcard_xfer_out),           // слово, читаемое из буфера чтения
-      .sdcard_xfer_in(sdcard_xfer_in),             // слово, записываемое в буфер записи
-      .sdcard_xfer_write(sdbuf_write),             // разрешение записи буфера
+      .sdbuf_addr(sdbuf_addr),         // текущий адрес в буферах чтения и записи
+      .sdbuf_dataout(sdbuf_dataout),           // слово, читаемое из буфера чтения
+      .sdbuf_datain(sdbuf_datain),             // слово, записываемое в буфер записи
+      .sdbuf_we(sdbuf_write),             // разрешение записи буфера
       .mode(sdmode),                               // режим ведущего-ведомого контроллера
       .controller_clk(wb_clk_i),                   // синхросигнал общей шины
       .reset(reset),                               // сброс
@@ -241,8 +241,8 @@ always @(posedge wb_clk_i)
          cyl <= 10'o0;
          hd <= 3'o0;
          sec <= 5'o0;
-         sdcard_start <= 1'b0;
-         sdcard_write_mode <= 1'b0;
+         sdspi_start <= 1'b0;
+         sdspi_write_mode <= 1'b0;
          wstate <= w_prepare;
          write_error <= 1'b0;
          sdreq <= 1'b0;
@@ -265,13 +265,13 @@ always @(posedge wb_clk_i)
                                  rqa <= 1'b0;
                               end   
                   4'b0100 :   begin                       // 174010 - DWBUF
-                                 wb_dat_o <= sdcard_xfer_out;      
+                                 wb_dat_o <= sdbuf_dataout;      
                                  if (wb_ack_o) begin
-                                       if (&sdcard_xfer_addr == 1'b1) begin
+                                       if (&sdbuf_addr == 1'b1) begin
                                           rqa <= 1'b1;
                                           drq <= 1'b0;
                                        end   
-                                       else sdcard_xfer_addr <= sdcard_xfer_addr + 1'b1;
+                                       else sdbuf_addr <= sdbuf_addr + 1'b1;
                                  end  
                               end 
                   4'b0101 :   wb_dat_o <= {6'o0,cyl} ;  // 174012 - DWCYL
@@ -284,7 +284,7 @@ always @(posedge wb_clk_i)
                                  wb_dat_o <= {busy|(~sdcard_idle), 7'b0000000, 1'b1/*готовность буфера к обмену*/, ide, 5'b00000, rqa}; // 174020 -  DWSTRS
                               end   
                   4'b1001 :   begin
-                                 wb_dat_o <= sdcard_xfer_addr; // 174022 - текущий адрес в буфере SDSPI, для отладки, этого регистра в настоящем контроллере нет
+                                 wb_dat_o <= sdbuf_addr; // 174022 - текущий адрес в буфере SDSPI, для отладки, этого регистра в настоящем контроллере нет
                               end   
                   default :   wb_dat_o <= {16{1'b0}} ; 
                endcase 
@@ -301,8 +301,8 @@ always @(posedge wb_clk_i)
                                 end
                     // 174010 - DWBUF
                      4'b0100 :  begin   
-                                 sdcard_xfer_in<= wb_dat_i; 
-                                 if (reply)  sdcard_xfer_addr <= sdcard_xfer_addr + 1'b1;                              
+                                 sdbuf_datain<= wb_dat_i; 
+                                 if (reply)  sdbuf_addr <= sdbuf_addr + 1'b1;                              
                                 end
                     // 174012 - DWCYL
                      4'b0101 :  begin
@@ -347,19 +347,19 @@ always @(posedge wb_clk_i)
                            sdreq <= 1'b1;
                            if (sdack) // подтверждение получено
                               // если SD-модуль свободен, чтение еще не запущено и не завершено
-                              if (sdcard_idle == 1'b1 & sdcard_start == 1'b0 & sdcard_io_done == 1'b0) begin
-										         sdcard_write_mode <= 1'b0; 
-                                       sdcard_start <= 1'b1 ; 
+                              if (sdcard_idle == 1'b1 & sdspi_start == 1'b0 & sdspi_io_done == 1'b0) begin
+										         sdspi_write_mode <= 1'b0; 
+                                       sdspi_start <= 1'b1 ; 
                                        busy <= 1'b1;
                               end
 										// чтение окончено
-                              else if (sdcard_io_done == 1'b1 & sdcard_start == 1'b1) begin  
-                                      sdcard_start <= 1'b0 ;        // снимаем запрос чтения
+                              else if (sdspi_io_done == 1'b1 & sdspi_start == 1'b1) begin  
+                                      sdspi_start <= 1'b0 ;        // снимаем запрос чтения
                                       busy <= 1'b0;
                                       start <= 1'b0;
                                       if (sdcard_error == 1'b0)   begin        
                                       // чтение окончилось без ошибок
-                                         sdcard_xfer_addr <= 8'b00000000;   // инициализируем адрес секторного буфера
+                                         sdbuf_addr <= 8'b00000000;   // инициализируем адрес секторного буфера
                                          drq <= 1'b1;
                                       end     
                                       // ошибка чтения
@@ -374,15 +374,15 @@ always @(posedge wb_clk_i)
                                  w_prepare: begin
                                           drq <= 1'b1;
 														sdbuf_write <= 1'b1;
-                                          sdcard_xfer_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
+                                          sdbuf_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
                                           wstate <= w_skip;
                                        end   
                                        
                                  w_skip:   
-                                       if (|sdcard_xfer_addr == 1'b0) wstate <=w_waitdata;
+                                       if (|sdbuf_addr == 1'b0) wstate <=w_waitdata;
                                  // ожидание заполнения секторного буфера 
                                  w_waitdata:
-                                       if (&sdcard_xfer_addr == 1'b1) begin
+                                       if (&sdbuf_addr == 1'b1) begin
 														sdbuf_write <= 1'b0;
                                           drq <= 1'b0;
                                           wstate <= w_start;
@@ -392,8 +392,8 @@ always @(posedge wb_clk_i)
                                  w_start: begin
                                        sdreq <= 1'b1;   // запрос доступа к карте
                                        if (sdack & (sdcard_idle == 1)) begin
-                                          sdcard_write_mode <= 1'b1 ; 
-														sdcard_start <= 1'b1;
+                                          sdspi_write_mode <= 1'b1 ; 
+														sdspi_start <= 1'b1;
                                           busy <= 1'b1;
                                           wstate <= w_wait;
                                        end   
@@ -401,13 +401,13 @@ always @(posedge wb_clk_i)
                                     
                                  // ожидание окончание заиси сектора на карту   
                                  w_wait:
-                                       if (sdcard_io_done == 1'b1) begin
+                                       if (sdspi_io_done == 1'b1) begin
                                           wstate <= w_done;
                                        end   
                                        
                                  // запись подтверждена - освобождаем sdspi
                                  w_done: begin
-                                    sdcard_start <= 1'b0 ;              // снимаем строб записи
+                                    sdspi_start <= 1'b0 ;              // снимаем строб записи
                                     rqa <= 1'b1;                       // флаг завершения команды
                                     start <= 1'b0;                     // заканчиваем обработку команды
                                     busy <= 1'b0;

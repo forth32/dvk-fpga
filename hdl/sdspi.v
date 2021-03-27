@@ -14,14 +14,14 @@ module sdspi (
 
    input[26:0]     sdcard_addr,        // адрес сектора карты
    output reg      sdcard_idle,        // признак готовности контроллера
-   input           sdcard_start,       // строб начала чтения
-   output reg      sdcard_io_done,     // флаг окончагия чтения
-   input           sdcard_write_mode,  // 0-чтение, 1-запись
+   input           sdspi_start,       // строб начала чтения
+   output reg      sdspi_io_done,     // флаг окончагия чтения
+   input           sdspi_write_mode,  // 0-чтение, 1-запись
    output reg      sdcard_error,       // флаг ошибки
-   input  [7:0]    sdcard_xfer_addr,   // адрес в буфере чтния/записи
-   output [15:0]   sdcard_xfer_out,    // слово, читаемое из буфера чтения
-   input           sdcard_xfer_write,  // строб записи буфера
-   input[15:0]     sdcard_xfer_in,     // слово, записываемое в буфер записи
+   input  [7:0]    sdbuf_addr,   // адрес в буфере чтния/записи
+   output [15:0]   sdbuf_dataout,    // слово, читаемое из буфера чтения
+   input           sdbuf_we,  // строб записи буфера
+   input[15:0]     sdbuf_datain,     // слово, записываемое в буфер записи
    input           controller_clk,     // тактирование буферных операций - тактовый сигнал процессорной шины
    input           mode,               // режим работы: 0 - ведомый, 1 - ведущий
    input           sdclk,              // тактовый сигнал SD-карты
@@ -29,6 +29,7 @@ module sdspi (
 );
 
 //  процесс записи:                                  процесс чтения
+//
 //   - заполняем буфер
 //  host            sdspi                           host            sdspi
 //-------------------------------                   -------------------------------
@@ -36,7 +37,7 @@ module sdspi (
 //                  io_done=1                                     io_done=1
 //  start=0                                         start=0 
 //                  io_done=0                                     io_done=0
-
+//                                                   - вычитываем буфер
 //***********************************
 //*    буферная память
 //***********************************
@@ -45,15 +46,15 @@ reg sbuf_write_en;
 reg [15:0] sdbufdata;
 
 sectorbuf sbuf(
-	.address_a(sdcard_xfer_addr),
+	.address_a(sdbuf_addr),
 	.address_b(sectorindex),
 	.clock_a(controller_clk),
 	.clock_b(sdclk),
-	.data_a(sdcard_xfer_in),
+	.data_a(sdbuf_datain),
 	.data_b(sdbufdata),
-	.wren_a(sdcard_xfer_write),
+	.wren_a(sdbuf_we),
 	.wren_b(sbuf_write_en),
-	.q_a(sdcard_xfer_out),
+	.q_a(sdbuf_dataout),
 	.q_b(bufdata_out)
 );
    
@@ -115,7 +116,7 @@ sectorbuf sbuf(
    reg io_done; 
    reg write_mode; 
    reg card_error; 
-
+	
 //*******************************************   
 //* Интерфейс к хост-модулю
 //*******************************************   
@@ -123,16 +124,16 @@ always @(posedge controller_clk) begin
          
          // сдвиговые регистры фильтров интерфейсных сигналов
          idle_filter <= {idle_filter[2:0], idle} ;  // фильтр сигнала готовности
-         start_filter <= {start_filter[2:0], sdcard_start} ; // фильтр строба чтения
+         start_filter <= {start_filter[2:0], sdspi_start} ; // фильтр строба чтения
          io_done_filter <= {io_done_filter[2:0], io_done} ;           // фильтр сигнала окончания записи
-         write_mode_filter <= {write_mode_filter[2:0], sdcard_write_mode} ; // фильтр строба записи
+         write_mode_filter <= {write_mode_filter[2:0], sdspi_write_mode} ; // фильтр строба записи
          card_error_filter <= {card_error_filter[2:0], card_error} ; 
          
          // сброс контроллера
          if (reset == 1'b1)  begin
             sdcard_idle <= 1'b0 ; 
             start <= 1'b0 ; 
-            sdcard_io_done <= 1'b0 ; 
+            sdspi_io_done <= 1'b0 ; 
             write_mode <= 1'b0 ; 
             sdcard_error <= 1'b0 ; 
          end
@@ -148,8 +149,8 @@ always @(posedge controller_clk) begin
             else if (start_filter == {4{1'b1}})  start <= 1'b1 ; 
 
             // строб окончания чтения
-            if (io_done_filter == {4{1'b0}}) sdcard_io_done <= 1'b0 ; 
-            else if (io_done_filter == {4{1'b1}})  sdcard_io_done <= 1'b1 ; 
+            if (io_done_filter == {4{1'b0}}) sdspi_io_done <= 1'b0 ; 
+            else if (io_done_filter == {4{1'b1}})  sdspi_io_done <= 1'b1 ; 
 
             // сигнал начала записи
             if (write_mode_filter == {4{1'b0}})     write_mode <= 1'b0 ; 

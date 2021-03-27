@@ -173,14 +173,14 @@ module rk11 (
    // интерфейс к SDSPI
 wire [26:0] sdcard_addr;       // адрес сектора карты
 wire sdcard_error;             // флаг ошибки
-wire [15:0] sdcard_xfer_out;   // слово; читаемое из буфера чтения
+wire [15:0] sdbuf_dataout;   // слово; читаемое из буфера чтения
 wire sdcard_idle;              // признак готовности контроллера
-reg [7:0] sdcard_xfer_addr;    // адрес в буфере чтния/записи
-reg sdcard_xfer_write;         // строб записи буфера
-reg [15:0] sdcard_xfer_in;     // слово; записываемое в буфер записи
-reg sdcard_start;         // строб запуска sdspi
-reg sdcard_write_mode;    // 0-чтение, 1-запись
-wire sdcard_io_done;      // флаг заверщение операции обмена с картой
+reg [7:0] sdbuf_addr;    // адрес в буфере чтния/записи
+reg sdbuf_we;         // строб записи буфера
+reg [15:0] sdbuf_datain;     // слово; записываемое в буфер записи
+reg sdspi_start;         // строб запуска sdspi
+reg sdspi_write_mode;    // 0-чтение, 1-запись
+wire sdspi_io_done;      // флаг заверщение операции обмена с картой
 
 //***********************************************
 //*  Контроллер SD-карты
@@ -196,18 +196,18 @@ sdspi sd1 (
    
       .sdcard_addr(sdcard_addr),                  // адрес блока на карте
       .sdcard_idle(sdcard_idle),                  // сигнал готовности модуля к обмену
+      .sdcard_error(sdcard_error),                // флаг ошибки
       
       // сигналы управления чтением - записью
-      .sdcard_start(sdcard_start),                // строб запуска ввода вывода
-      .sdcard_io_done(sdcard_io_done),            // флаг окончания обмена данными
-      .sdcard_write_mode(sdcard_write_mode),      // режим: 0 - чтение, 1 - запись
-      .sdcard_error(sdcard_error),                // флаг ошибки
+      .sdspi_start(sdspi_start),                // строб запуска ввода вывода
+      .sdspi_io_done(sdspi_io_done),            // флаг окончания обмена данными
+      .sdspi_write_mode(sdspi_write_mode),      // режим: 0 - чтение, 1 - запись
 
       // интерфейс к буферной памяти контроллера
-      .sdcard_xfer_addr(sdcard_xfer_addr),         // текущий адрес в буферах чтения и записи
-      .sdcard_xfer_out(sdcard_xfer_out),           // слово, читаемое из буфера чтения
-      .sdcard_xfer_in(sdcard_xfer_in),             // слово, записываемое в буфер записи
-      .sdcard_xfer_write(sdcard_xfer_write),       // строб записи буфера
+      .sdbuf_addr(sdbuf_addr),         // текущий адрес в буферах чтения и записи
+      .sdbuf_dataout(sdbuf_dataout),           // слово, читаемое из буфера чтения
+      .sdbuf_datain(sdbuf_datain),             // слово, записываемое в буфер записи
+      .sdbuf_we(sdbuf_we),       // строб записи буфера
 
       .mode(sdmode),                               // режим ведущего-ведомого контроллера
       .controller_clk(wb_clk_i),                   // синхросигнал общей шины
@@ -889,8 +889,8 @@ sdspi sd1 (
          // сброс
          busmaster_state <= busmaster_idle ; 
          dma_req <= 1'b0 ; 
-         sdcard_write_mode <= 1'b0 ; 
-			sdcard_start <= 1'b0;
+         sdspi_write_mode <= 1'b0 ; 
+			sdspi_start <= 1'b0;
          nxm <= 1'b0 ; 
 			iocomplete <= 1'b0;
 			rkdb <= 16'o0;
@@ -915,7 +915,7 @@ sdspi sd1 (
                                  if (wcp >= 16'o400) sector_data_index <= 9'o400;               // запрошен полный сектор или больше
                                  else if (wcp == 16'o0) sector_data_index <= 9'b000000000 ;     // запрошено 0 байт данных
                                  else                sector_data_index <= {1'b0, wcp[7:0]} ;    // запрошено меньше сектора
-                                 sdcard_xfer_addr <= 8'b11111111 ;                              // адрес в буфере sd-контроллера
+                                 sdbuf_addr <= 8'b11111111 ;                              // адрес в буфере sd-контроллера
                               end 
                            end
                            // старт процедуры чтения
@@ -931,7 +931,7 @@ sdspi sd1 (
                                  // коррекция счетчика читаемых слов
                                  if (wcp >= 16'o400)  sector_data_index <= 9'o400;             // запрошен сектор и больше
                                  else                 sector_data_index <= {1'b0, wcp[7:0]} ;  // запрошено меньше сектора
-                                 sdcard_xfer_addr <= 0 ;                                       // начальный адрес в буфере SD-контроллера
+                                 sdbuf_addr <= 0 ;                                       // начальный адрес в буфере SD-контроллера
                               end 
                            end 
 									else iocomplete <= 1'b0;
@@ -960,15 +960,15 @@ sdspi sd1 (
                         // чтение данных с карты в буфер SDSPI 
  					busmaster_readsector:			
                         begin
-                           sdcard_start <= 1'b1;          // запускаем SDSPI
-	                        sdcard_write_mode <= 1'b0;     // режим чтения
-	                        if (sdcard_io_done == 1'b1) busmaster_state <= busmaster_preparebus; // sdspi закончил работу
+                           sdspi_start <= 1'b1;          // запускаем SDSPI
+	                        sdspi_write_mode <= 1'b0;     // режим чтения
+	                        if (sdspi_io_done == 1'b1) busmaster_state <= busmaster_preparebus; // sdspi закончил работу
 								end	
 								
                         // чтение данных - подготовка шины к DMA
                busmaster_preparebus :
                         begin
-								   sdcard_start <= 1'b0;
+								   sdspi_start <= 1'b0;
                            busmaster_state <= busmaster_read ; 
                            dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; // выставляем адрес на шину
                            dma_stb_o <= 1'b0 ;                        // снимаем строб данных 
@@ -980,10 +980,10 @@ sdspi sd1 (
                         begin
                            if (sector_data_index != 9'o0)  begin
                               // передача данных сектора
-                              dma_dat_o <= sdcard_xfer_out ;             // выставляем данные
+                              dma_dat_o <= sdbuf_dataout ;             // выставляем данные
                               dma_we_o <= 1'b1;               // режим записи
                               dma_stb_o <= 1'b1 ;             // строб записи на шину
-                              rkdb <= sdcard_xfer_out ;      // регистр данных RKDB
+                              rkdb <= sdbuf_dataout ;      // регистр данных RKDB
                               reply_count <= reply_count - 1'b1; // таймер ожидания ответа
                               if (|reply_count == 1'b0) begin
 										  // таймаут шины
@@ -994,7 +994,7 @@ sdspi sd1 (
                                   busmaster_state <= busmaster_preparebus; 
                                   if (rkcs_iba == 1'b0) ram_phys_addr <= ram_phys_addr + 1'b1 ; // если разрешено, увеличиваем физический адрес
                                   sector_data_index <= sector_data_index - 1'b1 ;       // уменьшаем счетчик данных сектора
-                                  sdcard_xfer_addr <= sdcard_xfer_addr + 1'b1 ;         // увеличиваем адрес буфера SD
+                                  sdbuf_addr <= sdbuf_addr + 1'b1 ;         // увеличиваем адрес буфера SD
                               end    
                            end
                            else begin
@@ -1020,9 +1020,9 @@ sdspi sd1 (
                busmaster_write1 :
                         begin
                               sector_data_index <= sector_data_index - 1'b1 ; // уменьшаем счетчик записанных данных
-                              sdcard_xfer_write <= 1'b1 ;         // поднимаем флаг режима записи sdspi
+                              sdbuf_we <= 1'b1 ;         // поднимаем флаг режима записи sdspi
                               dma_we_o <= 1'b0 ; 
-                              sdcard_xfer_addr <= sdcard_xfer_addr + 1'b1 ; // адрес буфера sdspi++
+                              sdbuf_addr <= sdbuf_addr + 1'b1 ; // адрес буфера sdspi++
                               dma_stb_o <= 1'b1 ;  // поднимаем строб чтения
                               if (rkcs_iba == 1'b0)  ram_phys_addr <= ram_phys_addr + 1'b1 ; // если разрешено, увеличиваем адрес
                               dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; // выставляем на шину адрес
@@ -1041,11 +1041,11 @@ sdspi sd1 (
                                 busmaster_state <= busmaster_write_done ; 
                            end  
                              if (dma_ack_i == 1'b1) begin   // устройство подтвердило обмен
-                                 sdcard_xfer_in <= dma_dat_i ; // передаем байт данные с шины на вход sdspi
+                                 sdbuf_datain <= dma_dat_i ; // передаем байт данные с шины на вход sdspi
                                  dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; // выставляем на шину адрес
                                  dma_stb_o <= 1'b0 ; 
                               if (sector_data_index == 9'o0) begin
-                                if (sdcard_xfer_addr == 255) busmaster_state <= busmaster_write_wait ; 
+                                if (sdbuf_addr == 255) busmaster_state <= busmaster_write_wait ; 
                                 else                         busmaster_state <= busmaster_write_fill; 
                                 dma_req <= 1'b0 ; 
                               end 
@@ -1058,23 +1058,23 @@ sdspi sd1 (
                busmaster_write_fill :
                         begin
                            dma_req <= 1'b0 ; 
-                           if (sdcard_xfer_addr == 255)  busmaster_state <= busmaster_write_wait ; 
+                           if (sdbuf_addr == 255)  busmaster_state <= busmaster_write_wait ; 
                            else   begin
-                              sdcard_xfer_in <= {16{1'b0}} ; 
-                              sdcard_xfer_addr <= sdcard_xfer_addr + 1'b1 ; 
-                              sdcard_xfer_write <= 1'b1 ; 
+                              sdbuf_datain <= {16{1'b0}} ; 
+                              sdbuf_addr <= sdbuf_addr + 1'b1 ; 
+                              sdbuf_we <= 1'b1 ; 
                            end 
                         end
                         
                busmaster_write_wait :
                         begin
-                           sdcard_start <= 1'b1 ; 
-									sdcard_write_mode <= 1'b1;
-                           sdcard_xfer_write <= 1'b0 ; 
-                           if (sdcard_io_done == 1'b1)   begin
+                           sdspi_start <= 1'b1 ; 
+									sdspi_write_mode <= 1'b1;
+                           sdbuf_we <= 1'b0 ; 
+                           if (sdspi_io_done == 1'b1)   begin
                               busmaster_state <= busmaster_write_done ; 
-                              sdcard_start <= 1'b0 ; 
-  									   sdcard_write_mode <= 1'b0;
+                              sdspi_start <= 1'b0 ; 
+  									   sdspi_write_mode <= 1'b0;
 										iocomplete <= 1'b1;
                            end 
                         end
