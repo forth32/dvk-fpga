@@ -116,6 +116,7 @@ sectorbuf sbuf(
    reg io_done; 
    reg write_mode; 
    reg card_error; 
+	reg [1:0] errcount;
 	
 //*******************************************   
 //* Интерфейс к хост-модулю
@@ -200,6 +201,7 @@ always @(posedge sdcard_sclk)  begin
                   sdcard_mosi <= 1'b1 ;   // MOSI=1
                   sdcard_cs <= 1'b0;      // CS=0
                end
+					errcount <= 2'b00;
                do_readr3 <= 1'b0 ; 
                io_done <= 1'b0 ;       // снимаем флаг окончания чтения
                card_error <= 1'b0 ;      // снимаем флаг ошибки
@@ -522,13 +524,20 @@ always @(posedge sdcard_sclk)  begin
                      if (start == 1'b0) begin
 							   sd_state <= sd_idle;
 								io_done <= 1'b0;
+								errcount <= 2'b00;
 							end	
                    end
                // обработка ошибочных состояний          
                sd_error :
                         begin
-                           card_error <= 1'b1 ; 
-                           sd_state <= sd_reset;
+								   errcount <= errcount + 1'b1;  // счетчик ошибок
+									if (errcount == 2'b11) begin
+									  // 4 повторные ошибки - больше повторять не будем
+                             card_error <= 1'b1 ;        // признак ошибка ввода-вывода
+                             sd_state <= sd_waitidle;     // завершаем обработку команды
+									end
+									// 4 попытки повтора команды
+                           else sd_state <= sd_reset;
                         end
             endcase 
          end 
