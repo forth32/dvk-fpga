@@ -131,7 +131,7 @@ module rk11 (
    reg[13:0] rkcs_godelay;  // таймер задержки перед запуском команды
    reg write_start;         // запуск записи
    reg read_start;          // запуск чтения
-	reg iocomplete;          // признак завершения работы DMA-контроллера
+   reg iocomplete;          // признак завершения работы DMA-контроллера
    reg [5:0] reply_count;   // таймер ожидания ответа при DMA-обмене
       
    // регистры контроллера DMA
@@ -152,7 +152,7 @@ module rk11 (
    parameter[3:0] busmaster_wait = 11; 
    parameter[3:0] busmaster_write_delay = 12; 
    parameter[3:0] busmaster_readsector = 13; 
-	
+   
    reg[3:0] busmaster_state; 
 
 
@@ -173,14 +173,14 @@ module rk11 (
    // интерфейс к SDSPI
 wire [26:0] sdcard_addr;       // адрес сектора карты
 wire sdcard_error;             // флаг ошибки
-wire [15:0] sdbuf_dataout;   // слово; читаемое из буфера чтения
+wire [15:0] sdbuf_dataout;     // слово; читаемое из буфера чтения
 wire sdcard_idle;              // признак готовности контроллера
-reg [7:0] sdbuf_addr;    // адрес в буфере чтния/записи
-reg sdbuf_we;         // строб записи буфера
-reg [15:0] sdbuf_datain;     // слово; записываемое в буфер записи
-reg sdspi_start;         // строб запуска sdspi
-reg sdspi_write_mode;    // 0-чтение, 1-запись
-wire sdspi_io_done;      // флаг заверщение операции обмена с картой
+reg [7:0] sdbuf_addr;          // адрес в буфере чтния/записи
+reg sdbuf_we;                  // строб записи буфера
+reg [15:0] sdbuf_datain;       // слово; записываемое в буфер записи
+reg sdspi_start;               // строб запуска sdspi
+reg sdspi_write_mode;          // 0-чтение, 1-запись
+wire sdspi_io_done;            // флаг заверщение операции обмена с картой
 
 //***********************************************
 //*  Контроллер SD-карты
@@ -204,10 +204,10 @@ sdspi sd1 (
       .sdspi_write_mode(sdspi_write_mode),      // режим: 0 - чтение, 1 - запись
 
       // интерфейс к буферной памяти контроллера
-      .sdbuf_addr(sdbuf_addr),         // текущий адрес в буферах чтения и записи
+      .sdbuf_addr(sdbuf_addr),                 // текущий адрес в буферах чтения и записи
       .sdbuf_dataout(sdbuf_dataout),           // слово, читаемое из буфера чтения
       .sdbuf_datain(sdbuf_datain),             // слово, записываемое в буфер записи
-      .sdbuf_we(sdbuf_we),       // строб записи буфера
+      .sdbuf_we(sdbuf_we),                     // строб записи буфера
 
       .mode(sdmode),                               // режим ведущего-ведомого контроллера
       .controller_clk(wb_clk_i),                   // синхросигнал общей шины
@@ -283,8 +283,8 @@ sdspi sd1 (
          rkcs_godelay <= 30 ; 
          irq <= 1'b0 ;    // снимаем запрос на прерывания
          sdreq <= 1'b0;
-			read_start <= 1'b0;
-			write_start <= 1'b0;
+         read_start <= 1'b0;
+         write_start <= 1'b0;
       end
       
       // рабочие состояния
@@ -380,7 +380,7 @@ sdspi sd1 (
          
             // запись регистров   
             if (bus_write_req == 1'b1)  begin
-				
+            
                // запись четных байтов
                if (wb_sel_i[0] == 1'b1)  begin
                   case (wb_adr_i[3:1])
@@ -390,7 +390,7 @@ sdspi sd1 (
                                  rkcs_fu <= wb_dat_i[3:1] ;      // код команды
                                  rkcs_mex <= wb_dat_i[5:4] ;     // расширение шины адреса
                                  rkcs_ide <= wb_dat_i[6] ;       // разрешение прерываний
-											// поиск условия возникновения прерывания
+                                 // поиск условия возникновения прерывания
                                  if (wb_dat_i[6] == 1'b1 &       // установка IDE, разрешение прерывания 
                                      wb_dat_i[0] == 1'b0 &       // бит GO не установлен
                                      rkcs_rdy == 1'b1)           // контроллер готов к приему команды  
@@ -455,7 +455,7 @@ sdspi sd1 (
             end
             
             // Подготовка запуска обмена после снятия бита GO
-				// Происходит после снятия бита GO при уже снятом бите готовности RDY
+            // Происходит после снятия бита GO при уже снятом бите готовности RDY
             if (rkcs_rdy == 1'b0 & start == 1'b0 & rkcs_go == 1'b0)  begin
                   start <= 1'b1 ;  // запускаем команду в обработку
                   rkdelay <= 120 ; // задержка запуска команды
@@ -503,7 +503,7 @@ sdspi sd1 (
                   3'b001 :    begin   
                               sdreq <= 1'b1;   // запрашиваем доступ к SD-карте
                               if (rkdelay != 0) rkdelay <= rkdelay - 1'b1 ; // задержка запуска команды
-										// задержка окончена, подтверждение доступа к карте получено
+                              // задержка окончена, подтверждение доступа к карте получено
                               else if (sdack) begin
                                  rksi[rkda_dr] <= 0 ;  // отключаем таймер задержки позиционирования 
                                  // запись еще не запущена, SD-карта готова к  работе
@@ -525,21 +525,21 @@ sdspi sd1 (
                                     end
                                     // проверки окончены - запускаем запись
                                     else  begin
-												   write_start <= 1'b1 ; 
-												end	
+                                       write_start <= 1'b1 ; 
+                                    end   
                                  end
                                  
                                  // запись сектора завершена
                                  else if (write_start == 1'b1 & iocomplete == 1'b1) begin
                                     write_start <= 1'b0 ;              // снимаем флаг запуска записи
                                     if (nxm == 1'b0 & sdcard_error == 1'b0)  begin
-												
+                                    
                                        // запись окончилась без ошибок 
                                        rkcs_mex <= 2'b00; //ram_phys_addr[17:16] ;  // адрес окончания записи - старшая часть, пока, увы, не нужна
                                        rkba <= {ram_phys_addr[15:1], 1'b0} ;  // младшая часть
-													
-													// ----- переход к следующему сектору -----
-													
+                                       
+                                       // ----- переход к следующему сектору -----
+                                       
                                        // сектор меньше 11 - дорожку не меняем.
                                        if ((rkda_sc[3:0]) < (4'b1011))  rkda_sc[3:0] <= rkda_sc[3:0] + 1'b1 ; // прсто увеличиваем # сектора 
                                        else  begin
@@ -582,7 +582,7 @@ sdspi sd1 (
                                        rkcs_rdy <= 1'b1 ;                   // выходим в готовность
                                        if (nxm == 1'b1)  rker_nxm <= 1'b1 ; // ошибка NXM - запись в несуществующую память
                                        if (sdcard_error == 1'b1) rker_dre <= 1'b1 ;   // ошибка SD-карты
-													start <= 1'b0;  // завершаем обработку команды
+                                       start <= 1'b0;  // завершаем обработку команды
                                     end 
                                  end 
                               end 
@@ -618,26 +618,26 @@ sdspi sd1 (
                                      end
                                      // проверка окончена - запускаем чтение SD
                                      else  begin
-												    read_start <= 1'b1;         // запускаем sdspi
-												 end	 
+                                        read_start <= 1'b1;         // запускаем sdspi
+                                     end    
                                  end
                                  
-											// sdspi закончил свою работу
+                                 // sdspi закончил свою работу
                                  else if (read_start == 1'b1 & iocomplete == 1'b1) begin
-											   read_start <= 1'b0;
+                                    read_start <= 1'b0;
                                     if (nxm == 1'b0 & sdcard_error == 1'b0)   begin
-												   // чтение завершено без ошибок
+                                       // чтение завершено без ошибок
                                        rkcs_mex <= 2'b00; //ram_phys_addr[17:16] ; 
                                        rkba <= {ram_phys_addr[15:1], 1'b0} ; // адрес буфера к ОЗУ хоста
                                          
-													// переход на следующий сектор  
+                                       // переход на следующий сектор  
                                        if (rkda_sc[3:0] < 4'o13) rkda_sc[3:0] <= rkda_sc[3:0] + 1'b1 ; 
                                        else  begin
-													   // переход на головку 1
+                                          // переход на головку 1
                                           rkda_sc[3:0] <= 4'b0000 ; 
                                           if (rkda_hd == 1'b0) rkda_hd <= 1'b1 ; 
                                           else begin
-														   // переход на новый цилиндр  
+                                             // переход на новый цилиндр  
                                              if ((rkda_cy == 8'o312) & (rkcs_fmt != 1'b1) & (wcp > 16'o400)) begin
                                                 // выход за границу диска
                                                 rker_ovr <= 1'b1 ; 
@@ -645,14 +645,14 @@ sdspi sd1 (
                                                 start <= 1'b0 ; 
                                              end
                                              else begin
-															   // цилиндр++
+                                                // цилиндр++
                                                 rkda_cy <= rkda_cy + 1'b1 ; 
                                                 rkda_hd <= 1'b0 ; 
                                              end 
                                           end 
                                        end 
-													
-													// эмуляция верификации
+                                       
+                                       // эмуляция верификации
                                        if (rkcs_fmt == 1'b1)  begin
 
                                           if (wcp > 16'o1)  wcp <= wcp - 16'o1; 
@@ -662,8 +662,8 @@ sdspi sd1 (
                                              rkcs_rdy <= 1'b1 ; 
                                           end 
                                        end
-													
-													// реальное чтение данных
+                                       
+                                       // реальное чтение данных
                                        else  begin
                                           if (wcp > 16'o400)   wcp <= wcp - 16'o400 ; // счетчик данных не исчерпан - читаем далее
                                           else  begin
@@ -674,15 +674,15 @@ sdspi sd1 (
                                           end 
                                        end 
                                     end
-												
+                                    
                                     else  begin
-												   // обработка ошибок чтения
+                                       // обработка ошибок чтения
                                        rkcs_mex <= 2'b00; //ram_phys_addr[17:16] ; 
                                        rkba <= {ram_phys_addr[15:1], 1'b0} ; 
                                        rkcs_rdy <= 1'b1 ; 
                                        if (nxm == 1'b1)  rker_nxm <= 1'b1 ; 
                                        if (sdcard_error == 1'b1)  rker_dre <= 1'b1 ; 
-													start <= 1'b0;
+                                       start <= 1'b0;
                                     end 
                                  end 
                               end 
@@ -776,18 +776,18 @@ sdspi sd1 (
                endcase 
             end
 
-				// Активной команды нет - переход в начальное состояние
+            // Активной команды нет - переход в начальное состояние
             else  begin
                sdreq <= 1'b0;            // снимаем запрос доступа к SD-карте
-					
-					// Проверка на условия прерывания по завершению позиционирования
+               
+               // Проверка на условия прерывания по завершению позиционирования
                if (rkcs_rdy == 1'b1)  begin  // при готовности контроллера
-					
-					   // проверка для каждого диска начиная с 7
+               
+                  // проверка для каждого диска начиная с 7
                   if (rksi[7] == 1)  begin  // таймер позиционирования дошел до 1
                      rksi[7] <= 0 ;         // отключаем таймер
                      if (rkcs_ide == 1'b1)  begin  
-							   // если прерывания разрешены
+                        // если прерывания разрешены
                         rkds_dri <= 3'b111 ;  // прерывание вызвано устройством 7
                         rkcs_scp <= 1'b1 ;    // позиционирование окончено
                         scpset <= 1'b1 ;      // запрашиваем прерывание
@@ -890,10 +890,10 @@ sdspi sd1 (
          busmaster_state <= busmaster_idle ; 
          dma_req <= 1'b0 ; 
          sdspi_write_mode <= 1'b0 ; 
-			sdspi_start <= 1'b0;
+         sdspi_start <= 1'b0;
          nxm <= 1'b0 ; 
-			iocomplete <= 1'b0;
-			rkdb <= 16'o0;
+         iocomplete <= 1'b0;
+         rkdb <= 16'o0;
       end
       
       // рабочие состояния
@@ -910,7 +910,7 @@ sdspi sd1 (
                               if (dma_gnt == 1'b1) begin               // ждем подтверждения DMA
                                  busmaster_state <= busmaster_write1 ; // переходим к этапу 1 записи
                                  ram_phys_addr <= rkba[15:1];          // полный физический адрес памяти
-											
+                                 
                                  // вычисление количества байтов в текущем секторе (передача может быть неполной)
                                  if (wcp >= 16'o400) sector_data_index <= 9'o400;               // запрошен полный сектор или больше
                                  else if (wcp == 16'o0) sector_data_index <= 9'b000000000 ;     // запрошено 0 байт данных
@@ -923,18 +923,18 @@ sdspi sd1 (
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
                                  ram_phys_addr <= rkba[15:1];          // полный физический адрес буфера в ОЗУ
-											
+                                 
                                  // проверка на режим чтения заголовков
                                  if (rkcs_fmt == 1'b1) busmaster_state <= busmaster_readh ; // переходим к чтению заголовков
                                  else  busmaster_state <= busmaster_readsector;                 // переходим к чтению данных
-											
+                                 
                                  // коррекция счетчика читаемых слов
                                  if (wcp >= 16'o400)  sector_data_index <= 9'o400;             // запрошен сектор и больше
                                  else                 sector_data_index <= {1'b0, wcp[7:0]} ;  // запрошено меньше сектора
                                  sdbuf_addr <= 0 ;                                       // начальный адрес в буфере SD-контроллера
                               end 
                            end 
-									else iocomplete <= 1'b0;
+                           else iocomplete <= 1'b0;
                         end
                         
                         // чтение заголовоков секторов
@@ -956,19 +956,19 @@ sdspi sd1 (
                            if (rkcs_iba == 1'b0)     ram_phys_addr <= ram_phys_addr + 1'b1 ; 
                            if (dma_ack_i == 1'b1) busmaster_state <= busmaster_read_done ; 
                         end
-								
+                        
                         // чтение данных с карты в буфер SDSPI 
- 					busmaster_readsector:			
+                busmaster_readsector:         
                         begin
                            sdspi_start <= 1'b1;          // запускаем SDSPI
-	                        sdspi_write_mode <= 1'b0;     // режим чтения
-	                        if (sdspi_io_done == 1'b1) busmaster_state <= busmaster_preparebus; // sdspi закончил работу
-								end	
-								
+                           sdspi_write_mode <= 1'b0;     // режим чтения
+                           if (sdspi_io_done == 1'b1) busmaster_state <= busmaster_preparebus; // sdspi закончил работу
+                        end   
+                        
                         // чтение данных - подготовка шины к DMA
                busmaster_preparebus :
                         begin
-								   sdspi_start <= 1'b0;
+                           sdspi_start <= 1'b0;
                            busmaster_state <= busmaster_read ; 
                            dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; // выставляем адрес на шину
                            dma_stb_o <= 1'b0 ;                        // снимаем строб данных 
@@ -986,7 +986,7 @@ sdspi sd1 (
                               rkdb <= sdbuf_dataout ;      // регистр данных RKDB
                               reply_count <= reply_count - 1'b1; // таймер ожидания ответа
                               if (|reply_count == 1'b0) begin
-										  // таймаут шины
+                                // таймаут шины
                                 nxm <= 1'b1;
                                 busmaster_state <= busmaster_read_done ; 
                               end  
@@ -1010,10 +1010,10 @@ sdspi sd1 (
                            dma_stb_o <= 1'b0 ; 
                            dma_we_o <= 1'b0 ; 
                            if (read_start == 1'b0) begin
-									   busmaster_state <= busmaster_idle ; // переходим в состояние ожидания команды
-										iocomplete <= 1'b0;                 // снимаем подтверждение окончания работы
+                              busmaster_state <= busmaster_idle ; // переходим в состояние ожидания команды
+                              iocomplete <= 1'b0;                 // снимаем подтверждение окончания работы
                            end 
-									else iocomplete <= 1'b1;  // подтверждаем окончание обмена
+                           else iocomplete <= 1'b1;  // подтверждаем окончание обмена
                         end
                         
                // этап 1 записи - подготовка шины к DMA
@@ -1069,19 +1069,19 @@ sdspi sd1 (
                busmaster_write_wait :
                         begin
                            sdspi_start <= 1'b1 ; 
-									sdspi_write_mode <= 1'b1;
+                           sdspi_write_mode <= 1'b1;
                            sdbuf_we <= 1'b0 ; 
                            if (sdspi_io_done == 1'b1)   begin
                               busmaster_state <= busmaster_write_done ; 
                               sdspi_start <= 1'b0 ; 
-  									   sdspi_write_mode <= 1'b0;
-										iocomplete <= 1'b1;
+                                sdspi_write_mode <= 1'b0;
+                              iocomplete <= 1'b1;
                            end 
                         end
                busmaster_write_done :
                         begin
                            if (write_start == 1'b0)  begin
-									   iocomplete <= 1'b0;
+                              iocomplete <= 1'b0;
                               busmaster_state <= busmaster_idle ; 
                            end 
                         end

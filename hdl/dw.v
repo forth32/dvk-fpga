@@ -122,14 +122,14 @@ reg rstreq;  // триггер запроса на программный сбр
       
 // интерфейс к SDSPI
 wire [26:0] sdcard_addr;  // адрес сектора карты
-wire sdspi_io_done;    // флаг окончагия чтения
+wire sdspi_io_done;       // флаг окончагия чтения
 wire sdcard_error;        // флаг ошибки
-wire [15:0] sdbuf_dataout;  // слово; читаемое из буфера чтения
+wire [15:0] sdbuf_dataout;// слово; читаемое из буфера чтения
 wire sdcard_idle;         // признак готовности контроллера
-reg sdspi_start;           // строб начала чтения
-reg sdspi_write_mode;          // строб начала записи
-reg [7:0] sdbuf_addr;    // адрес в буфере чтния/записи
-reg [15:0] sdbuf_datain;     // слово; записываемое в буфер записи
+reg sdspi_start;          // строб начала чтения
+reg sdspi_write_mode;     // строб начала записи
+reg [7:0] sdbuf_addr;     // адрес в буфере чтния/записи
+reg [15:0] sdbuf_datain;  // слово; записываемое в буфер записи
 reg write_error;
 reg sdbuf_write;
 
@@ -160,20 +160,21 @@ sdspi sd1 (
       .sdcard_idle(sdcard_idle),                  // сигнал готовности модуля к обмену
       
       // сигналы управления чтением - записью
-      .sdspi_start(sdspi_start),                // строб запуска ввода вывода
-      .sdspi_io_done(sdspi_io_done),            // флаг окончания обмена данными
-      .sdspi_write_mode(sdspi_write_mode),      // режим: 0 - чтение, 1 - запись
+      .sdspi_start(sdspi_start),                  // строб запуска ввода вывода
+      .sdspi_io_done(sdspi_io_done),              // флаг окончания обмена данными
+      .sdspi_write_mode(sdspi_write_mode),        // режим: 0 - чтение, 1 - запись
       .sdcard_error(sdcard_error),                // флаг ошибки
 
       // интерфейс к буферной памяти контроллера
-      .sdbuf_addr(sdbuf_addr),         // текущий адрес в буферах чтения и записи
-      .sdbuf_dataout(sdbuf_dataout),           // слово, читаемое из буфера чтения
-      .sdbuf_datain(sdbuf_datain),             // слово, записываемое в буфер записи
-      .sdbuf_we(sdbuf_write),             // разрешение записи буфера
-      .mode(sdmode),                               // режим ведущего-ведомого контроллера
-      .controller_clk(wb_clk_i),                   // синхросигнал общей шины
-      .reset(reset),                               // сброс
-      .sdclk(sdclock)                              // синхросигнал SD-карты
+      .sdbuf_addr(sdbuf_addr),                    // текущий адрес в буферах чтения и записи
+      .sdbuf_dataout(sdbuf_dataout),              // слово, читаемое из буфера чтения
+      .sdbuf_datain(sdbuf_datain),                // слово, записываемое в буфер записи
+      .sdbuf_we(sdbuf_write),                     // разрешение записи буфера
+      
+      .mode(sdmode),                              // режим ведущего-ведомого контроллера
+      .controller_clk(wb_clk_i),                  // синхросигнал общей шины
+      .reset(reset),                              // сброс
+      .sdclk(sdclock)                             // синхросигнал SD-карты
 ); 
    
 //**************************************
@@ -246,7 +247,7 @@ always @(posedge wb_clk_i)
          wstate <= w_prepare;
          write_error <= 1'b0;
          sdreq <= 1'b0;
-			sdbuf_write <= 1'b0;
+         sdbuf_write <= 1'b0;
       end
       
       // рабочие состояния
@@ -348,15 +349,15 @@ always @(posedge wb_clk_i)
                            if (sdack) // подтверждение получено
                               // если SD-модуль свободен, чтение еще не запущено и не завершено
                               if (sdcard_idle == 1'b1 & sdspi_start == 1'b0 & sdspi_io_done == 1'b0) begin
-										         sdspi_write_mode <= 1'b0; 
-                                       sdspi_start <= 1'b1 ; 
-                                       busy <= 1'b1;
+                                       sdspi_write_mode <= 1'b0; 
+                                       sdspi_start <= 1'b1 ;        // режим чтения
+                                       busy <= 1'b1;                // запускаем sdspi
                               end
-										// чтение окончено
+                              // чтение окончено
                               else if (sdspi_io_done == 1'b1 & sdspi_start == 1'b1) begin  
                                       sdspi_start <= 1'b0 ;        // снимаем запрос чтения
-                                      busy <= 1'b0;
-                                      start <= 1'b0;
+                                      busy <= 1'b0;                // снимаем занятость
+                                      start <= 1'b0;               // завершаем обработку команды
                                       if (sdcard_error == 1'b0)   begin        
                                       // чтение окончилось без ошибок
                                          sdbuf_addr <= 8'b00000000;   // инициализируем адрес секторного буфера
@@ -372,8 +373,8 @@ always @(posedge wb_clk_i)
                                case (wstate) 
                                  // подготовка к приему секторного буфера
                                  w_prepare: begin
-                                          drq <= 1'b1;
-														sdbuf_write <= 1'b1;
+                                          drq <= 1'b1;                 // запрос данных
+                                          sdbuf_write <= 1'b1;         // буфер sdspi - в режим записи
                                           sdbuf_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
                                           wstate <= w_skip;
                                        end   
@@ -383,7 +384,8 @@ always @(posedge wb_clk_i)
                                  // ожидание заполнения секторного буфера 
                                  w_waitdata:
                                        if (&sdbuf_addr == 1'b1) begin
-														sdbuf_write <= 1'b0;
+                                          // буфер заполнен
+                                          sdbuf_write <= 1'b0;
                                           drq <= 1'b0;
                                           wstate <= w_start;
                                        end
@@ -392,14 +394,14 @@ always @(posedge wb_clk_i)
                                  w_start: begin
                                        sdreq <= 1'b1;   // запрос доступа к карте
                                        if (sdack & (sdcard_idle == 1)) begin
-                                          sdspi_write_mode <= 1'b1 ; 
-														sdspi_start <= 1'b1;
-                                          busy <= 1'b1;
+                                          sdspi_write_mode <= 1'b1 ;  // ражим записи
+                                          sdspi_start <= 1'b1;        // запускаем sdspi
+                                          busy <= 1'b1;               // снимаем бит готовности контроллера
                                           wstate <= w_wait;
                                        end   
                                     end   
                                     
-                                 // ожидание окончание заиси сектора на карту   
+                                 // ожидание окончания записи сектора на карту   
                                  w_wait:
                                        if (sdspi_io_done == 1'b1) begin
                                           wstate <= w_done;
@@ -412,7 +414,7 @@ always @(posedge wb_clk_i)
                                     start <= 1'b0;                     // заканчиваем обработку команды
                                     busy <= 1'b0;
                                     wstate <= w_prepare;
-                                    if (sdcard_error) write_error <= 1'b1;
+                                    if (sdcard_error) write_error <= 1'b1; // была ошибка записи
                                  end   
                               endcase   
                            end
@@ -423,6 +425,8 @@ always @(posedge wb_clk_i)
                            end   
                endcase 
             end
+            
+            // нет активной команды - снимаем запрос доступа к карте
             else sdreq <= 1'b0;
    end 
 
