@@ -535,6 +535,7 @@ always @(posedge sdcard_sclk)  begin
 									  // 4 повторные ошибки - больше повторять не будем
                              card_error <= 1'b1 ;        // признак ошибка ввода-вывода
                              sd_state <= sd_waitidle;     // завершаем обработку команды
+ 								     io_done <= 1'b1;
 									end
 									// 4 попытки повтора команды
                            else sd_state <= sd_reset;
