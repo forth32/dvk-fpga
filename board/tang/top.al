@@ -2,7 +2,7 @@
 <Project>
     <Project_Created_Time>2021-03-10 07:42:39</Project_Created_Time>
     <TD_Version>4.6.18154</TD_Version>
-    <UCode>11111000</UCode>
+    <UCode>10110010</UCode>
     <Name>top</Name>
     <HardWare>
         <Family>EG4</Family>
@@ -63,6 +63,7 @@
             <File>../../hdl/m4/am4_seq.v</File>
             <File>../../hdl/m4/am4_wb.v</File>
             <File>ip-components/tang_user_rom.v</File>
+            <File>ip-components/tang_sectorbuf.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
@@ -78,8 +79,8 @@
         <RtlProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-03-23 18:32:05</Step_Last_Change>
-        <Current_Step>0</Current_Step>
+        <Step_Last_Change>2021-03-27 18:46:39</Step_Last_Change>
+        <Current_Step>60</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>

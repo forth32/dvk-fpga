@@ -176,3 +176,34 @@ tang_user_rom rom(
 );  
    
 endmodule
+
+//*********************************************************
+//* Буфер сектора для модуля sdspi
+//*********************************************************
+module sectorbuf (
+	input	[7:0]  address_a,
+	input	[7:0]  address_b,
+	input	  clock_a,
+	input	  clock_b,
+	input	[15:0]  data_a,
+	input	[15:0]  data_b,
+	input	  wren_a,
+	input	  wren_b,
+	output	[15:0]  q_a,
+	output	[15:0]  q_b
+);
+
+tang_sectorbuf sbuf( 
+  .doa(q_a),
+  .dob(q_b),
+  .dia(data_a),
+  .dib(data_b),
+  .addra(address_a),
+  .addrb(address_b),
+  .wea(wren_a),
+  .web(wren_b),
+  .clka(clock_a),
+  .clkb(clock_b)
+);
+	
+endmodule

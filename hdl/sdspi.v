@@ -14,17 +14,14 @@ module sdspi (
 
    input[26:0]     sdcard_addr,        // адрес сектора карты
    output reg      sdcard_idle,        // признак готовности контроллера
-   input           sdcard_read_start,  // строб начала чтения
-   input           sdcard_read_ack,    // флаг подтверждения окончания чтения
-   output reg      sdcard_read_done,   // флаг окончагия чтения
-   input           sdcard_write_start, // строб начала записи
-   input           sdcard_write_ack,   // флаг подтверждения команды записи
-   output reg      sdcard_write_done,  // флаг окончания записи
+   input           sdspi_start,       // строб начала чтения
+   output reg      sdspi_io_done,     // флаг окончагия чтения
+   input           sdspi_write_mode,  // 0-чтение, 1-запись
    output reg      sdcard_error,       // флаг ошибки
-   input[7:0]      sdcard_xfer_addr,   // адрес в буфере чтния/записи
-   output reg[15:0]sdcard_xfer_out,    // слово, читаемое из буфера чтения
-   input           sdcard_xfer_write,  // строб записи буфера
-   input[15:0]     sdcard_xfer_in,     // слово, записываемое в буфер записи
+   input  [7:0]    sdbuf_addr,   // адрес в буфере чтния/записи
+   output [15:0]   sdbuf_dataout,    // слово, читаемое из буфера чтения
+   input           sdbuf_we,  // строб записи буфера
+   input[15:0]     sdbuf_datain,     // слово, записываемое в буфер записи
    input           controller_clk,     // тактирование буферных операций - тактовый сигнал процессорной шины
    input           mode,               // режим работы: 0 - ведомый, 1 - ведущий
    input           sdclk,              // тактовый сигнал SD-карты
@@ -32,22 +29,34 @@ module sdspi (
 );
 
 //  процесс записи:                                  процесс чтения
+//
 //   - заполняем буфер
 //  host            sdspi                           host            sdspi
 //-------------------------------                   -------------------------------
-//  write_start=1                                   read_start=1
-//                  write_done=1                                     read_done=1
-//  write_ack=1                                      read_ack=1 
-//                  write_done=0                                     read_done=0
-//  write_ack=0                                     read_ack=0
-//
+//  start=1, write_mode=1                           start=1, write_mode=0
+//                  io_done=1                                     io_done=1
+//  start=0                                         start=0 
+//                  io_done=0                                     io_done=0
+//                                                   - вычитываем буфер
+//***********************************
+//*    буферная память
+//***********************************
+wire [15:0] bufdata_out;
+reg sbuf_write_en;
+reg [15:0] sdbufdata;
 
-   //****************************
-    // буферная память
-   //****************************
-   reg[15:0] rsector[0:255]; // буфер чтения
-   reg[15:0] wsector[0:255]; // буфер записи
-
+sectorbuf sbuf(
+	.address_a(sdbuf_addr),
+	.address_b(sectorindex),
+	.clock_a(controller_clk),
+	.clock_b(sdclk),
+	.data_a(sdbuf_datain),
+	.data_b(sdbufdata),
+	.wren_a(sdbuf_we),
+	.wren_b(sbuf_write_en),
+	.q_a(sdbuf_dataout),
+	.q_b(bufdata_out)
+);
    
    //****************************
    // Машина состояний SDкарты
@@ -97,51 +106,36 @@ module sdspi (
    reg[7:0] sectorindex; 
    reg[15:0] sd_word; 
    reg[3:0] idle_filter; 
-   reg[3:0] read_start_filter; 
-   reg[3:0] read_ack_filter; 
-   reg[3:0] read_done_filter; 
-   reg[3:0] write_start_filter; 
-   reg[3:0] write_ack_filter; 
-   reg[3:0] write_done_filter; 
+   reg[3:0] start_filter; 
+   reg[3:0] io_done_filter; 
+   reg[3:0] write_mode_filter; 
    reg[3:0] card_error_filter; 
    
    reg idle; 
-   reg read_start; 
-   reg read_ack; 
-   reg read_done; 
-   reg write_start; 
-   reg write_ack; 
-   reg write_done; 
+   reg start; 
+   reg io_done; 
+   reg write_mode; 
    reg card_error; 
-
+	reg [1:0] errcount;
+	
 //*******************************************   
 //* Интерфейс к хост-модулю
 //*******************************************   
 always @(posedge controller_clk) begin
          
-         // операции с буферами
-         sdcard_xfer_out <= rsector[sdcard_xfer_addr] ; // слово, читаемое из буфера чтения
-         if (sdcard_xfer_write == 1'b1)  wsector[sdcard_xfer_addr] <= sdcard_xfer_in; // запись слова в буфер записи
-         
          // сдвиговые регистры фильтров интерфейсных сигналов
          idle_filter <= {idle_filter[2:0], idle} ;  // фильтр сигнала готовности
-         read_start_filter <= {read_start_filter[2:0], sdcard_read_start} ; // фильтр строба чтения
-         read_ack_filter <= {read_ack_filter[2:0], sdcard_read_ack} ;       // фильтр подтверждения чтения
-         read_done_filter <= {read_done_filter[2:0], read_done} ;           // фильтр сигнала окончания записи
-         write_start_filter <= {write_start_filter[2:0], sdcard_write_start} ; // фильтр строба записи
-         write_ack_filter <= {write_ack_filter[2:0], sdcard_write_ack} ; 
-         write_done_filter <= {write_done_filter[2:0], write_done} ; 
+         start_filter <= {start_filter[2:0], sdspi_start} ; // фильтр строба чтения
+         io_done_filter <= {io_done_filter[2:0], io_done} ;           // фильтр сигнала окончания записи
+         write_mode_filter <= {write_mode_filter[2:0], sdspi_write_mode} ; // фильтр строба записи
          card_error_filter <= {card_error_filter[2:0], card_error} ; 
          
          // сброс контроллера
          if (reset == 1'b1)  begin
             sdcard_idle <= 1'b0 ; 
-            read_start <= 1'b0 ; 
-            read_ack <= 1'b0 ; 
-            sdcard_read_done <= 1'b0 ; 
-            write_start <= 1'b0 ; 
-            write_ack <= 1'b0 ; 
-            sdcard_write_done <= 1'b0 ; 
+            start <= 1'b0 ; 
+            sdspi_io_done <= 1'b0 ; 
+            write_mode <= 1'b0 ; 
             sdcard_error <= 1'b0 ; 
          end
          
@@ -152,28 +146,16 @@ always @(posedge controller_clk) begin
             else if (idle_filter == {4{1'b1}}) sdcard_idle <= 1'b1 ;
             
             // сигнал начала чтения
-            if (read_start_filter == {4{1'b0}}) read_start <= 1'b0 ; 
-            else if (read_start_filter == {4{1'b1}})  read_start <= 1'b1 ; 
-
-            // сигнал подтверждения чтения
-            if (read_ack_filter == {4{1'b0}})      read_ack <= 1'b0 ; 
-            else if (read_ack_filter == {4{1'b1}}) read_ack <= 1'b1 ; 
+            if (start_filter == {4{1'b0}}) start <= 1'b0 ; 
+            else if (start_filter == {4{1'b1}})  start <= 1'b1 ; 
 
             // строб окончания чтения
-            if (read_done_filter == {4{1'b0}}) sdcard_read_done <= 1'b0 ; 
-            else if (read_done_filter == {4{1'b1}})  sdcard_read_done <= 1'b1 ; 
+            if (io_done_filter == {4{1'b0}}) sdspi_io_done <= 1'b0 ; 
+            else if (io_done_filter == {4{1'b1}})  sdspi_io_done <= 1'b1 ; 
 
             // сигнал начала записи
-            if (write_start_filter == {4{1'b0}})     write_start <= 1'b0 ; 
-            else if (write_start_filter == {4{1'b1}})  write_start <= 1'b1 ; 
-
-            // строб подтверждения записи
-            if (write_ack_filter == {4{1'b0}})       write_ack <= 1'b0 ; 
-            else if (write_ack_filter == {4{1'b1}})  write_ack <= 1'b1 ; 
-
-            // строб окончания записи
-            if (write_done_filter == {4{1'b0}}) sdcard_write_done <= 1'b0 ; 
-            else if (write_done_filter == {4{1'b1}}) sdcard_write_done <= 1'b1 ; 
+            if (write_mode_filter == {4{1'b0}})     write_mode <= 1'b0 ; 
+            else if (write_mode_filter == {4{1'b1}})  write_mode <= 1'b1 ; 
 
             // сигнал ошибки карты
             if (card_error_filter == {4{1'b0}}) sdcard_error <= 1'b0 ; 
@@ -194,7 +176,7 @@ always @ (posedge sdclk) sdcounter <= sdcounter + 1'b1;
 reg sdslow;  
 
 // тактовый сигнал карты
-assign sdcard_sclk = sdslow? sdclk : sdcounter[5];
+assign sdcard_sclk =/* sdslow?*/ sdclk /*: sdcounter[5]*/;
 
 //*******************************************   
 //* Обработка обмена данными с картой по SPI
@@ -206,6 +188,8 @@ always @(posedge sdcard_sclk)  begin
                   // режим ведущего  - переходим к инициализации карты
                   sd_state <= sd_reset ; 
                   sdslow <= 1'b0;       // инициализация идет на низкой скорости
+						idle <= 1'b0;
+    				   sbuf_write_en <= 1'b0;
                end   
                else begin 
                   // режим ведомого - переходим в состояние ожидания
@@ -217,9 +201,9 @@ always @(posedge sdcard_sclk)  begin
                   sdcard_mosi <= 1'b1 ;   // MOSI=1
                   sdcard_cs <= 1'b0;      // CS=0
                end
+					errcount <= 2'b00;
                do_readr3 <= 1'b0 ; 
-               read_done <= 1'b0 ;       // снимаем флаг окончания чтения
-               write_done <= 1'b0 ;      // и записи
+               io_done <= 1'b0 ;       // снимаем флаг окончания чтения
                card_error <= 1'b0 ;      // снимаем флаг ошибки
                sdcard_debug <= 4'b0011 ; 
          end
@@ -231,12 +215,13 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            counter <= 10'd500 ; // счетчик ожидания перед инициализацией
                            sdslow <= 1'b0;      // инициализация идет на низкой скорости
+								   sbuf_write_en <= 1'b0;
                            do_readr3 <= 1'b0 ; 
                            do_readr7 <= 1'b0 ; 
                            sdcard_cs <= 1'b1 ;     // CS=1
                            sdcard_mosi <= 1'b1 ;   // MOSI=1
                            sd_state <= sd_sendcmd0 ; // следующий этап - CMD0
-                           idle <= 1'b0 ; 
+//                           idle <= 1'b0 ; 
                            sdcard_debug <= 4'b0011 ; 
                         end
                // Отправка cmd0
@@ -290,7 +275,6 @@ always @(posedge sdcard_sclk)  begin
                sd_checkacmd41 :
                         begin
                            if (sd_r1 == 7'b0000000) begin
-//                              sd_state <= sd_waitidle ; // Правильный ответ - переходим к рабочему циклу обработки команд                           
                               sd_state <= sd_idle ; // Правильный ответ - переходим к рабочему циклу обработки команд                           
                               sdslow <= 1'b1;       // устанавилваем полную скорость SPI-интерфейса
                            end   
@@ -299,39 +283,31 @@ always @(posedge sdcard_sclk)  begin
                // Ожидание команды обмена
                sd_idle :
                         begin
-                           sdcard_debug[0] <= 1'b0 ;   
-                           sdcard_debug[1] <= 1'b0;
-                           sdcard_debug[3] <= 1'b0 ; 
-                           if ((read_start | write_start) == 1'b0) begin
+								   // бездействие
+                           if (start == 1'b0) begin
                              idle <= 1'b1 ;   // флаг готовности к обмену 
                              sdcard_cs <= 1'b1;
-                             sdcard_debug[2] <= 1'b0 ; 
                            end  
-
-                           // запуск чтения
-                           if (read_start == 1'b1)  begin
-                                sdcard_cs <= 1'b0;
+                           // запуск ввода-вывода
+                           if (start == 1'b1) begin
+                               sdcard_cs <= 1'b0;
                                card_error <= 1'b0 ; 
                                idle <= 1'b0 ;    // снимаем флаг готовности
                                counter <= 48 ;   // длина команды
-                               // команда чтения сектора для SDHC
-                               sd_cmd <= {8'h51, 5'b00000, sdcard_addr, 8'h01} ; 
                                sd_state <= sd_send_cmd ; // отправляем команду
-                               sd_nextstate <= sd_read_data_waitstart ; // и переходим к ожиданию стартового токена
-                               sdcard_debug[2] <= 1'b1 ; 
-                           end 
+                               // запуск чтения
+ 									    if (write_mode == 1'b0)  begin
+                                 // команда чтения сектора для SDHC
+                                 sd_cmd <= {8'h51, 5'b00000, sdcard_addr, 8'h01} ; 
+                                 sd_nextstate <= sd_read_data_waitstart ; // и переходим к ожиданию стартового токена
+                               end 
                            
-                           // запуск записи
-                           else if (write_start == 1'b1)  begin
-                                sdcard_cs <= 1'b0;
-                               card_error <= 1'b0 ; 
-                               idle <= 1'b0 ; 
-                               counter <= 48 ; 
-                               sd_cmd <= {8'h58 , 5'b00000, sdcard_addr, 8'h01 } ; 
-                               sd_state <= sd_send_cmd ; 
-                               sd_nextstate <= sd_write_checkresponse ; 
-                               sdcard_debug[3] <= 1'b1 ; 
-                           end 
+                               // запуск записи
+                               else  begin
+                                 sd_cmd <= {8'h58 , 5'b00000, sdcard_addr, 8'h01 } ; 
+                                 sd_nextstate <= sd_write_checkresponse ; 
+                               end 
+									end 
                         end
                         
                // ожидание готовности карты принять данные для записи
@@ -348,12 +324,12 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            if (counter != 0)  begin
                               counter <= counter - 1'b1 ; 
-                              sectorindex <= 0 ; 
+                              sectorindex <= 8'o0 ; 
                               sdcard_mosi <= 1'b1 ; 
                            end
                            else begin
                               sdcard_mosi <= 1'b0 ; 
-                              sd_word <= {wsector[sectorindex][7:0], wsector[sectorindex][15:8]} ; 
+                              sd_word <= {bufdata_out[7:0], bufdata_out[15:8]} ; 
                               sectorindex <= sectorindex + 1'b1 ; 
                               sd_state <= sd_write ; 
                               counter <= 15 ; 
@@ -366,8 +342,8 @@ always @(posedge sdcard_sclk)  begin
                            sd_word <= {sd_word[14:0], 1'b0} ; 
                            counter <= counter - 1'b1 ; 
                            if (counter == 0) begin
-                              sd_word <= {wsector[sectorindex][7:0], wsector[sectorindex][15:8]} ; 
-                              if (sectorindex == 255)  sd_state <= sd_write_last ; 
+                              sd_word <= {bufdata_out[7:0], bufdata_out[15:8]} ; 
+                              if (sectorindex == 8'd255)  sd_state <= sd_write_last ; 
                               sectorindex <= sectorindex + 1'b1 ; 
                               counter <= 15 ; 
                            end 
@@ -409,7 +385,7 @@ always @(posedge sdcard_sclk)  begin
                            begin
                               counter <= 7 ; 
                               sd_state <= sd_wait ; 
-                              write_done <= 1'b1 ;         // поднимаем строб окончания записи
+                              io_done <= 1'b1 ;         // поднимаем строб окончания записи
                               sd_nextstate <= sd_waitidle ; 
                            end 
                         end
@@ -420,7 +396,8 @@ always @(posedge sdcard_sclk)  begin
                               if (sdcard_miso == 1'b0) begin
                                  sd_state <= sd_read_data ; 
                                  counter <= 15 ; 
-                                 sectorindex <= 0 ; 
+  										   sbuf_write_en <= 1'b0;
+                                 sectorindex <= 8'b11111111 ; 
                               end 
                            end
                            else  sd_state <= sd_error ; 
@@ -430,11 +407,14 @@ always @(posedge sdcard_sclk)  begin
                         begin
                            if (counter == 0)  begin
                               counter <= 15 ; 
-                              rsector[sectorindex] <= {sd_word[6:0], sdcard_miso, sd_word[14:7]}; 
-                              if (sectorindex == 255)  sd_state <= sd_read_crc ; 
-                              else    sectorindex <= sectorindex + 1'b1 ; 
+										sdbufdata <=  {sd_word[6:0], sdcard_miso, sd_word[14:7]};
+										sbuf_write_en <= 1'b1;
+								   	sectorindex <= sectorindex + 1'b1 ; 
+									   sbuf_write_en <= 1'b1;
+                              if (sectorindex == 8'b11111110) sd_state <= sd_read_crc ; 
                            end
                            else   begin
+										sbuf_write_en <= 1'b0;
                               sd_word <= {sd_word[14:0], sdcard_miso} ; 
                               counter <= counter - 1'b1 ; 
                            end 
@@ -442,11 +422,12 @@ always @(posedge sdcard_sclk)  begin
                // чтение поля CRC после блока даннх
                sd_read_crc :
                         begin
+								   sbuf_write_en <= 1'b0;
                            if (counter == 0)  begin
                               counter <= 15 ; 
                               sd_state <= sd_wait ; 
                               sd_nextstate <= sd_waitidle ; 
-                              read_done <= 1'b1 ;       // поднимаем флаг окончания 
+                              io_done <= 1'b1 ;       // поднимаем флаг окончания 
                            end
                            else  begin
                               sd_word <= {sd_word[14:0], sdcard_miso} ; 
@@ -539,22 +520,25 @@ always @(posedge sdcard_sclk)  begin
                // ожидание снятия запроса ввода-вывода
             sd_waitidle:
                     begin
-                           // хост подтвержил окончание чтения
-                    if (read_ack == 1'b1) read_done <= 1'b0 ;  // снимаем строб готовности данных
-
-                           // хост подтвердил окончание записи
-                           if (write_ack == 1'b1) write_done <= 1'b0 ; 
-                            
                      // хост снял запрос ввода-вывода - переходим в idle 
-                     if ((read_ack|write_ack|read_start|write_start) == 1'b0) sd_state <= sd_idle;
+                     if (start == 1'b0) begin
+							   sd_state <= sd_idle;
+								io_done <= 1'b0;
+								errcount <= 2'b00;
+							end	
                    end
                // обработка ошибочных состояний          
                sd_error :
                         begin
-                           card_error <= 1'b1 ; 
-                           sd_state <= sd_reset;
-//                           write_done <= write_start;
-//                           read_done <= read_start;
+								   errcount <= errcount + 1'b1;  // счетчик ошибок
+									if (errcount == 2'b11) begin
+									  // 4 повторные ошибки - больше повторять не будем
+                             card_error <= 1'b1 ;        // признак ошибка ввода-вывода
+                             sd_state <= sd_waitidle;     // завершаем обработку команды
+ 								     io_done <= 1'b1;
+									end
+									// 4 попытки повтора команды
+                           else sd_state <= sd_reset;
                         end
             endcase 
          end 
