@@ -63,11 +63,11 @@ module qmtech(
 //********************************************
 //* Светодиоды
 //********************************************
-wire rk_led, dw_led, my_led, dx_led, timer_led;
+wire rk_led, dw_led, dm_led, my_led, dx_led, timer_led;
 
-assign led[0]=rk_led;        // запрос обмена диска RK
+assign led[0]=rk_led;        // запрос обмена диска RK 
 assign led[1]=dx_led;        // запрос обмена диска DX
-assign led[2]=my_led;        // запрос обмена диска MY 
+assign led[2]=dm_led;        // запрос обмена диска MY 
 assign led[3]=dw_led;        // запрос обмена диска DW
 assign led[4]=timer_led;     // индикация включения таймера
 
@@ -222,6 +222,7 @@ topboard kernel(
    // индикаторные светодиоды      
    .rk_led(rk_led),               // запрос обмена диска RK
    .dw_led(dw_led),               // запрос обмена диска DW
+   .dm_led(dm_led),               // запрос обмена диска DM
    .my_led(my_led),               // запрос обмена диска MY
    .dx_led(dx_led),               // запрос обмена диска DX
    .timer_led(timer_led),         // индикация включения таймера

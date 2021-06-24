@@ -190,12 +190,12 @@ wire bus_read_req = bus_strobe & ~wb_we_i;     // запрос чтения
 wire bus_write_req = bus_strobe & wb_we_i;     // запрос записи
 wire reset=wb_rst_i;
 
-reg interrupt_trigger;     // триггер запроса прерывания
 // состояние машины обработки прерывания
 parameter[1:0] i_idle = 0; 
 parameter[1:0] i_req = 1; 
 parameter[1:0] i_wait = 2; 
 reg[1:0] interrupt_state; 
+reg int_req; 
 
 // регистр управления/состояния 1 - rkcs1 - 177440
 reg rkcs1_go;             // запуск команды
@@ -255,7 +255,6 @@ reg write_start;         // запуск записи
 reg read_start;          // запуск чтения
 reg iocomplete;          // признак завершения работы DMA-контроллера
 reg [5:0] reply_count;   // таймер ожидания ответа при DMA-обмене
-reg int_req; 
 reg start_latch; 
 
 assign rkcs1_cerr=rker_ilf | rker_ski | rker_nxf | rker_coe | rker_idae | rker_dck | rker_dtype;
@@ -343,7 +342,6 @@ always @(posedge wb_clk_i)  begin
 	if (reset | rkcs2_sclr) begin
 
    	// сброс системы
-		interrupt_trigger <= 1'b0 ; 
 		interrupt_state <= i_idle ; 
 		int_req <= 1'b0 ; 
 		start_latch <= 1'b0;
@@ -490,11 +488,6 @@ always @(posedge wb_clk_i)  begin
 										rkcs1_ie <= wb_dat_i[6] ;       // разрешение прерываний
 										// программная симуляция прерывания - принудительная установка IE и RDY
 										if (wb_dat_i[7:6] == 2'b11) int_req <= 1'b1;
-										// поиск условия возникновения прерывания
-										if (wb_dat_i[6] == 1'b1 &       // установка IE, разрешение прерывания 
-											 wb_dat_i[0] == 1'b0 &       // бит GO не установлен
-											 rkcs1_rdy == 1'b1)           // контроллер готов к приему команды  
-											 interrupt_trigger <= 1'b1 ; // это сразу приводит к прерыванию
 									end
 					// 777442  RKWC - счетчик слов для обмена данными
 					4'b0001 :   begin 
@@ -606,7 +599,7 @@ always @(posedge wb_clk_i)  begin
 									end							  
 				//------------------------------------------------------------
 				// разгрузка тома
-					4'b0010:    begin
+					4'b0011:    begin
 										rkds_vv[devnum] <= 1'b0;
 										start <= 1'b0;
 									end				                 			
