@@ -281,7 +281,8 @@ reg[3:0] DMA_state;
 reg [8:0] dma_datacounter;
 
 // интерфейс к SDSPI
-wire [26:0] sdcard_addr;       // адрес сектора карты
+wire [26:0] sdaddr;            // адрес сектора карты 
+reg  [26:0] sdcard_addr;       // буфер для хранения вычисленного адреса
 wire sdcard_error;             // флаг ошибки
 wire [15:0] sdbuf_dataout;     // слово; читаемое из буфера чтения
 wire sdcard_idle;              // признак готовности контроллера
@@ -831,9 +832,9 @@ always @(posedge wb_clk_i)  begin
             DMA_idle :
                         begin
                         nxm <= 1'b0 ; //  снимаем флаг ошибки nxm
-                        
                         // старт процедуры записи
                         if (write_start == 1'b1) begin
+									 sdcard_addr <= sdaddr;                   // получаем адрес SD-сектора                
                             dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                             if (dma_gnt == 1'b1) begin               // ждем подтверждения DMA
                                 DMA_state <= DMA_write1 ; // переходим к этапу 1 записи
@@ -853,6 +854,7 @@ always @(posedge wb_clk_i)  begin
                         end
                         // старт процедуры чтения
                         else if (read_start == 1'b1) begin
+									     sdcard_addr <= sdaddr;                       // получаем адрес SD-сектора   
                                 DMA_state <= DMA_readsector;                 // переходим к чтению данных
                                 // коррекция счетчика читаемых слов
                                 if (wcp >= 16'o400)  sector_data_index <= 9'o400;             // запрошен сектор и больше
@@ -1028,6 +1030,6 @@ assign hd_offset = (rkda_hd == 2'd0) ? 16'd0  :
 //
 assign drv_offset = devnum << 16; // округляем размер устройства до 10000h секторов
 // полный абсолютный адрес 
-assign sdcard_addr = drv_offset + hd_offset + cyl_offset + rkda_sc + start_offset ;
+assign sdaddr = drv_offset + hd_offset + cyl_offset + rkda_sc + start_offset ;
 
 endmodule

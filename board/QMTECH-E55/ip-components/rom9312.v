@@ -129,53 +129,6 @@ module rom9312l (
 		altsyncram_component.width_byteena_a = 1;
 endmodule
 
-//______________________________________________________________________________
-// ROM 9312 H
-module m9312h(
-   input          wb_clk_i,
-   input  [15:0]  wb_adr_i,
-   output [15:0]  wb_dat_o,
-   input          wb_stb_i,
-   output         wb_ack_o
-);
-reg [1:0]ack;
-
-rom9312h romh(
-   .address(wb_adr_i[8:1]),
-   .clock(wb_clk_i),
-   .q(wb_dat_o));
-
-assign wb_ack_o = wb_stb_i & ack[1];
-always @ (posedge wb_clk_i) begin
-   ack[0] <= wb_stb_i;
-   ack[1] <= wb_stb_i & ack[0];
-end
-endmodule
-
-//______________________________________________________________________________
-// ROM 9312 L
-module m9312l(
-   input          wb_clk_i,
-   input  [15:0]  wb_adr_i,
-   output [15:0]  wb_dat_o,
-   input          wb_stb_i,
-   output         wb_ack_o
-);
-reg [1:0]ack;
-
-rom9312l roml(
-   .address(wb_adr_i[8:1]),
-   .clock(wb_clk_i),
-   .q(wb_dat_o));
-
-assign wb_ack_o = wb_stb_i & ack[1];
-always @ (posedge wb_clk_i) begin
-   ack[0] <= wb_stb_i;
-   ack[1] <= wb_stb_i & ack[0];
-end
-endmodule
-
-
 
 
 

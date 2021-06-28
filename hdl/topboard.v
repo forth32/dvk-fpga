@@ -126,8 +126,8 @@ wire dw_stb;
 wire rx_stb;
 wire my_stb;
 wire kgd_stb;
-wire romh_stb;             
-wire roml_stb;             
+wire m9312h_stb;             
+wire m9312l_stb;             
 
 // линии подтверждения обмена, исходяшие из устройства
 wire uart1_ack;
@@ -140,8 +140,8 @@ wire dw_ack;
 wire rx_ack;
 wire my_ack;
 wire kgd_ack;
-wire romh_ack;             
-wire roml_ack;             
+wire m9312h_ack;             
+wire m9312l_ack;             
 
 // линии подтверждения, входящие в DMA-контроллеры устройств
 wire rk11_dma_ack;
@@ -159,8 +159,8 @@ wire [15:0] dw_dat;
 wire [15:0] rx_dat;
 wire [15:0] my_dat;
 wire [15:0] kgd_dat;
-wire [15:0] romh_dat;             
-wire [15:0] roml_dat;             
+wire [15:0] m9312h_dat;             
+wire [15:0] m9312l_dat;             
 
 
 // линии процессорных сбросов и прерываний                                       
@@ -367,14 +367,14 @@ wire [31:0] baud2;        // делитель скорости второго п
 // Согласование скорости с терминальным модулем
 wire [31:0]   terminal_baud;    // делитель, соответствующий текущей скорости терминала                     
 assign  terminal_baud = 
-  (vspeed == 3'd0)   ? 32'd767: // 1200
-  (vspeed == 3'd1)   ? 32'd383: // 2400
-  (vspeed == 3'd2)   ? 32'd191: // 4800
-  (vspeed == 3'd3)   ? 32'd95:  // 9600
-  (vspeed == 3'd4)   ? 32'd47:  // 19200
-  (vspeed == 3'd5)   ? 32'd23:  // 38400
-  (vspeed == 3'd6)   ? 32'd15:  // 57600
-                       32'd7;   // 115200
+  (vspeed == 3'd0)   ? 32'd767: 32'D0 | // 1200
+  (vspeed == 3'd1)   ? 32'd383: 32'D0 | // 2400
+  (vspeed == 3'd2)   ? 32'd191: 32'D0 | // 4800
+  (vspeed == 3'd3)   ? 32'd95: 32'D0 |  // 9600
+  (vspeed == 3'd4)   ? 32'd47: 32'D0 |  // 19200
+  (vspeed == 3'd5)   ? 32'd23: 32'D0 |  // 38400
+  (vspeed == 3'd6)   ? 32'd15: 32'D0 |  // 57600
+  (vspeed == 3'd6)   ? 32'd7:  32'D0 ;  // 115200
                        
 // Выбор скорости второго UART                        
 // assign  baud2 = 921600/`UART2SPEED-1;
@@ -412,14 +412,14 @@ wbc_uart #(.REFCLK(`clkref)) uart1
    .wb_stb_i(uart1_stb),
    .wb_ack_o(uart1_ack),
 
-   .tx_dat_o(uart1_txd),
-   .rx_dat_i(uart1_rxd),
+   .txd(uart1_txd),
+   .rxd(uart1_rxd),
 
    .tx_cts_i(1'b0),
    .tx_irq_o(irpstx_irq),
-   .tx_ack_i(irpstx_iack),
+   .tx_iack_i(irpstx_iack),
    .rx_irq_o(irpsrx_irq),
-   .rx_ack_i(irpsrx_iack),
+   .rx_iack_i(irpsrx_iack),
 
    .cfg_bdiv(uart1_speed),
    .cfg_nbit(2'b11),
@@ -445,13 +445,13 @@ wbc_uart #(.REFCLK(`clkref)) uart2
    .wb_ack_o(uart2_ack),
 
    .tx_cts_i(1'b0),
-   .tx_dat_o(uart2_txd),
-   .rx_dat_i(uart2_rxd),
+   .txd(uart2_txd),
+   .rxd(uart2_rxd),
 
    .tx_irq_o(irpstx2_irq),
-   .tx_ack_i(irpstx2_iack),
+   .tx_iack_i(irpstx2_iack),
    .rx_irq_o(irpsrx2_irq),
-   .rx_ack_i(irpsrx2_iack),
+   .rx_iack_i(irpsrx2_iack),
 
    .cfg_bdiv(uart2_speed),
    .cfg_nbit(2'b11),
@@ -570,24 +570,38 @@ assign lpt_irq=1'b0;
 //*******************************************
 //* ПЗУ монитора 9312
 //*******************************************
-
+`ifdef M9312_module
 // консоль, 165000-165777
-m9312l rom_console(
-   .wb_clk_i(wb_clk),
-   .wb_adr_i(wb_adr),
-   .wb_dat_o(roml_dat),
-   .wb_stb_i(roml_stb),
-   .wb_ack_o(roml_ack)
-);
+rom9312l rom_console(
+   .address(wb_adr[8:1]),
+   .clock(wb_clk),
+   .q(m9312l_dat));
+
+reg [1:0]m9312l_ack_reg;
+always @ (posedge wb_clk) begin
+   m9312l_ack_reg[0] <= m9312l_stb & ~wb_we;
+   m9312l_ack_reg[1] <= m9312l_stb & ~wb_we & m9312l_ack_reg[0];
+end
+assign m9312l_ack = wb_stb & m9312l_ack_reg[1];
 
 // загрузчики, 173000-173777
-m9312h rom_boot(
-   .wb_clk_i(wb_clk),
-   .wb_adr_i(wb_adr),
-   .wb_dat_o(romh_dat),
-   .wb_stb_i(romh_stb),
-   .wb_ack_o(romh_ack)
-);
+rom9312h rom_boot(
+   .address(wb_adr[8:1]),
+   .clock(wb_clk),
+   .q(m9312h_dat));
+
+reg [1:0]m9312h_ack_reg;
+always @ (posedge wb_clk) begin
+   m9312h_ack_reg[0] <= m9312h_stb & ~wb_we;
+   m9312h_ack_reg[1] <= m9312h_stb & ~wb_we & m9312h_ack_reg[0];
+end
+assign m9312h_ack = wb_stb & m9312h_ack_reg[1];
+
+`else 
+assign m9312l_ack=1'b0;
+assign m9312h_ack=1'b0;
+`endif
+
 
 //****************************************************
 //*  Дисковый контроллер RK11D
@@ -1088,8 +1102,8 @@ assign my_stb     = wb_stb & wb_cyc & (wb_adr[15:2] == (16'o172140 >> 2));   // 
 assign kgd_stb    = wb_stb & wb_cyc & (wb_adr[15:3] == (16'o176640 >> 3));   // КГД - 176640-176646
 
 // ROM 9312
-assign romh_stb   = wb_stb & wb_cyc & (wb_adr[15:9] == 7'o173);              // загрузчики, 173000-173776
-assign roml_stb   = wb_stb & wb_cyc & (wb_adr[15:9] == 7'o165);              // консоль, 165000-165776
+assign m9312h_stb   = wb_stb & wb_cyc & (wb_adr[15:9] == 7'o173);              // загрузчики, 173000-173776
+assign m9312l_stb   = wb_stb & wb_cyc & (wb_adr[15:9] == 7'o165);              // консоль, 165000-165776
 
 // ПЗУ пользователя
 `ifdef userrom
@@ -1109,7 +1123,7 @@ assign sdram_stb =  (wb_stb & wb_cyc & (wb_adr[15:13] != 3'b111)) | sysram_stb;
 `endif
 
 // Сигналы подтверждения - собираются через OR со всех устройств
-assign global_ack  = sdram_ack | rom_ack | uart1_ack | uart2_ack | rk11_ack | rk611_ack | lpt_ack | dw_ack | rx_ack | my_ack | kgd_ack | romh_ack | roml_ack;
+assign global_ack  = sdram_ack | rom_ack | uart1_ack | uart2_ack | rk11_ack | rk611_ack | lpt_ack | dw_ack | rx_ack | my_ack | kgd_ack | m9312h_ack | m9312l_ack;
 
 // Мультиплексор выходных шин данных всех устройств
 assign wb_mux = 
@@ -1124,8 +1138,8 @@ assign wb_mux =
      | (rx_stb    ? rx_dat    : 16'o000000)
      | (my_stb    ? my_dat    : 16'o000000)
      | (kgd_stb   ? kgd_dat   : 16'o000000)
-     | (romh_stb  ? romh_dat  : 16'o000000)
-     | (roml_stb  ? roml_dat  : 16'o000000)
+     | (m9312h_stb  ? m9312h_dat  : 16'o000000)
+     | (m9312l_stb  ? m9312l_dat  : 16'o000000)
 ;
 
   

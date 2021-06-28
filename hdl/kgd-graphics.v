@@ -106,7 +106,7 @@ always @(posedge wb_clk_i)
             2'b10:   wb_dat_o <= {2'b0, areg};
                         
             // 176646 - регистр счетчика
-            2'b11:   wb_dat_o <= lineadr[16:3]+col[10:4];
+            2'b11:   wb_dat_o <= {row[4:0], col[10:0]};
          endcase         
    
       // запись регистров   

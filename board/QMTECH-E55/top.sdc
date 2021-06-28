@@ -130,8 +130,34 @@ set_clock_uncertainty -fall_from [get_clocks {clk}] -fall_to [get_clocks {clk}] 
 #**************************************************************
 
 set_false_path -from [get_keepers {topboard:kernel|wbc_rst:reset|key_down}] -to [get_keepers {topboard:kernel|wbc_rst:reset|key_syn[0]}]
+set_false_path -from {topboard:kernel|wbc_rst:reset|pwr_event} -to {topboard:kernel|wbc_rst:reset|count_dc[*]}
+set_false_path -from {topboard:kernel|wbc_rst:reset|pwr_event} -to {topboard:kernel|wbc_rst:reset|count_ac[*]}
+set_false_path -from {topboard:kernel|wbc_rst:reset|pwr_event} -to {topboard:kernel|wbc_rst:reset|count_pw[*]}
+set_false_path -from {topboard:kernel|wbc_rst:reset|pwr_event} -to {topboard:kernel|wbc_rst:reset|sys_dclo}
+set_false_path -from {topboard:kernel|wbc_rst:reset|pwr_event} -to {topboard:kernel|wbc_rst:reset|sys_rst}
+set_false_path -from {topboard:kernel|wbc_rst:reset|pwr_event} -to {topboard:kernel|wbc_rst:reset|sys_aclo}
+set_false_path -from {topboard:kernel|wbc_rst:reset|pwr_event} -to {topboard:kernel|wbc_rst:reset|pwr_rst}
 
+set_false_path -from {topboard:kernel|ksm:terminal|vga:video|row[*]} -to {topboard:kernel|kgd:graphics|wb_dat_o[*]}
+set_false_path -from {topboard:kernel|ksm:terminal|vga:video|col[*]} -to {topboard:kernel|kgd:graphics|wb_dat_o[*]}
 
+set_false_path -from {topboard:kernel|ksm:terminal|wbc_uart:uart|tx_csr_brk} -to {topboard:kernel|wbc_uart:uart1|rx_rdata_reg[0]}
+set_false_path -from {topboard:kernel|ksm:terminal|wbc_uart:uart|tx_csr_brk} -to {topboard:kernel|wbc_uart:uart2|rx_rdata_reg[0]}
+set_false_path -from {topboard:kernel|wbc_uart:uart1|tx_csr_brk} -to {topboard:kernel|ksm:terminal|wbc_uart:uart|rx_rdata_reg[0]}
+set_false_path -from {topboard:kernel|wbc_uart:uart2|tx_csr_brk} -to {topboard:kernel|ksm:terminal|wbc_uart:uart|rx_rdata_reg[0]}
+
+set_false_path -from {topboard:kernel|ksm:terminal|wbc_uart:uart|tx_shr[0]} -to {topboard:kernel|wbc_uart:uart1|rx_rdata_reg[0]}
+set_false_path -from {topboard:kernel|ksm:terminal|wbc_uart:uart|tx_shr[0]} -to {topboard:kernel|wbc_uart:uart2|rx_rdata_reg[0]}
+set_false_path -from {topboard:kernel|wbc_uart:uart1|tx_shr[0]} -to {topboard:kernel|ksm:terminal|wbc_uart:uart|rx_rdata_reg[0]}
+set_false_path -from {topboard:kernel|wbc_uart:uart2|tx_shr[0]} -to {topboard:kernel|ksm:terminal|wbc_uart:uart|rx_rdata_reg[0]}
+
+set_false_path -from {topboard:kernel|ksm:terminal|vregs:videoreg|vtcsr[0]} -to {topboard:kernel|wbc_uart:uart1|rx_rdata_reg[0]}
+set_false_path -from {topboard:kernel|ksm:terminal|vregs:videoreg|vtcsr[0]} -to {topboard:kernel|wbc_uart:uart2|rx_rdata_reg[0]}
+
+set_false_path -from {topboard:kernel|ksm:terminal|vregs:videoreg|vtcsr[*]} -to {topboard:kernel|wbc_uart:uart1|baud_div[*]}
+set_false_path -from {topboard:kernel|ksm:terminal|vregs:videoreg|vtcsr[*]} -to {topboard:kernel|wbc_uart:uart2|baud_div[*]}
+
+set_false_path -from {topboard:kernel|wbc_rst:reset|sys_aclo} -to {topboard:kernel|mc1201_02:cpu|vm2_wb:cpu|io_st[*]}
 #**************************************************************
 # Set Multicycle Path
 #**************************************************************
