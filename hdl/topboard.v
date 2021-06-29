@@ -126,8 +126,6 @@ wire dw_stb;
 wire rx_stb;
 wire my_stb;
 wire kgd_stb;
-wire m9312h_stb;             
-wire m9312l_stb;             
 
 // линии подтверждения обмена, исходяшие из устройства
 wire uart1_ack;
@@ -140,8 +138,6 @@ wire dw_ack;
 wire rx_ack;
 wire my_ack;
 wire kgd_ack;
-wire m9312h_ack;             
-wire m9312l_ack;             
 
 // линии подтверждения, входящие в DMA-контроллеры устройств
 wire rk11_dma_ack;
@@ -159,8 +155,6 @@ wire [15:0] dw_dat;
 wire [15:0] rx_dat;
 wire [15:0] my_dat;
 wire [15:0] kgd_dat;
-wire [15:0] m9312h_dat;             
-wire [15:0] m9312l_dat;             
 
 
 // линии процессорных сбросов и прерываний                                       
@@ -539,10 +533,10 @@ assign genable=1'b0;
 assign vgavideo_g=1'b0;
 `endif
 
-`ifdef IRPR_module
 //**********************************
 //*  ИРПР
 //**********************************
+`ifdef IRPR_module
 irpr printer (
    .wb_clk_i(wb_clk),
    .wb_rst_i(sys_init),
@@ -567,40 +561,6 @@ assign lpt_ack=1'b0;
 assign lpt_irq=1'b0;
 `endif
 
-//*******************************************
-//* ПЗУ монитора 9312
-//*******************************************
-`ifdef M9312_module
-// консоль, 165000-165777
-rom9312l rom_console(
-   .address(wb_adr[8:1]),
-   .clock(wb_clk),
-   .q(m9312l_dat));
-
-reg [1:0]m9312l_ack_reg;
-always @ (posedge wb_clk) begin
-   m9312l_ack_reg[0] <= m9312l_stb & ~wb_we;
-   m9312l_ack_reg[1] <= m9312l_stb & ~wb_we & m9312l_ack_reg[0];
-end
-assign m9312l_ack = wb_stb & m9312l_ack_reg[1];
-
-// загрузчики, 173000-173777
-rom9312h rom_boot(
-   .address(wb_adr[8:1]),
-   .clock(wb_clk),
-   .q(m9312h_dat));
-
-reg [1:0]m9312h_ack_reg;
-always @ (posedge wb_clk) begin
-   m9312h_ack_reg[0] <= m9312h_stb & ~wb_we;
-   m9312h_ack_reg[1] <= m9312h_stb & ~wb_we & m9312h_ack_reg[0];
-end
-assign m9312h_ack = wb_stb & m9312h_ack_reg[1];
-
-`else 
-assign m9312l_ack=1'b0;
-assign m9312h_ack=1'b0;
-`endif
 
 
 //****************************************************
@@ -1101,10 +1061,6 @@ assign rx_stb     = wb_stb & wb_cyc & (wb_adr[15:2] == (16'o177170 >> 2));   // 
 assign my_stb     = wb_stb & wb_cyc & (wb_adr[15:2] == (16'o172140 >> 2));   // MY - 172140-172142 
 assign kgd_stb    = wb_stb & wb_cyc & (wb_adr[15:3] == (16'o176640 >> 3));   // КГД - 176640-176646
 
-// ROM 9312
-assign m9312h_stb   = wb_stb & wb_cyc & (wb_adr[15:9] == 7'o173);              // загрузчики, 173000-173776
-assign m9312l_stb   = wb_stb & wb_cyc & (wb_adr[15:9] == 7'o165);              // консоль, 165000-165776
-
 // ПЗУ пользователя
 `ifdef userrom
 assign rom_stb = wb_stb & wb_cyc & (wb_adr[15:13] == 3'b110);
@@ -1123,7 +1079,7 @@ assign sdram_stb =  (wb_stb & wb_cyc & (wb_adr[15:13] != 3'b111)) | sysram_stb;
 `endif
 
 // Сигналы подтверждения - собираются через OR со всех устройств
-assign global_ack  = sdram_ack | rom_ack | uart1_ack | uart2_ack | rk11_ack | rk611_ack | lpt_ack | dw_ack | rx_ack | my_ack | kgd_ack | m9312h_ack | m9312l_ack;
+assign global_ack  = sdram_ack | rom_ack | uart1_ack | uart2_ack | rk11_ack | rk611_ack | lpt_ack | dw_ack | rx_ack | my_ack | kgd_ack;
 
 // Мультиплексор выходных шин данных всех устройств
 assign wb_mux = 
@@ -1138,8 +1094,6 @@ assign wb_mux =
      | (rx_stb    ? rx_dat    : 16'o000000)
      | (my_stb    ? my_dat    : 16'o000000)
      | (kgd_stb   ? kgd_dat   : 16'o000000)
-     | (m9312h_stb  ? m9312h_dat  : 16'o000000)
-     | (m9312l_stb  ? m9312l_dat  : 16'o000000)
 ;
 
   

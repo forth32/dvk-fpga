@@ -60,32 +60,36 @@ module mc1201_02 (
 // Локальная шина процессора
 wire [15:0] local_dat_i;    // локальная входная шина данных
 wire [16:0] full_adr;       // полный адрес, вместе с SEL
-wire local_cyc;             // локальный сигнал начала транзацкии
+wire local_stb;             // локальный сигнал начала транзацкии
 wire cpu_ack;               // вход REPLY процессора
 wire una;                   // строб безадресного чтения
 wire [15:0] vector;         // вход вектора прерывания/стартового регистра
 wire cpu_istb;              // локальный выход подтверждения приема вектора IACK
 
 // Размещение ROM с монитором 055/279 в теневой области с адреса 140000         
-assign rom_stb = cpu_stb_o & local_cyc & (full_adr[16:13] == 4'b1110);
+assign rom_stb = local_stb & (full_adr[16:13] == 4'b1110);
 
 // Размещение системной теневой памяти :  160000 - 177776 - в режиме пульта
-assign sysram_stb = cpu_stb_o & local_cyc & (full_adr[16:13] == 4'b1111);
+assign sysram_stb = local_stb & (full_adr[16:13] == 4'b1111);
 
 // Сигнал подтвреждения обмена - от общей шины и модуля ROM
-assign cpu_ack = global_ack | rom_ack;
+assign cpu_ack = global_ack | rom_ack | bootrom_ack;
 
-// мультиплексор входной шины данных - подключается к общей шине или к ROM
-assign local_dat_i = (rom_stb   ? rom_dat   : 16'o0) | cpu_dat_i;
+// мультиплексор входной шины данных - подключается к общей шине и к локальным источникам
+assign local_dat_i = (rom_stb     ? rom_dat    : 16'o0) 
+                  |  (bootrom_stb ? bootrom_dat: 16'o0) 
+                  |  cpu_dat_i;
 
 // В оригинальном процессоре сигнал adr[16] называется SEL и управляет картой памяти. 
 // Признак активной транзакции на общей шине - если адрес [16]==0. 
 // При adr[16]==1 транзакция локальная - с теневым ПЗУ или ОЗУ.
-assign cpu_cyc_o=local_cyc & (~full_adr[16]);
+assign cpu_stb_o=local_stb & (~full_adr[16]);
 
 // Выход адреса на общую шину 
 assign cpu_adr_o=full_adr[15:0];
 
+// cyc - формальный сигнал, не имеющий смысла в нашей схеме
+assign cpu_cyc_o=cpu_stb_o;
 
 //***********************************************
 //*   Обработка процедуры безадресного чтения
@@ -128,10 +132,10 @@ vm2_wb #(.VM2_CORE_FIX_PREFETCH(0)) cpu
    .wbm_adr_o(full_adr),            // выход шины адреса
    .wbm_dat_o(cpu_dat_o),           // выход шины данных
    .wbm_dat_i(local_dat_i),         // вход шины данных
-   .wbm_cyc_o(local_cyc),           // Строб цила wishbone
+//   .wbm_cyc_o(local_cyc),           // Строб цила wishbone
    .wbm_we_o(cpu_we_o),             // разрешение записи
    .wbm_sel_o(cpu_sel_o),           // выбор байтов для передачи
-   .wbm_stb_o(cpu_stb_o),           // строб данных
+   .wbm_stb_o(local_stb),           // строб данных
    .wbm_ack_i(cpu_ack),             // вход подтверждения данных
 
 // Сбросы и прерывания
@@ -165,9 +169,38 @@ rom055 hrom(
 
 // формирователь cигнала подверждения транзакции с задержкой на 1 такт
 always @ (posedge clk_p) begin
-   rom_ack0 <= local_cyc & rom_stb;// & ~cpu_we_o;
-   rom_ack  <= local_cyc & rom_ack0;// & ~cpu_we_o;
+   rom_ack0 <= rom_stb;         
+   rom_ack  <= local_stb & rom_ack0;
 end
+
+//*******************************************
+//* ПЗУ монитора-загрузчика
+//*******************************************
+wire bootrom_stb;
+wire bootrom_ack;
+wire [15:0] bootrom_dat;
+reg [1:0]bootrom_ack_reg;
+
+`ifdef bootrom_module
+// эмулятор пульта и набор загрузчиков - ПЗУ  165000-166777
+boot_rom bootrom(
+   .address(full_adr[9:1]),
+   .clock(clk_p),
+   .q(bootrom_dat));
+
+always @ (posedge clk_p) begin
+   bootrom_ack_reg[0] <= bootrom_stb & ~cpu_we_o;
+   bootrom_ack_reg[1] <= bootrom_stb & ~cpu_we_o & bootrom_ack_reg[0];
+end
+assign bootrom_ack = cpu_stb_o & bootrom_ack_reg[1];
+
+// сигнал выбора
+assign bootrom_stb   = cpu_stb_o & (full_adr[15:10] == 6'o72); // 165000-166776   1 110 101   -- 1 110 110
+
+`else 
+assign bootrom_ack=1'b0;
+assign bootrom_stb=1'b0;
+`endif
 
 //*************************************************************************
 //* Генератор прерываний от таймера
