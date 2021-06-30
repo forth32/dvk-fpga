@@ -294,6 +294,10 @@ reg sdspi_start;               // строб запуска sdspi
 reg sdspi_write_mode;          // 0-чтение, 1-запись
 wire sdspi_io_done;            // флаг заверщение операции обмена с картой
 
+// Проверка CHS на выход за пределы диска
+wire bad_chs;
+assign bad_chs = (rkdc > 10'd814) | (rkda_hd > 3'd2) | (rkda_sc > 5'd21) ;
+
 //***********************************************
 //*  Контроллер SD-карты
 //***********************************************
@@ -611,9 +615,7 @@ always @(posedge wb_clk_i)  begin
             // позиционирование
                4'b0111:    begin
                                  // проверка установленных CHS
-                                 if ((rkdc > 10'd814) |
-                                     (rkda_hd > 3'd2) |
-                                     (rkda_sc > 5'd21))   begin
+                                 if (bad_chs)   begin
                                         // CHS некорректен
                                         rker_idae <= 1'b1 ;  
                                         rker_ski <= 1'b1 ; 
@@ -635,9 +637,7 @@ always @(posedge wb_clk_i)  begin
                               if (sdcard_idle == 1'b1 & write_start == 1'b0) begin
                                  
                                  // проверка параметров CHS
-                                 if ((rkdc > 10'd814) |
-                                     (rkda_hd > 3'd2) |
-                                     (rkda_sc > 5'd21))   begin
+                                 if (bad_chs)  begin
                                         rker_idae <= 1'b1 ; 
                                         rker_ski <= 1'b1 ; 
                                         start <= 1'b0 ;     // прекращаем обработку команды
@@ -666,7 +666,7 @@ always @(posedge wb_clk_i)  begin
                                        else  begin
                                           // переход на новый цилиндр
                                           if ((rkdc == 10'd815) & (wcp > 16'b0000000100000000))  begin
-                                             // вышли за пределы диска 312 цилиндров
+                                             // вышли за пределы диска 815 цилиндров
                                              rker_ski <= 1'b1 ;   // ошибка позиционирования
                                              rker_coe <= 1'b1 ;   // ошибка OVR
                                              start <= 1'b0 ; 
@@ -712,9 +712,7 @@ always @(posedge wb_clk_i)  begin
                               // если SD-модуль свободен, чтение еще не запущено и не завершено
                               if (iocomplete == 1'b0 & read_start == 1'b0) begin
                                  // проверка параметров CHS
-                                 if ((rkdc > 10'd814) |
-                                     (rkda_hd > 3'd2) |
-                                     (rkda_sc > 5'd21))   begin
+                                 if (bad_chs) begin
                                         rker_idae <= 1'b1 ; 
                                         rker_ski <= 1'b1 ; 
                                         start <= 1'b0 ;     // прекращаем обработку команды
@@ -743,7 +741,7 @@ always @(posedge wb_clk_i)  begin
                                        else  begin
                                           // переход на новый цилиндр
                                           if ((rkdc == 10'd815) & (wcp > 16'b0000000100000000))  begin
-                                             // вышли за пределы диска 312 цилиндров
+                                             // вышли за пределы диска 815 цилиндров
                                              rker_ski <= 1'b1 ;   // ошибка позиционирования
                                              rker_coe <= 1'b1 ;   // ошибка OVR
                                              start <= 1'b0 ; 
