@@ -64,6 +64,8 @@
             <File>../../hdl/m4/am4_wb.v</File>
             <File>ip-components/tang_user_rom.v</File>
             <File>ip-components/tang_sectorbuf.v</File>
+            <File>ip-components/tang_bootrom.v</File>
+            <File>../../hdl/rk611.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
@@ -79,8 +81,8 @@
         <RtlProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-03-27 18:46:39</Step_Last_Change>
-        <Current_Step>60</Current_Step>
-        <Step_Status>true</Step_Status>
+        <Step_Last_Change>2021-06-30 17:14:58</Step_Last_Change>
+        <Current_Step>20</Current_Step>
+        <Step_Status>false</Step_Status>
     </Project_Settings>
 </Project>

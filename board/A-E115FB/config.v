@@ -29,9 +29,11 @@
 `define IRPS2_module      // второй последовательный порт ИРПС
 `define IRPR_module       // параллельный порт ИРПР
 `define RK_module         // диск RK-11/RK05
+`define DM_module         // диск RK611/RK07
 `define DW_module         // жесткий диск DW
 `define DX_module         // гибкий диск RX01
 `define MY_module         // гибкий диск двойной плотности MY
+`define bootrom_module    // монитор-загрузчик M9312
 
 //======================================================================================================
 //
@@ -159,16 +161,28 @@
 // Выбор ведущего и ведомых SDSPI
 `ifdef RK_module
   `define RK_sdmode 1'b1  
+  `define DM_sdmode 1'b0  
   `define MY_sdmode 1'b0
   `define DX_sdmode 1'b0
   `define DW_sdmode 1'b0
   `define def_mosi  rk_mosi
   `define def_cs    rk_cs
   `define def_sclk  rk_sclk
+
+  `elsif DM_module
+  `define DM_sdmode 1'b1  
+  `define RK_sdmode 1'b0  
+  `define MY_sdmode 1'b0
+  `define DX_sdmode 1'b0
+  `define DW_sdmode 1'b0
+  `define def_mosi  dm_mosi
+  `define def_cs    dm_cs
+  `define def_sclk  dm_sclk
   
 `elsif MY_module
   `define MY_sdmode 1'b1
   `define RK_sdmode 1'b0  
+  `define DM_sdmode 1'b0  
   `define DX_sdmode 1'b0
   `define DW_sdmode 1'b0
   `define def_mosi  my_mosi
@@ -178,6 +192,7 @@
 `elsif DX_module
   `define DX_sdmode 1'b1
   `define MY_sdmode 1'b0
+  `define DM_sdmode 1'b0  
   `define RK_sdmode 1'b0  
   `define DW_sdmode 1'b0
   `define def_mosi  dx_mosi
@@ -187,6 +202,7 @@
 `else
   `define DW_sdmode 1'b1
   `define DX_sdmode 1'b0
+  `define DM_sdmode 1'b0  
   `define MY_sdmode 1'b0
   `define RK_sdmode 1'b0  
   `define def_mosi  dw_mosi
