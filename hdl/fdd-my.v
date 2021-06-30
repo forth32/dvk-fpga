@@ -628,7 +628,7 @@ always @(posedge wb_clk_i)
             end
             // чтение еще не запущено
             else begin 
-		         sdcard_addr <= sdaddr;
+               sdcard_addr <= sdaddr;
                sdspi_start <= 1'b1;         // запускаем SDSPI на чтение
                sdspi_write_mode <= 1'b0;
             end   
@@ -698,7 +698,7 @@ always @(posedge wb_clk_i)
       DMA_STARTWRITE: begin
          dma_req <= 1'b1;    // запрос на доступ к шине
          if (dma_gnt == 1'b1) begin
-		      sdcard_addr <= sdaddr;
+            sdcard_addr <= sdaddr;
             sdbuf_addr <= 8'o0; // адрес в буфере sdspi начинается с 0
             dma_we_o <= 1'b0;   // снимаем флаг записи на шину
             sdbuf_we <= 1'b1;   // включаем режим записи буфера

@@ -888,7 +888,7 @@ sdspi sd1 (
                            
                            // старт процедуры записи
                            if (write_start == 1'b1) begin
-									   sdcard_addr <= sdaddr;
+                              sdcard_addr <= sdaddr;
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1) begin               // ждем подтверждения DMA
                                  busmaster_state <= busmaster_write1 ; // переходим к этапу 1 записи
@@ -903,7 +903,7 @@ sdspi sd1 (
                            end
                            // старт процедуры чтения
                            else if (read_start == 1'b1) begin
-									   sdcard_addr <= sdaddr;
+                              sdcard_addr <= sdaddr;
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
                                  ram_phys_addr <= rkba[15:1];          // полный физический адрес буфера в ОЗУ

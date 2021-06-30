@@ -987,21 +987,21 @@ always @(posedge wb_clk_i)  begin
             DMA_write_wait :
                        begin
                         if (sdspi_io_done == 1'b1)   begin
-								  // SDSPI завершил работу
+                          // SDSPI завершил работу
                             DMA_state <= DMA_write_done ; 
                             sdspi_start <= 1'b0 ;    // снимаем флаг запуска sdspi
                             sdspi_write_mode <= 1'b0;
                             iocomplete <= 1'b1;      // поднимаем флаг завершения ввода-вывода
                         end 
-								else begin
-								   // запуск SDSPI
+                        else begin
+                           // запуск SDSPI
                            sdspi_start <= 1'b1 ; 
                            sdspi_write_mode <= 1'b1;  // режим - запись
                            sdbuf_we <= 1'b0 ;         // снимаем строб записи буфера
-								end	
+                        end   
                        end
             DMA_write_done :
-				// завершение сеанса обмена
+            // завершение сеанса обмена
                        begin
                         if (write_start == 1'b0)  begin  // ожидаем снятия запроса записи
                             iocomplete <= 1'b0;          // снимаем подтверждение окончания обмена

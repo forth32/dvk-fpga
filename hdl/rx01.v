@@ -390,7 +390,7 @@ always @(posedge wb_clk_i)   begin
                               sdbuf_datain <= {15'o0,cmd[2]};  // cmd[2]=0 для обычных секторов, 1 для удаленных
                               // получен ответ sdack
                               if (sdack) begin
-										   sdcard_addr <= sdaddr;
+                                 sdcard_addr <= sdaddr;
                                  sdspi_write_mode=1'b1;
                                  sdspi_start <= 1'b1 ;  // запускаем SDSPI
                                  iostate <= io_wait;
@@ -436,7 +436,7 @@ always @(posedge wb_clk_i)   begin
                            else begin
                               sdreq <= 1'b1;   // запрос доступа к карте
                               if (sdack) begin
-										   sdcard_addr <= sdaddr;
+                                 sdcard_addr <= sdaddr;
                                  sdspi_start <= 1'b1 ; 
                                  sdspi_write_mode=1'b0;
                                  iostate <= io_wait;
