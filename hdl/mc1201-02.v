@@ -195,7 +195,7 @@ end
 assign bootrom_ack = cpu_stb_o & bootrom_ack_reg[1];
 
 // сигнал выбора
-assign bootrom_stb   = cpu_stb_o & (full_adr[15:10] == 6'o72); // 165000-166776   1 110 101   -- 1 110 110
+assign bootrom_stb   = cpu_stb_o & (full_adr[15:10] == 6'o72); // 164000-165776  
 
 `else 
 assign bootrom_ack=1'b0;

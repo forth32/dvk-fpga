@@ -44,6 +44,23 @@ module mc1260 (
 // Системной памяти здесь нет
 assign sysram_stb=1'b0;
 
+wire [15:0] local_dat_i;    // локальная входная шина данных
+wire local_stb;             // локальный сигнал начала транзацкии
+wire cpu_ack;               // вход REPLY процессора
+
+// cyc - формальный сигнал, не имеющий смысла в нашей схеме
+assign cpu_cyc_o=cpu_stb_o;
+
+// Сигнал подтвреждения обмена - от общей шины и модуля ROM
+assign cpu_ack = global_ack | bootrom_ack;
+
+// мультиплексор входной шины данных
+assign local_dat_i = (bootrom_stb) ?   bootrom_dat: 16'o0       // boot rom
+                     | cpu_dat_i;                               // остальные устройства на шине
+                   
+// Разрешение транзакций на общей шине - только при отсутствии доступа к локальным устройствам
+assign cpu_stb_o=local_stb & (~bootrom_stb);
+
 //*************************************
 // счетчик замедления процессора
 //*************************************
@@ -76,12 +93,12 @@ lsi_wb cpu (
                                     // 0 - DMA с внешними устройствами, cpu отключен от шины и бесконечно ждет ответа wb_ack
    .wbm_adr_o(cpu_adr_o),           // выход шины адреса
    .wbm_dat_o(cpu_dat_o),           // выход шины данных
-   .wbm_dat_i(cpu_dat_i),           // вход шины данных
-   .wbm_cyc_o(cpu_cyc_o),           // Строб цила wishbone
+   .wbm_dat_i(local_dat_i),           // вход шины данных
+//   .wbm_cyc_o(cpu_cyc_o),           // Строб цила wishbone
    .wbm_we_o(cpu_we_o),             // разрешение записи
    .wbm_sel_o(cpu_sel_o),           // выбор байтов для передачи
-   .wbm_stb_o(cpu_stb_o),           // строб данных
-   .wbm_ack_i(global_ack),             // вход подтверждения данных
+   .wbm_stb_o(local_stb),           // строб данных
+   .wbm_ack_i(cpu_ack),             // вход подтверждения данных
 
 // Сбросы и прерывания
    .vm_init(vm_init),               // Выход сброса для периферии
@@ -103,6 +120,36 @@ lsi_wb cpu (
 //     11 - load vector 24
    .vm_bsel(2'b10)
 );
+
+//*******************************************
+//* ПЗУ монитора-загрузчика
+//*******************************************
+wire bootrom_stb;
+wire bootrom_ack;
+wire [15:0] bootrom_dat;
+reg [1:0]bootrom_ack_reg;
+
+`ifdef bootrom_module
+// эмулятор пульта и набор загрузчиков - ПЗУ  165000-166777
+boot_rom bootrom(
+   .address(cpu_adr_o[9:1]),
+   .clock(clk_p),
+   .q(bootrom_dat));
+
+always @ (posedge clk_p) begin
+   bootrom_ack_reg[0] <= bootrom_stb & ~cpu_we_o;
+   bootrom_ack_reg[1] <= bootrom_stb & ~cpu_we_o & bootrom_ack_reg[0];
+end
+assign bootrom_ack = local_stb & bootrom_ack_reg[1];
+
+// сигнал выбора
+assign bootrom_stb   = local_stb & (cpu_adr_o[15:10] == 6'o72); // 164000-165776  
+
+`else 
+assign bootrom_ack=1'b0;
+assign bootrom_stb=1'b0;
+`endif
+
 
 //*************************************************************************
 //* Генератор прерываний от таймера
