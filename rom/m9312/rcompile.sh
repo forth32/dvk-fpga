@@ -11,5 +11,5 @@
 
 ./macro11 -o bootrom.obj -l bootrom.lst bootrom.mac
 ./rt11obj2bin-t bootrom.obj > bootrom.map
-srec_cat bootrom.obj.bin -binary  --byte-swap 2 -o bootrom.mif -Memory_Initialization_File 16 -obs=2
+srec_cat bootrom.obj.bin -binary -fill 0x00 0x0000 0x400 --byte-swap 2 -o bootrom.mif -Memory_Initialization_File 16 -obs=2
 

@@ -780,20 +780,13 @@ always @(posedge wb_clk_i)  begin
                4'b1100 :
                         begin
                         // проверка параметров CHS
-                         if ((rkdc > 10'd814) |
-                             (rkda_hd > 3'd2) |
-                             (rkda_sc > 5'd21))   begin
-                                        rker_idae <= 1'b1 ; 
-                                        rker_ski <= 1'b1 ; 
-                                        start <= 1'b0 ;     // прекращаем обработку команды
-                          end
-
-                          if (wcp > 16'o400)   wcp <= wcp - 16'o400; 
-                          else   begin
-                              wcp <= {16{1'b0}} ; 
-                              rkwc <= {16{1'b0}} ; 
-                              start <= 1'b0 ; 
-                          end 
+//                          if (bad_chs) begin
+//                             rker_idae <= 1'b1 ; 
+//                             rker_ski <= 1'b1 ; 
+//                          end
+                          wcp <= {16{1'b0}} ; 
+                          rkwc <= {16{1'b0}} ; 
+                          start <= 1'b0 ; 
                         end
                         
             //------------------------------------------------------------

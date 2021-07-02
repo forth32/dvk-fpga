@@ -9,5 +9,4 @@ derive_pll_clocks -gen_basic_clock
 #Set False Path
 set_false_path  -through [get_nets {kernel/reset/key_down}]
 set_false_path  -through [get_nets {kernel/reset/pwr_event}]
-set_false_path  -through [get_nets {kernel/uart1/div1[3]} {kernel/uart1/div1[4]} {kernel/uart1/div1[5]} {kernel/uart1/div1[6]} {kernel/uart1/div1[7]} {kernel/uart1/div1[8]} {kernel/uart1/div1[9]}]
 
