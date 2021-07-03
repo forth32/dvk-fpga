@@ -43,11 +43,7 @@ create_clock -name {clk} -period 40.000 -waveform { 0.000 20.000 } [get_ports {c
 #**************************************************************
 # Create Generated Clock
 #**************************************************************
-create_generated_clock -source [get_pins {pll1|altpll_component|auto_generated|pll1|inclk[0]}] -divide_by 1 -multiply_by 3 [get_pins {pll1|altpll_component|auto_generated|pll1|clk[0]}]
-create_generated_clock -source [get_pins {pll1|altpll_component|auto_generated|pll1|inclk[0]}] -divide_by 1 -multiply_by 3 -phase 180 [get_pins {pll1|altpll_component|auto_generated|pll1|clk[1]}]
-create_generated_clock -source [get_pins {pll1|altpll_component|auto_generated|pll1|inclk[0]}] -divide_by 2 -multiply_by 1 [get_pins {pll1|altpll_component|auto_generated|pll1|clk[2]}]
-create_generated_clock -source [get_pins {pll1|altpll_component|auto_generated|pll1|inclk[0]}] -divide_by 1 -multiply_by 2 [get_pins {pll1|altpll_component|auto_generated|pll1|clk[3]}]
-
+derive_pll_clocks
 
 #**************************************************************
 # Set Clock Latency

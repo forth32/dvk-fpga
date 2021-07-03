@@ -227,7 +227,7 @@ topboard kernel(
    
    // индикаторные светодиоды      
    .rk_led(rk_led),               // запрос обмена диска RK
-   .dm_led(rk_led),               // запрос обмена диска DM
+   .dm_led(dm_led),               // запрос обмена диска DM
    .dw_led(dw_led),               // запрос обмена диска DW
    .my_led(my_led),               // запрос обмена диска MY
    .dx_led(dx_led),               // запрос обмена диска DX
