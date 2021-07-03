@@ -1,0 +1,356 @@
+         .title   M9312 bootloaders
+; --------------------------------------------------
+
+
+    ; This boot PROM is for any RX11/RX01 compatible floppy controller.
+
+rxcsr	=177170				; std RX11 csrbase
+
+rxcs	=+0				; command/status
+rxdb	=+2				; data buffer
+
+;diags	=165564				; console diags phase2 entry
+
+    .asect
+    .=173000
+start:
+
+	; --------------------------------------------------
+
+dxstart:	.ascii	"XD"			; device code (reversed)
+
+	.word	rkstart-.			; offset to next boot header
+
+dx0n:	sec				; boot std csr, unit zero, no diags
+dx0d:	mov	#0,r0			; boot std csr, unit zero, with diags
+dxNr:	mov	#rxcsr,r1		; boot std csr, unit <R0>
+dxNb:	mov	pc,r4			; boot csr <R1>, unit <R0>
+;	bcc	diag			; br if diags requested
+	br	dxgo			; return to (R4)+2 from diags
+					; then skip over pseudo reboot vector
+
+	; --------------------------------------------------
+
+	.word	173000			; prom start addess @ 24
+	.word	340			; and priority level @ 26
+
+	; --------------------------------------------------
+
+dxgo:	clc				; clear carry
+	mov	#<003*400>+007,r3	; unit zero, read+go
+	bitb	#1,r0			; test unit ID
+	beq	2$			; br if zero
+	mov	#<023*400>+027,r3	; unit one, read+go
+
+2$:	bitb	#100040,(r1)		; test error<15> or done<5>
+	beq	2$			; neither, keep looping
+
+	movb	r3,(r1)			; exec read+go on unit
+
+3$:	movb	(r1),r5			; wait for transfer req
+	bpl	3$			; not yet, keep looping
+
+	movb	#1,rxdb(r1)		; set track/sector 1
+	rorb	r3			; 007 -> 003 -> 001 -> 000
+	bvs	3$			; loop three times
+
+4$:	bit	#100040,(r1)		; test error<15> or done<5>
+	beq	4$			; neither, keep looping
+	bmi	6$			; br if error
+
+	swab	r3			; R3=003/023 unit0/1
+	movb	r3,(r1)			; exec emptybuf+go on unit
+
+	clr	r3			; bus address ptr
+5$:	tstb	(r1)			; wait for data transfer req
+	bpl	5$			; loop if not yet
+	movb	rxdb(r1),(r3)+		; store data byte
+	tstb	r3			; check address >= 128
+	bpl	5$			; br if address in 0..127
+
+	clr	pc			; jump to bootstrap at zero
+
+6$:	reset				; failed, reset controller
+	jmp	2(r4)			; and retry from the beginning
+
+	; --------------------------------------------------
+
+dx1n:	mov	#1,r0			; boot std csr, unit one, no diags
+	sec				;
+	br	dxNr			; continue
+
+dx1d:	mov	#1,r0			; boot std csr, unit one, ? diags
+	br	dxNr			; continue
+
+	; --------------------------------------------------
+
+;diag:	jmp	@#diags			; jump to console diags
+
+
+
+; --------------------------------------------------
+; 2nd rom
+; --------------------------------------------------
+
+         .=173200
+
+rkcsr    =177400              ; std RK03/05 DECdisk csrbase
+
+rkwc     =+6-4                ; word count
+rkda     =+12-4               ; disk address
+
+tccsr    =177340              ; std TU55/56 DECtape csrbase
+
+tccs     =+0-2                ; control/status
+tcwc     =+4-2                ; word count
+
+xxwc     =rkwc                ; common word count offset
+
+;diags    =165564              ; console diags phase2 entry
+
+
+rkstart: .ascii   "KD"        ; device code (reversed)
+
+         .word dtstart-.      ; offset to next boot header
+
+dk0n:    sec                  ; boot std csr, unit zero, no diags
+dk0d:    mov   #0,r0          ; boot std csr, unit zero, with diags
+dkNr:    mov   #rkcsr+4,r1    ; boot std csr, unit <R0>
+dkNb:    mov   pc,r4          ; boot csr <R1>, unit <R0>
+;         bcc   diag           ; br if diags requested
+         br    disk           ; return to (R4)+2 from diags
+                              ; then skip over pseudo reboot vector
+
+; --------------------------------------------------
+
+         .word 173200         ; prom start addess @ 24
+         .word 340            ; and priority level @ 26
+
+; --------------------------------------------------
+
+dtstart: .ascii   "TD"        ; device code (reversed)
+
+   .word rpstart-.            ; offset to next boot header
+
+dt0n:    sec                  ; boot std csr, unit zero, no diags
+dt0d:    mov   #0,r0          ; boot std csr, unit zero, with diags
+dtNr:    mov   #tccsr+2,r1    ; boot std csr, unit <R0>
+dtNb:    mov   pc,r4          ; boot csr <R1>, unit <R0>
+;         bcc   diag           ; br if diags requested
+                              ; return to (R4)+2 from diags
+                              ; then skip over pseudo reboot vector
+
+tape:    mov   r0,r3          ; get unit number
+         swab  r3             ; into high byte
+         mov   r3,(r1)        ; store in controller
+         bis   #4003,(r1)     ; set REVERSE and RNUM+GO
+1$:      tst   (r1)           ; test error bit
+         bpl   1$             ; loop until error set (at BOT)
+
+         tst   tccs(r1)       ; read control/status
+         mov   r3,(r1)        ; set unit number in controller
+         br common            ; continue
+
+disk:    mov   r0,r3          ; get unit number
+         clc                  ; C=0 for ror
+         ror   r3             ; shift into 15:12
+         ror   r3             ;
+         ror   r3             ;
+         ror   r3             ;
+         mov   r3,rkda(r1)    ; unit number, sector 0 to disk addr
+
+common:  mov   #-512.,xxwc(r1)   ; set word count
+         bis   #5,r3          ; command READ+GO
+         mov   r3,(r1)        ; execute
+2$:      tstb  (r1)           ; test ready
+         bpl   2$             ; loop
+
+         tst   (r1)           ; check error
+         bpl   3$             ; br if no error
+
+         reset                ; reset the world
+         jmp   2(r4)          ; and retry
+
+3$:      bic   #377,(r1)      ; nop command
+         clr   pc             ; jump to loaded boot sector
+
+
+dk2n:    sec                  ; boot std csr, unit two, no diags
+dk2d:    mov   #2,r0          ; boot std csr, unit two, with diags
+         br dkNr              ; continue
+
+
+; --------------------------------------------------
+; 3rd rom
+; --------------------------------------------------
+
+         .=173400
+         
+rpcsr    =176714              ; std RP11-C csrbase 
+.if      df    altrmcsr
+rmcsr    =176300              ; alt RH11 csrbase [match J.West .bin]
+.iff
+rmcsr    =176700              ; std RH11 csrbase
+.endc
+
+rpcs  =+0                     ; control status offset
+rpwc  =+2                     ; word count offset
+rpba  =+4                     ; bus addr offset
+rpcs2 =+10                    ; control status 2 offset
+rpas  =+16                    ; atten summary offset
+rpof  =+32                    ; offset register offset
+;diags =165564                 ; console diags phase2 entry
+
+rpstart: .ascii   "PD"        ; device code (reversed)
+
+         .word rp2start-.     ; offset to next boot header
+
+dp0n:    sec                  ; boot std csr, unit zero, no diags
+dp0d:    mov   #0,r0          ; boot std csr, unit zero, with diags
+dpNr:    mov   #rpcsr,r1      ; boot std csr, unit <R0>
+dpNb:    mov   pc,r4          ; boot csr <R1>, unit <R0>
+;         bcc   diag           ; br if diags requested
+         br    rpgo           ; return to (R4)+2 from diags
+                              ; then skip over pseudo reboot vector
+
+; --------------------------------------------------
+
+         .word 173400         ; prom start addess @ 24
+         .word 340            ; and priority level @ 26
+
+; --------------------------------------------------
+
+rpgo:    mov   r0,r3          ; copy unit number
+         swab  r3             ; into upper byte
+         mov   r3,(r1)        ; store into controller
+         mov   #5,r2          ; READ+GO command code
+         br bootrp            ; continue
+
+; ----------------------------------------
+
+.if df altrmcsr
+rp2start: .ascii   "RD"       ; device code (reversed) [match J.West .bin]
+.iff
+rp2start: .ascii   "BD"       ; device code (reversed)
+.endc
+
+         .word dmstart-.      ; offset to next boot header
+
+db0n:    sec                  ; boot std csr, unit zero, no diags
+db0d:    mov   #0,r0          ; boot std csr, unit zero, with diags
+dbNr:    mov   #rmcsr,r1      ; boot std csr, unit <R0>
+dbNb:    mov   pc,r4          ; boot csr <R1>, unit <R0>
+;         bcc   diag           ; br if diags requested
+
+; ----------------------------------------
+
+         mov   r0,rpcs2(r1)   ; set unit number into controller
+         mov   #071,r2        ; READ+GO command code
+         mov   #021,(r1)      ; RIP+GO command
+         mov   #014000,rpof(r1)  ; set 16b mode, inhibit ECC mode
+         mov   rpas(r1),rpas(r1) ; clear attention bits
+
+bootrp:  mov   #-512.,rpwc(r1)      ; set word count
+         mov   (r1),r3        ; get unit number
+         bic   #377,r3        ; clear command byte
+         bis   r2,r3          ; insert read command code
+         mov   r3,(r1)        ; execute read command
+2$:      tstb  (r1)           ; test unit ready
+         bpl   2$             ; br if not yet
+
+         tst   (r1)           ; test any error
+         bpl   3$             ; br if not
+
+         reset                ; error, reset the world
+         jmp   2(r4)          ; and jump back to restart
+
+3$:      bic   #377,(r1)      ; nop command, clear controller
+         clr   pc             ; jump to bootstrap start
+
+dp1n:    sec                  ; boot std csr, unit one, no diags
+dp1d:    mov   #1,r0          ; boot std csr, unit one, with diags
+         br dpNr              ; continue
+
+
+; --------------------------------------------------
+; 4th rom
+; --------------------------------------------------
+
+         .=173600
+rk6csr	=177440				; std RK611 csrbase
+
+rkcs1	=+0				; control/status reg1
+rk6wc	=+2				; word count
+rkcs2	=+10				; control/status reg2
+rk6er	=+14				; error reg
+
+;diags	=165564				; console diags phase2 entry
+
+	; --------------------------------------------------
+
+dmstart:	.ascii	"MD"			; device code (reversed)
+
+	.word	last-.			; offset to next boot header
+
+dm0n:	sec				; boot std csr, unit zero, no diags
+dm0d:	mov	#0,r0			; boot std csr, unit zero, with diags
+dmNr:	mov	#rk6csr,r1		; boot std csr, unit <R0>
+dmNb:	mov	pc,r4			; boot csr <R1>, unit <R0>
+;	bcc	diag			; br if diags requested
+	br	dmgo			; return to (R4)+2 from diags
+					; then skip over pseudo reboot vector
+
+	; --------------------------------------------------
+
+	.word	173600			; prom start addess @ 24
+	.word	340			; and priority level @ 26
+
+	; --------------------------------------------------
+
+dmgo:	mov	r0,rkcs2(r1)		; set unit number
+	mov	#0003,(r1)		; command pack+go rk06 type
+
+2$:	tstb	(r1)			; wait for done
+	bpl	2$			; loop 
+	tst	(r1)			; check for error
+	bpl	4$			; br if no error, rk06 was OK
+
+	bit	#40,rk6er(r1)		; check if a disk-type error
+	beq	6$			; br if not, something else
+	reset				; yes, reset controller
+	mov	r0,rkcs2(r1)		; set unit number
+	mov	#2003,(r1)		; command pack+go rk07 type
+
+3$:	tstb	(r1)			; wait for done
+	bpl	3$			; loop
+	tst	(r1)			; check for error
+	bmi	6$			; br if error
+
+4$:	mov	#-512.,rk6wc(r1)		; set wordcount
+	mov	(r1),r3			; get current pack type
+	bic	#377,r3			; zap command portion
+	bis	#21,r3			; read+go command
+	mov	r3,(r1)			; execute
+
+5$:	tstb	(r1)			; wait for done
+	bpl	5$			; loop
+	tst	(r1)			; check for error
+	bpl	7$			; br if OK
+
+6$:	reset				; error; clear controller
+	jmp	2(r4)			; and retry from beginning
+
+7$:	clr	pc			; jump to bootstrap start
+
+	; --------------------------------------------------
+
+dm1n:	sec				; boot std csr, unit one, no diags
+dm1d:	mov	#1,r0			; boot std csr, unit one, with diags
+	br	dmNr			; merge to main flow
+
+
+   ; --------------------------------------------------
+
+         .=start+1000
+last:
+   .end

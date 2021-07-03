@@ -171,7 +171,8 @@ module rk11 (
    assign rker = {rker_dre, rker_ovr, rker_wlo, rker_ske, rker_pge, rker_nxm, rker_dlt, rker_te, rker_nxd, rker_nxc, rker_nxs, 3'b000, rker_cse, rker_wce} ;
 
    // интерфейс к SDSPI
-wire [26:0] sdcard_addr;       // адрес сектора карты
+wire [26:0] sdaddr;       // адрес сектора карты
+reg [26:0] sdcard_addr;       // адрес сектора карты
 wire sdcard_error;             // флаг ошибки
 wire [15:0] sdbuf_dataout;     // слово; читаемое из буфера чтения
 wire sdcard_idle;              // признак готовности контроллера
@@ -862,25 +863,6 @@ sdspi sd1 (
       end  
    end 
 
-   //**********************************************
-   // Вычисление адреса блока на SD-карте
-   //**********************************************
-   wire[16:0] hs_offset; 
-   wire[16:0] ca_offset; 
-   wire[16:0] dn_offset;
-   // 
-   // Головка
-   assign hs_offset = (rkda_hd == 1'b1) ? 17'b00000000000001100 : 17'b00000000000000000 ;
-   // Цилиндр
-   assign ca_offset = {5'b00000, rkda_cy, 4'b0000} + {6'b000000, (rkda_cy), 3'b000} ;
-   // Начало образа диска на карте
-   //
-   //  0 0ddd 0000 0000 0000   1000 + 0800 = 1800
-   //  0 00dd d000 0000 0000
-   //
-   assign dn_offset = {2'b00, rkda_dr, 12'b000000000000} + {3'b000, rkda_dr, 11'b00000000000} ;
-   // полный абсолютный адрес 
-   assign sdcard_addr = {6'b000000, dn_offset} + hs_offset + ca_offset + rkda_sc + start_offset ;
 
    // DMA и работа с картой памяти
    //---------------------------------------
@@ -906,6 +888,7 @@ sdspi sd1 (
                            
                            // старт процедуры записи
                            if (write_start == 1'b1) begin
+                              sdcard_addr <= sdaddr;
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1) begin               // ждем подтверждения DMA
                                  busmaster_state <= busmaster_write1 ; // переходим к этапу 1 записи
@@ -920,6 +903,7 @@ sdspi sd1 (
                            end
                            // старт процедуры чтения
                            else if (read_start == 1'b1) begin
+                              sdcard_addr <= sdaddr;
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
                                  ram_phys_addr <= rkba[15:1];          // полный физический адрес буфера в ОЗУ
@@ -945,7 +929,7 @@ sdspi sd1 (
                            dma_stb_o <= 1'b1 ; 
                            dma_we_o <= 1'b1;
                            if (rkcs_iba == 1'b0)       ram_phys_addr <= ram_phys_addr + 1'b1 ; 
-                           if (dma_ack_i == 1'b1) busmaster_state <= busmaster_read_done ; 
+                           if (dma_ack_i == 1'b1) busmaster_state <= busmaster_readh2 ; 
                         end
                busmaster_readh2 :
                         begin
@@ -1088,4 +1072,25 @@ sdspi sd1 (
             endcase 
       end  
    end 
+
+//**********************************************
+// Вычисление адреса блока на SD-карте
+//**********************************************
+wire[16:0] hs_offset; 
+wire[16:0] ca_offset; 
+wire[16:0] dn_offset;
+// 
+// Головка
+assign hs_offset = (rkda_hd == 1'b1) ? 17'b00000000000001100 : 17'b00000000000000000 ;
+// Цилиндр
+assign ca_offset = {5'b00000, rkda_cy, 4'b0000} + {6'b000000, (rkda_cy), 3'b000} ;
+// Начало образа диска на карте
+//
+//  0 0ddd 0000 0000 0000   1000 + 0800 = 1800
+//  0 00dd d000 0000 0000
+//
+assign dn_offset = {2'b00, rkda_dr, 12'b000000000000} + {3'b000, rkda_dr, 11'b00000000000} ;
+// полный абсолютный адрес 
+assign sdaddr = {6'b000000, dn_offset} + hs_offset + ca_offset + rkda_sc + start_offset ;
+
 endmodule

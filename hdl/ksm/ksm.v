@@ -208,13 +208,13 @@ wbc_uart #(.REFCLK(50000000)) uart
    .wb_ack_o(uart_ack),
 
    .tx_cts_i(1'b0),
-   .tx_dat_o(vtx),
-   .rx_dat_i(vrx),
+   .txd(vtx),
+   .rxd(vrx),
 
    .tx_irq_o(tx_irq),
-   .tx_ack_i(tx_iack),
+   .tx_iack_i(tx_iack),
    .rx_irq_o(rx_irq),
-   .rx_ack_i(rx_iack),
+   .rx_iack_i(rx_iack),
 
    .cfg_bdiv(baud[15:0]),
    .cfg_nbit(2'b11),

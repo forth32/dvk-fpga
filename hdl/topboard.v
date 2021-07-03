@@ -27,12 +27,13 @@ module topboard (
    input          bt_timer,         // выключатель таймера
    
    // переключатели конфигурации
-   input [6:0]    sw_diskbank,  // дисковый банк
+   input [3:0]    sw_diskbank,  // дисковый банк
    input          sw_console,   // выбор консольного порта: 0 - терминальный модуль, 1 - ИРПС 2
    input          sw_cpuslow,   // замедление процессора
 
    // индикаторные светодиоды      
    output         rk_led,               // запрос обмена диска RK
+   output         dm_led,               // запрос обмена диска RK
    output         dw_led,               // запрос обмена диска DW
    output         my_led,               // запрос обмена диска MY
    output         dx_led,               // запрос обмена диска DX
@@ -119,6 +120,7 @@ wire uart2_stb;
 wire sysram_stb;
 wire rom_stb;
 wire rk11_stb;
+wire rk611_stb;
 wire lpt_stb;
 wire dw_stb;
 wire rx_stb;
@@ -130,6 +132,7 @@ wire uart1_ack;
 wire uart2_ack;
 wire rom_ack;
 wire rk11_ack;
+wire rk611_ack;
 wire lpt_ack;
 wire dw_ack;
 wire rx_ack;
@@ -138,6 +141,7 @@ wire kgd_ack;
 
 // линии подтверждения, входящие в DMA-контроллеры устройств
 wire rk11_dma_ack;
+wire rk611_dma_ack;
 wire my_dma_ack;
 
 //  Шины данных от периферии
@@ -145,6 +149,7 @@ wire [15:0] uart1_dat;
 wire [15:0] uart2_dat;
 wire [15:0] rom_dat;
 wire [15:0] rk11_dat;
+wire [15:0] rk611_dat;
 wire [15:0] lpt_dat;
 wire [15:0] dw_dat;
 wire [15:0] rx_dat;
@@ -164,6 +169,7 @@ wire        irpsrx_irq, irpsrx_iack;
 wire        irpstx2_irq, irpstx2_iack;            
 wire        irpsrx2_irq, irpsrx2_iack;            
 wire        rk11_irq, rk11_iack;
+wire        rk611_irq, rk611_iack;
 wire        lpt_irq, lpt_iack;
 wire        dw_irq, dw_iack;
 wire        rx_irq, rx_iack;
@@ -175,6 +181,9 @@ wire        global_reset;   // кнопка сброса
 wire         rk_mosi;       // mosi от RK11
 wire         rk_cs;         // cs от RK11
 wire         rk_sclk;       // sclk от RK11
+wire         dm_mosi;       // mosi от RK611
+wire         dm_cs;         // cs от RK611
+wire         dm_sclk;       // sclk от RK611
 wire         dw_mosi;       // mosi от DW
 wire         dw_cs;         // cs от DW
 wire         dw_sclk;
@@ -190,6 +199,8 @@ wire        rk_sdreq;       // запрос доступа
 reg         rk_sdack;       // разрешение доступа
 wire        dw_sdreq;
 reg         dw_sdack; 
+wire        dm_sdreq;
+reg         dm_sdack; 
 wire        dx_sdreq;
 reg         dx_sdack; 
 wire        my_sdreq;
@@ -229,6 +240,7 @@ assign vgablue  = ((genable == 1)? vgavideo_g: 1'b0) | ((tdisable == 1'b0)? vgab
 //********************************************
 assign rk_led = ~rk_sdreq;   // запрос обмена диска RK
 assign dw_led = ~dw_sdreq;   // запрос обмена диска DW
+assign dm_led = ~dm_sdreq;   // запрос обмена диска DW
 assign my_led = ~my_sdreq;   // запрос обмена диска MY
 assign dx_led = ~dx_sdreq;   // запрос обмена диска DX
 assign timer_led = ~timer_on;   // индикация включения таймера
@@ -349,14 +361,14 @@ wire [31:0] baud2;        // делитель скорости второго п
 // Согласование скорости с терминальным модулем
 wire [31:0]   terminal_baud;    // делитель, соответствующий текущей скорости терминала                     
 assign  terminal_baud = 
-  (vspeed == 3'd0)   ? 32'd767: // 1200
-  (vspeed == 3'd1)   ? 32'd383: // 2400
-  (vspeed == 3'd2)   ? 32'd191: // 4800
-  (vspeed == 3'd3)   ? 32'd95:  // 9600
-  (vspeed == 3'd4)   ? 32'd47:  // 19200
-  (vspeed == 3'd5)   ? 32'd23:  // 38400
-  (vspeed == 3'd6)   ? 32'd15:  // 57600
-                       32'd7;   // 115200
+  (vspeed == 3'd0)   ? 32'd767: 32'D0 | // 1200
+  (vspeed == 3'd1)   ? 32'd383: 32'D0 | // 2400
+  (vspeed == 3'd2)   ? 32'd191: 32'D0 | // 4800
+  (vspeed == 3'd3)   ? 32'd95: 32'D0 |  // 9600
+  (vspeed == 3'd4)   ? 32'd47: 32'D0 |  // 19200
+  (vspeed == 3'd5)   ? 32'd23: 32'D0 |  // 38400
+  (vspeed == 3'd6)   ? 32'd15: 32'D0 |  // 57600
+  (vspeed == 3'd6)   ? 32'd7:  32'D0 ;  // 115200
                        
 // Выбор скорости второго UART                        
 // assign  baud2 = 921600/`UART2SPEED-1;
@@ -394,14 +406,14 @@ wbc_uart #(.REFCLK(`clkref)) uart1
    .wb_stb_i(uart1_stb),
    .wb_ack_o(uart1_ack),
 
-   .tx_dat_o(uart1_txd),
-   .rx_dat_i(uart1_rxd),
+   .txd(uart1_txd),
+   .rxd(uart1_rxd),
 
    .tx_cts_i(1'b0),
    .tx_irq_o(irpstx_irq),
-   .tx_ack_i(irpstx_iack),
+   .tx_iack_i(irpstx_iack),
    .rx_irq_o(irpsrx_irq),
-   .rx_ack_i(irpsrx_iack),
+   .rx_iack_i(irpsrx_iack),
 
    .cfg_bdiv(uart1_speed),
    .cfg_nbit(2'b11),
@@ -427,13 +439,13 @@ wbc_uart #(.REFCLK(`clkref)) uart2
    .wb_ack_o(uart2_ack),
 
    .tx_cts_i(1'b0),
-   .tx_dat_o(uart2_txd),
-   .rx_dat_i(uart2_rxd),
+   .txd(uart2_txd),
+   .rxd(uart2_rxd),
 
    .tx_irq_o(irpstx2_irq),
-   .tx_ack_i(irpstx2_iack),
+   .tx_iack_i(irpstx2_iack),
    .rx_irq_o(irpsrx2_irq),
-   .rx_ack_i(irpsrx2_iack),
+   .rx_iack_i(irpsrx2_iack),
 
    .cfg_bdiv(uart2_speed),
    .cfg_nbit(2'b11),
@@ -521,10 +533,10 @@ assign genable=1'b0;
 assign vgavideo_g=1'b0;
 `endif
 
-`ifdef IRPR_module
 //**********************************
 //*  ИРПР
 //**********************************
+`ifdef IRPR_module
 irpr printer (
    .wb_clk_i(wb_clk),
    .wb_rst_i(sys_init),
@@ -548,6 +560,8 @@ irpr printer (
 assign lpt_ack=1'b0;
 assign lpt_irq=1'b0;
 `endif
+
+
 
 //****************************************************
 //*  Дисковый контроллер RK11D
@@ -607,7 +621,7 @@ rk11 rkdisk (
    .sdmode(`RK_sdmode),           // режим ведущего-ведомого
    
 // Адрес массива дисков на карте
-   .start_offset({1'b0,sw_diskbank,18'h0}),
+   .start_offset({1'b0,sw_diskbank,22'h0}),
 
 // отладочные сигналы
    .sdcard_debug(rksddebug)
@@ -618,6 +632,75 @@ assign rk11_ack=1'b0;
 assign rk11_dma_req=1'b0;
 assign rk_sdreq = 1'b0;
 assign rk11_irq=1'b0;
+`endif
+
+  
+//****************************************************
+//*  Дисковый контроллер RK611
+//****************************************************
+
+// Сигналы запроса-подтверждения DMA
+wire rk611_dma_req;
+wire rk611_dma_gnt;
+
+// выходная шина DMA
+wire [17:0] rk611_adr;                     
+wire        rk611_dma_stb;
+wire        rk611_dma_we;
+wire [15:0] rk611_dma_out;
+
+`ifdef DM_module
+
+rk611 dmdisk (
+
+// шина wishbone
+   .wb_clk_i(wb_clk),      // тактовая частота шины
+   .wb_rst_i(sys_init),    // сброс
+   .wb_adr_i(wb_adr[4:0]), // адрес 
+   .wb_dat_i(wb_out),      // входные данные
+   .wb_dat_o(rk611_dat),    // выходные данные
+   .wb_cyc_i(wb_cyc),      // начало цикла шины
+   .wb_we_i(wb_we),        // разрешение записи (0 - чтение)
+   .wb_stb_i(rk611_stb),    // строб цикла шины
+   .wb_sel_i(wb_sel),      // выбор конкретных байтов для записи - старший, младший или оба
+   .wb_ack_o(rk611_ack),    // подтверждение выбора устройства
+
+// обработка прерывания   
+   .irq(rk611_irq),         // запрос
+   .iack(rk611_iack),       // подтверждение
+   
+// DMA
+   .dma_req(rk611_dma_req), // запрос DMA
+   .dma_gnt(rk611_dma_gnt), // подтверждение DMA
+   .dma_adr_o(rk611_adr),   // выходной адрес при DMA-обмене
+   .dma_dat_i(wb_mux),     // входная шина данных DMA
+   .dma_dat_o(rk611_dma_out), // выходная шина данных DMA
+   .dma_stb_o(rk611_dma_stb), // строб цикла шины DMA
+   .dma_we_o(rk611_dma_we),   // направление передачи DMA (0 - память->диск, 1 - диск->память) 
+   .dma_ack_i(rk611_dma_ack), // Ответ от устройства, с которым идет DMA-обмен
+   
+// интерфейс SD-карты
+   .sdcard_cs(dm_cs), 
+   .sdcard_mosi(dm_mosi), 
+   .sdcard_miso(sdcard_miso), 
+   .sdcard_sclk(dm_sclk),
+
+   .sdclock(sdclock),
+   .sdreq(dm_sdreq),
+   .sdack(dm_sdack),
+   .sdmode(`DM_sdmode),           // режим ведущего-ведомого
+   
+// Адрес массива дисков на карте
+//   .start_offset({1'b0,sw_diskbank,18'h0}),
+   .start_offset({1'b0, sw_diskbank,22'h330000})
+
+   ); 
+
+`else 
+assign rk611_ack=1'b0;
+assign rk611_dma_req=1'b0;
+assign dm_sdreq = 1'b0;
+assign rk611_irq=1'b0;
 `endif
 
   
@@ -658,7 +741,7 @@ dw hdd(
    .sdmode(`DW_sdmode),          
 
 // Адрес массива дисков на карте
-   .start_offset({1'b0,sw_diskbank,18'hc000}),
+   .start_offset({1'b0,sw_diskbank,22'hc000}),
    
 // отладочные сигналы
    .sdcard_debug(dwsddebug)
@@ -708,7 +791,7 @@ rx01 dxdisk (
    .sdclock(sdclock),
    
 // Адрес массива дисков на карте
-   .start_offset({1'b0,sw_diskbank,18'h2c000}),
+   .start_offset({1'b0,sw_diskbank,22'h2c000}),
    
 // отладочные сигналы
    .sdcard_debug(rxsddebug)
@@ -779,7 +862,7 @@ fdd_my mydisk (
    .sdmode(`MY_sdmode),          
    
 // Адрес массива дисков на карте
-   .start_offset({1'b0,sw_diskbank,18'h2e000}),
+   .start_offset({1'b0,sw_diskbank,22'h2e000}),
 
 // отладочные сигналы
    .sdcard_debug(mysddebug)
@@ -799,6 +882,7 @@ assign my_irq=1'b0;
 reg [1:0] my_sdreq_filter;
 reg [1:0] rk_sdreq_filter;
 reg [1:0] dw_sdreq_filter;
+reg [1:0] dm_sdreq_filter;
 reg [1:0] dx_sdreq_filter;
 
 // фильтрация сигналов запроса
@@ -812,6 +896,9 @@ always @(posedge sdclock) begin
   dw_sdreq_filter[0]=dw_sdreq;
   dw_sdreq_filter[1]=dw_sdreq_filter[0];
   
+  dm_sdreq_filter[0]=dm_sdreq;
+  dm_sdreq_filter[1]=dm_sdreq_filter[0];
+  
   rk_sdreq_filter[0]=rk_sdreq;
   rk_sdreq_filter[1]=rk_sdreq_filter[0];
 end  
@@ -821,15 +908,17 @@ always @(posedge sdclock) begin
    if (sys_init == 1'b1) begin
       rk_sdack <= 1'b0;
       dw_sdack <= 1'b0;
+      dm_sdack <= 1'b0;
       dx_sdack <= 1'b0;
       my_sdack <= 1'b0;
    end   
    else
    // поиск контроллера, желающего доступ к карте
-    if ((rk_sdack == 1'b0) && (dw_sdack == 1'b0) && (dx_sdack == 1'b0) && (my_sdack == 1'b0)) begin 
+    if ((rk_sdack == 1'b0) && (dm_sdack == 1'b0) && (dw_sdack == 1'b0) && (dx_sdack == 1'b0) && (my_sdack == 1'b0)) begin 
        // неактивное состояние - ищем источник запроса 
        if (rk_sdreq == 1'b1) rk_sdack <=1'b1;
        else if (dw_sdreq_filter[1] == 1'b1) dw_sdack <=1'b1;
+       else if (dm_sdreq_filter[1] == 1'b1) dm_sdack <=1'b1;
        else if (dx_sdreq_filter[1] == 1'b1) dx_sdack <=1'b1;
        else if (my_sdreq_filter[1] == 1'b1) my_sdack <=1'b1;
     end    
@@ -837,6 +926,7 @@ always @(posedge sdclock) begin
     // активное состояние - ждем освобождения карты
        if ((rk_sdack == 1'b1) && rk_sdreq_filter[1] == 1'b0) rk_sdack <= 1'b0;
        else if ((dw_sdack == 1'b1) && (dw_sdreq_filter[1] == 1'b0)) dw_sdack <= 1'b0;
+       else if ((dm_sdack == 1'b1) && (dm_sdreq_filter[1] == 1'b0)) dm_sdack <= 1'b0;
        else if ((dx_sdack == 1'b1) && (dx_sdreq_filter[1] == 1'b0)) dx_sdack <= 1'b0;
        else if ((my_sdack == 1'b1) && (my_sdreq_filter[1] == 1'b0)) my_sdack <= 1'b0;
 end
@@ -846,6 +936,7 @@ end
 //**********************************
 assign sdcard_mosi =
          dw_sdack? dw_mosi: // DW
+         dm_sdack? dm_mosi: // DM
          dx_sdack? dx_mosi: // DX
          my_sdack? my_mosi: // MY
          rk_sdack? rk_mosi: // RK
@@ -853,6 +944,7 @@ assign sdcard_mosi =
 
 assign sdcard_cs =
          dw_sdack? dw_cs:   // DW
+         dm_sdack? dm_cs:   // DM
          dx_sdack? dx_cs:   // DX
          my_sdack? my_cs:   // MY
          rk_sdack? rk_cs:   // RK
@@ -860,39 +952,16 @@ assign sdcard_cs =
                    
 assign sdcard_sclk =                    
          dw_sdack? dw_sclk:   // DW
+         dm_sdack? dm_sclk:   // DM
          dx_sdack? dx_sclk:   // DX
          my_sdack? my_sclk:   // MY
          rk_sdack? rk_sclk:   // RK
                    `def_sclk;   // по умолчанию - контроллер с ведущим SDSPI
-/*
-
-wire sdidle = ~(dw_sdack | rk_sdack | dx_sdack | my_sdack);
-
-assign sdcard_mosi =
-         dw_sdack? dw_mosi: 1'b0 // DW
-       | dx_sdack? dx_mosi: 1'b0 // DX
-       | my_sdack? my_mosi: 1'b0 // MY
-       | rk_sdack? rk_mosi: 1'b0 // RK
-       | sdidle  ? `def_mosi: 1'b0; // по умолчанию - контроллер с ведущим SDSPI
-assign sdcard_cs =
-       | dw_sdack? dw_cs: 1'b0  // DW
-       | dx_sdack? dx_cs: 1'b0  // DX
-       | my_sdack? my_cs: 1'b0  // MY
-       | rk_sdack? rk_cs: 1'b0  // RK
-       | sdidle  ? `def_cs: 1'b0;   // по умолчанию - контроллер с ведущим SDSPI
-                   
-assign sdcard_sclk =                    
-         dw_sdack? dw_sclk: 1'b0   // DW
-       | dx_sdack? dx_sclk: 1'b0   // DX
-       | my_sdack? my_sclk: 1'b0   // MY
-       | rk_sdack? rk_sclk: 1'b0   // RK
-       | sdidle  ? `def_sclk: 1'b0;   // по умолчанию - контроллер с ведущим SDSPI
-   */         
             
 //**********************************
 //*  Контроллер прерываний
 //**********************************
-wbc_vic #(.N(9)) vic
+wbc_vic #(.N(10)) vic
 (
    .wb_clk_i(wb_clk),
    .wb_rst_i(vm_dclo_in),
@@ -900,10 +969,10 @@ wbc_vic #(.N(9)) vic
    .wb_dat_o(vm_ivec),
    .wb_stb_i(vm_istb),
    .wb_ack_o(vm_iack),
-//         UART1-Tx     UART1-Rx   UART2-Tx    UART2-Rx     RK-11D        IRPR           DW         RX-11         MY  
-   .ivec({16'o000064, 16'o000060, 16'o000334,  16'o000330, 16'o000220,  16'o000330, 16'o000300, 16'o000264, 16'o000170 }),   // векторы
-   .ireq({irpstx_irq, irpsrx_irq, irpstx2_irq, irpsrx2_irq, rk11_irq,     lpt_irq,    dw_irq,     rx_irq,      my_irq  }),   // запрос прерывания
-   .iack({irpstx_iack,irpsrx_iack,irpstx2_iack,irpsrx2_iack,rk11_iack,    lpt_iack,   dw_iack,    rx_iack,     my_iack })    // подтверждение прерывания
+//         UART1-Tx     UART1-Rx   UART2-Tx    UART2-Rx     RK-11D        IRPR           DW         RX-11         MY         DM
+   .ivec({16'o000064, 16'o000060, 16'o000334,  16'o000330, 16'o000220,  16'o000330, 16'o000300, 16'o000264, 16'o000170, 16'o000210 }),   // векторы
+   .ireq({irpstx_irq, irpsrx_irq, irpstx2_irq, irpsrx2_irq, rk11_irq,     lpt_irq,    dw_irq,     rx_irq,      my_irq,  rk611_irq  }),   // запрос прерывания
+   .iack({irpstx_iack,irpsrx_iack,irpstx2_iack,irpsrx2_iack,rk11_iack,    lpt_iack,   dw_iack,    rx_iack,     my_iack, rk611_iack })    // подтверждение прерывания
 );
 
 //*****************************************************************************
@@ -911,23 +980,28 @@ wbc_vic #(.N(9)) vic
 //*****************************************************************************
 reg rk11_dma_state;
 reg my_dma_state;
+reg rk611_dma_state;
 // линии подтверждения разрешения доступа к шине
 assign rk11_dma_gnt = rk11_dma_state;
+assign rk611_dma_gnt = rk611_dma_state;
 assign my_dma_gnt = my_dma_state;
-assign cpu_access_req = ~ (rk11_dma_state | my_dma_state);
+assign cpu_access_req = ~ (rk11_dma_state | rk611_dma_state | my_dma_state);
 
 always @(posedge wb_clk) 
    if (sys_init == 1'b1) begin
       rk11_dma_state <= 1'b0;
+      rk611_dma_state <= 1'b0;
       my_dma_state <= 1'b0;
    end   
   // переключение источника - только в отсутствии активного цикла шины
    else if (wb_cyc == 1'b0) begin
      if (rk11_dma_req == 1'b1)  rk11_dma_state <= 1'b1;  // запрос от RK11
      else if (my_dma_req == 1'b1)  my_dma_state <= 1'b1; // запрос от MY
+     else if (rk611_dma_req == 1'b1)  rk611_dma_state <= 1'b1; // запрос от DM
      else begin
         // нет активных DMA-запросов - шина подключается к процессору
         rk11_dma_state <= 1'b0;       
+        rk611_dma_state <= 1'b0;       
         my_dma_state <= 1'b0;       
      end
   end
@@ -937,35 +1011,39 @@ always @(posedge wb_clk)
 //*  Коммутатор источника управления (мастера) шины wishbone
 //*******************************************************************
 assign wb_adr =   (rk11_dma_state) ? rk11_adr : 16'o0
+                | (rk611_dma_state) ? rk611_adr[15:0] : 16'o0
                 | (my_dma_state)   ? my_adr   : 16'o0
                 | (cpu_access_req) ? cpu_adr  : 16'o0;
                                            
 assign wb_out =   (rk11_dma_state) ? rk11_dma_out: 16'o0
+                | (rk611_dma_state) ? rk611_dma_out: 16'o0 
                 | (my_dma_state)   ? my_dma_out  : 16'o0
                 | (cpu_access_req) ? cpu_data_out: 16'o0;
                                            
 assign wb_cyc = (rk11_dma_state == 1'b1) ? rk11_dma_req:
+                (rk611_dma_state == 1'b1) ? rk611_dma_req:
                 (my_dma_state == 1'b1)   ? my_dma_req:
                                            cpu_cyc;
                                            
 assign wb_we =  (rk11_dma_state == 1'b1) ? rk11_dma_we:
+                (rk611_dma_state == 1'b1) ? rk611_dma_we:
                 (my_dma_state == 1'b1)   ? my_dma_we:
                                            cpu_we;
                                            
-assign wb_sel =   (rk11_dma_state) ? 2'b11: 2'b00              
-                | (my_dma_state)   ? 2'b11: 2'b00              
-                | (cpu_access_req) ? cpu_bsel: 2'b00;
+assign wb_sel =   (rk11_dma_state|rk611_dma_state|my_dma_state) ? 2'b11: cpu_bsel;
                                           
 assign wb_stb = (rk11_dma_state == 1'b1) ? rk11_dma_stb:
+                (rk611_dma_state == 1'b1) ? rk611_dma_stb:
                 (my_dma_state == 1'b1)   ? my_dma_stb:
                                            cpu_stb;
                                            
 assign cpu_ack = ((
                   rk11_dma_state | 
-                  my_dma_state
-                  ) == 1'b0) ? global_ack: 1'b0;
+                  rk611_dma_state | 
+                  my_dma_state) == 1'b0) ? global_ack: 1'b0;
                   
 assign rk11_dma_ack = (rk11_dma_state == 1'b1) ? global_ack: 1'b0;
+assign rk611_dma_ack = (rk611_dma_state == 1'b1) ? global_ack: 1'b0;
 assign my_dma_ack = (my_dma_state == 1'b1) ? global_ack: 1'b0;
   
 //*******************************************************************
@@ -977,6 +1055,7 @@ assign uart1_stb  = wb_stb & wb_cyc & (wb_adr[15:3] == (16'o177560 >> 3));   // 
 assign uart2_stb  = wb_stb & wb_cyc & (wb_adr[15:3] == (16'o176500 >> 3));   // ИРПС дополнительный - 176500-177506
 assign lpt_stb    = wb_stb & wb_cyc & (wb_adr[15:2] == (16'o177514 >> 2));   // ИРПР (LP) - 177514-177516
 assign rk11_stb   = wb_stb & wb_cyc & (wb_adr[15:4] == (16'o177400 >> 4));   // RK - 177400-177416
+assign rk611_stb  = wb_stb & wb_cyc & (wb_adr[15:5] == (16'o177440 >> 5));   // DM - 177440-177476
 assign dw_stb     = wb_stb & wb_cyc & (wb_adr[15:5] == (16'o174000 >> 5));   // DW - 174000-174026
 assign rx_stb     = wb_stb & wb_cyc & (wb_adr[15:2] == (16'o177170 >> 2));   // DX - 177170-177172
 assign my_stb     = wb_stb & wb_cyc & (wb_adr[15:2] == (16'o172140 >> 2));   // MY - 172140-172142 
@@ -1000,7 +1079,7 @@ assign sdram_stb =  (wb_stb & wb_cyc & (wb_adr[15:13] != 3'b111)) | sysram_stb;
 `endif
 
 // Сигналы подтверждения - собираются через OR со всех устройств
-assign global_ack  = sdram_ack | rom_ack | uart1_ack | uart2_ack | rk11_ack | lpt_ack | dw_ack | rx_ack | my_ack | kgd_ack;
+assign global_ack  = sdram_ack | rom_ack | uart1_ack | uart2_ack | rk11_ack | rk611_ack | lpt_ack | dw_ack | rx_ack | my_ack | kgd_ack;
 
 // Мультиплексор выходных шин данных всех устройств
 assign wb_mux = 
@@ -1009,6 +1088,7 @@ assign wb_mux =
      | (uart1_stb ? uart1_dat : 16'o000000)
      | (uart2_stb ? uart2_dat : 16'o000000)
      | (rk11_stb  ? rk11_dat  : 16'o000000)
+     | (rk611_stb ? rk611_dat : 16'o000000)
      | (lpt_stb   ? lpt_dat   : 16'o000000)
      | (dw_stb    ? dw_dat    : 16'o000000)
      | (rx_stb    ? rx_dat    : 16'o000000)

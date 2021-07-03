@@ -106,7 +106,8 @@ reg io_phase;
 reg delflag;     // признак удаленного сектора
       
 // интерфейс к SDSPI
-wire [26:0] sdcard_addr;   // адрес сектора карты
+wire [26:0] sdaddr;   // адрес сектора карты
+reg  [26:0] sdcard_addr;   // адрес сектора карты
 wire sdspi_io_done;        // флаг окончагия чтения
 reg  sdspi_write_mode;     //  выбо режима чтения-записи
 wire sdcard_error;         // флаг ошибки
@@ -389,6 +390,7 @@ always @(posedge wb_clk_i)   begin
                               sdbuf_datain <= {15'o0,cmd[2]};  // cmd[2]=0 для обычных секторов, 1 для удаленных
                               // получен ответ sdack
                               if (sdack) begin
+                                 sdcard_addr <= sdaddr;
                                  sdspi_write_mode=1'b1;
                                  sdspi_start <= 1'b1 ;  // запускаем SDSPI
                                  iostate <= io_wait;
@@ -434,6 +436,7 @@ always @(posedge wb_clk_i)   begin
                            else begin
                               sdreq <= 1'b1;   // запрос доступа к карте
                               if (sdack) begin
+                                 sdcard_addr <= sdaddr;
                                  sdspi_start <= 1'b1 ; 
                                  sdspi_write_mode=1'b0;
                                  iostate <= io_wait;
@@ -492,6 +495,6 @@ end
 //reg [4:0] sec;
 //
 // полный абсолютный адрес 
-assign sdcard_addr = start_offset + {10'b0,drv,cyl,sec[4:0]};
+assign sdaddr = start_offset + {10'b0,drv,cyl,sec[4:0]};
 
 endmodule

@@ -61,7 +61,7 @@ reg  [15:0]   SEL2_even, SEL2_odd;
 
 // Локальная шина процессора
 wire [15:0] local_dat_i;    // локальная входная шина данных
-wire local_cyc;             // локальный сигнал начала транзацкии
+wire local_stb;             // локальный сигнал начала транзацкии
 wire cpu_ack;               // вход REPLY процессора
 wire [3:1]   vm_irq;        // собственные входы запросов прерывания
 wire cpu_dev_stb;           // запрос на доступ к периферийному блоку процессора 
@@ -70,28 +70,32 @@ wire [15:0]   cpu_dev_dat;  // шина данных периферийного 
 wire [2:1]   vm_sel;        // выбор SEL-регистра
 
 // периферийный блок регистров процессора 177700-177717
-assign cpu_dev_stb= cpu_stb_o & local_cyc & (cpu_adr_o[15:4] == (16'o177700 >> 4));   
+assign cpu_dev_stb= local_stb & (cpu_adr_o[15:4] == (16'o177700 >> 4));   
 
 // ROM с монитором 0000
 wire rom_part1 = (cpu_adr_o[12:11] == 2'b00)&(startup_reg[2]|startup_reg[3]);                // область 160000-163777, управляемая битами 2 и 3
 wire rom_part2 = ((cpu_adr_o[12:11] == 2'b01)||(cpu_adr_o[12:11] == 2'b10)) & startup_reg[3]; // область 164000-173000 управляемая битом 3
 wire rom_part3 = (cpu_adr_o[12:9] == 4'b1011);                                               // область 173000-173777 c загрузчиком,
                                                                                             // всегда отображаемая в адресное пространство
-assign rom_stb = cpu_stb_o & local_cyc & (cpu_adr_o[15:13] == 3'b111) & (rom_part1|rom_part2|rom_part3);
+assign rom_stb = local_stb & (cpu_adr_o[15:13] == 3'b111) & (rom_part1|rom_part2|rom_part3);
 
 // Размещение системной памяти: 177600-177677
-assign sysram_stb   = cpu_stb_o & local_cyc &(cpu_adr_o[15:6] == 10'b1111111110); 
+assign sysram_stb   = local_stb & (cpu_adr_o[15:6] == 10'b1111111110); 
 
 // Сигнал подтвреждения обмена - от общей шины и модуля ROM
-assign cpu_ack = global_ack | rom_ack | cpu_dev_ack;
+assign cpu_ack = global_ack | rom_ack | cpu_dev_ack | bootrom_ack;
 
 // мультиплексор входной шины данных
-assign local_dat_i = (rom_stb)?                 rom_dat    : 16'o0    // теневой ROM
-                   | (cpu_dev_stb)?             cpu_dev_dat: 16'o0    // периферийный блок процессора
-                   | (~rom_stb & ~cpu_dev_stb)? cpu_dat_i  : 16'o0;   // остальные устройства на шине
+assign local_dat_i = (rom_stb)     ?   rom_dat    : 16'o0    // теневой ROM
+                   | (cpu_dev_stb) ?   cpu_dev_dat: 16'o0    // периферийный блок процессора
+                   | (bootrom_stb) ?   bootrom_dat: 16'o0 
+                   | cpu_dat_i;                               // остальные устройства на шине
                    
 // Разрешение транзакций на общей шине - только при отсутствии доступа к локальным устройствам
-assign cpu_cyc_o=local_cyc & (~rom_stb) & (~cpu_dev_stb);
+assign cpu_stb_o=local_stb & (~rom_stb) & (~cpu_dev_stb) & (~bootrom_stb);
+
+// cyc - формальный сигнал, не имеющий смысла в нашей схеме
+assign cpu_cyc_o=cpu_stb_o;
 
 // Встроенные в процессор источники прерывания
 assign      vm_irq[1] = halt;                  // кнопка входа в пульт
@@ -134,10 +138,10 @@ vm1_wb #(.VM1_CORE_MULG_VERSION(1)) cpu
    .wbm_adr_o(cpu_adr_o),           // выход шины адреса
    .wbm_dat_o(cpu_dat_o),           // выход шины данных
    .wbm_dat_i(local_dat_i),         // вход шины данных
-   .wbm_cyc_o(local_cyc),           // Строб цила wishbone
+//   .wbm_cyc_o(local_cyc),           // Строб цила wishbone
    .wbm_we_o(cpu_we_o),             // разрешение записи
    .wbm_sel_o(cpu_sel_o),           // выбор байтов для передачи
-   .wbm_stb_o(cpu_stb_o),           // строб данных
+   .wbm_stb_o(local_stb),           // строб данных
    .wbm_ack_i(cpu_ack),             // вход подтверждения данных
 
 // Сбросы и прерывания
@@ -158,7 +162,7 @@ vm1_wb #(.VM1_CORE_MULG_VERSION(1)) cpu
    .wbs_adr_i(cpu_adr_o[3:0]),      // адрес регистра периферийного блока
    .wbs_dat_i(cpu_dat_o),           // вход данных
    .wbs_dat_o(cpu_dev_dat),         // выход данных
-   .wbs_cyc_i(local_cyc),           // строб цикла шины
+   .wbs_cyc_i(cpu_dev_stb),         // строб цикла шины
    .wbs_stb_i(cpu_dev_stb),         // строб транзакции
    .wbs_ack_o(cpu_dev_ack),         // подтверждение транзакции
    .wbs_we_i(cpu_we_o),             // разрешение записи
@@ -170,7 +174,7 @@ vm1_wb #(.VM1_CORE_MULG_VERSION(1)) cpu
 );
 
 //******************************************************************
-//* Модуль ROM с теневым ПЗУ 000
+//* Теневое ПЗУ 000
 //******************************************************************
 wire [15:0] rom_dat;
 wire rom_stb;
@@ -184,9 +188,39 @@ rom000 hrom(
 );
 // формирователь cигнала подверждения транзакции с задержкой на 1 такт
 always @ (posedge clk_p) begin
-   rom_ack0 <= local_cyc & rom_stb;
-   rom_ack  <= local_cyc & rom_ack0;
+   rom_ack0 <= rom_stb;
+   rom_ack  <= rom_ack0;
 end
+
+//*******************************************
+//* ПЗУ монитора-загрузчика
+//*******************************************
+wire bootrom_stb;
+wire bootrom_ack;
+wire [15:0] bootrom_dat;
+reg [1:0]bootrom_ack_reg;
+
+`ifdef bootrom_module
+// эмулятор пульта и набор загрузчиков - ПЗУ  165000-166777
+boot_rom bootrom(
+   .address(cpu_adr_o[9:1]),
+   .clock(clk_p),
+   .q(bootrom_dat));
+
+always @ (posedge clk_p) begin
+   bootrom_ack_reg[0] <= bootrom_stb & ~cpu_we_o;
+   bootrom_ack_reg[1] <= bootrom_stb & ~cpu_we_o & bootrom_ack_reg[0];
+end
+assign bootrom_ack = local_stb & bootrom_ack_reg[1];
+
+// сигнал выбора
+assign bootrom_stb   = local_stb & (cpu_adr_o[15:10] == 6'o72); // 164000-165776  
+
+`else 
+assign bootrom_ack=1'b0;
+assign bootrom_stb=1'b0;
+`endif
+
 
 //******************************************************************************************
 //*  Внешние регистры начального пуска и SEL2, четный и нечетный
