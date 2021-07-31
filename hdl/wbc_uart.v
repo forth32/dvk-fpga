@@ -105,9 +105,9 @@ assign rx_csr = {rx_csr_perr, 2'b00, rx_csr_ovf, 4'b0000, rx_empty, rx_csr_ie, 5
 
 // стробы чтения-записи регистров
 assign rx_csr_wstb = wb_cyc_i & wb_stb_i &  wb_we_i & ~wb_ack_o & (wb_adr_i[2:1] == 2'b00);
-assign rx_rbr_rstb = wb_cyc_i & wb_stb_i & ~wb_we_i & ~wb_ack_o & (wb_adr_i[2:1] == 2'b01);
+assign rx_dat_rstb = wb_cyc_i & wb_stb_i & ~wb_we_i & ~wb_ack_o & (wb_adr_i[2:1] == 2'b01);
 assign tx_csr_wstb = wb_cyc_i & wb_stb_i &  wb_we_i & ~wb_ack_o & (wb_adr_i[2:1] == 2'b10);
-assign tx_thr_wstb = wb_cyc_i & wb_stb_i &  wb_we_i & ~wb_ack_o & (wb_adr_i[2:1] == 2'b11);
+assign tx_dat_wstb = wb_cyc_i & wb_stb_i &  wb_we_i & ~wb_ack_o & (wb_adr_i[2:1] == 2'b11);
 
 //**************************************
 //*  Сигнал ответа 
