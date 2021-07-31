@@ -187,7 +187,7 @@ module rk611 (
 
 wire bus_strobe = wb_cyc_i & wb_stb_i;         // строб цикла шины
 wire bus_read_req = bus_strobe & ~wb_we_i;     // запрос чтения
-wire bus_write_req = bus_strobe & wb_we_i;     // запрос записи
+wire bus_write_req = bus_strobe & wb_we_i & ~reply;   // запрос записи
 wire reset=wb_rst_i;
 reg reply;
 
@@ -199,7 +199,6 @@ reg[1:0] interrupt_state;
 reg int_req; 
 
 // регистр управления/состояния 1 - rkcs1 - 177440
-reg rkcs1_go;             // запуск команды
 reg[3:0] rkcs1_fu;        // код функции
 reg rkcs1_ie;             // разрешение прерывания
 wire rkcs1_rdy=~start;    // готовность контроллера
@@ -366,7 +365,6 @@ always @(posedge wb_clk_i)  begin
       rkcs1_ie <= 1'b0 ; 
       rkcs1_mex <= 2'b00 ; 
       rkcs1_fu <= 4'b0000 ; 
-      rkcs1_go <= 1'b0 ; 
       rkcs1_di <= 1'b0;
       rkcs1_cdt <= 1'b1;    // тип привода по умолчанию - RK07
       
@@ -415,7 +413,7 @@ always @(posedge wb_clk_i)  begin
             // Формирование запроса на прерывание         
             i_req :
                      begin
-                        if (rkcs1_ie == 1'b1) begin                           
+                        if (rkcs1_ie) begin                           
                            // если прерывания вообще разрешены
                            if (iack == 1'b1) begin
                               // если получено подтверждение прерывания от процессора
@@ -426,6 +424,7 @@ always @(posedge wb_clk_i)  begin
                         
                         else begin                           
                           // если прерывания запрещены
+								   irq <= 1'b0;
                            interrupt_state <= i_idle ; 
                         end 
                      end
@@ -451,7 +450,7 @@ always @(posedge wb_clk_i)  begin
             case (wb_adr_i[4:1])
                // 777440  rkcs1 - регистр управления/состояния 1 
                //                            15       14       13   12     11          10       8-9         7        6         5     1-4        0
-               4'b0000 :   wb_dat_o <= {rkcs1_cerr, rkcs1_di, 1'b0, 1'b0, 1'b0, rkcs1_cdt, rkcs1_mex, rkcs1_rdy, rkcs1_ie, 1'b0, rkcs1_fu, rkcs1_go} ;
+               4'b0000 :   wb_dat_o <= {rkcs1_cerr, rkcs1_di, 1'b0, 1'b0, 1'b0, rkcs1_cdt, rkcs1_mex, rkcs1_rdy, rkcs1_ie, 1'b0, rkcs1_fu, start} ;
                // 777442  RKWC - счетчик слов для обмена данными
                4'b0001 :   wb_dat_o <= ~(wcp-1'b1); // значение получаем инверсией wcp
                // физический адрес буфера в памяти - rkba - 177444
@@ -484,7 +483,7 @@ always @(posedge wb_clk_i)  begin
                case (wb_adr_i[4:1])
                // 777440  rkcs1 - регистр управления/состояния 1
                4'b0000 :  begin  
-                              rkcs1_go <= wb_dat_i[0] ;    // флаг запуска команды на выполнение
+                              start <= wb_dat_i[0] ;    // флаг запуска команды на выполнение
                               if (wb_dat_i[0]) begin   
                                   // если GO поднят - снимаем флаги ошибок
                                   rkcs2_pge <= 1'b0;
@@ -561,12 +560,6 @@ always @(posedge wb_clk_i)  begin
             update_rkwc <= 1'b0 ;    // синмаем флаг запроса обновления RKWC
          end
          
-         // формирователь сигнала start
-         if (start == 1'b0 & rkcs1_go & ~wb_stb_i)  begin
-               start <= 1'b1 ;    // запускаем команду в обработку
-               rkcs1_go <= 1'b0;  // снимаем бит GO
-         end 
-
          // запуск обработки команды
            if (start == 1'b1)  begin
             // проверка установленного типа устройства
@@ -604,6 +597,7 @@ always @(posedge wb_clk_i)  begin
                               rkds_cda[devnum] <= 1'b0;
                               rkas[devnum] <= 1'b0;
                               start <= 1'b0;
+                              rkds_vv[devnum] <= 1'b1; // поднимаем VV
                            end                       
             //------------------------------------------------------------
             // разгрузка тома
