@@ -1,3 +1,7 @@
+//=============================================
+//  Контроллер DEC RK11 (DK:) с дисками RK05
+//  Советский аналог - СМ5400
+//=============================================
 module rk11 (
 
 // шина wishbone
@@ -10,7 +14,7 @@ module rk11 (
    input                  wb_we_i,    // разрешение записи (0 - чтение)
    input                  wb_stb_i,   // строб цикла шины
    input    [1:0]         wb_sel_i,   // выбор конкретных байтов для записи - старший, младший или оба
-   output reg             wb_ack_o,   // подтверждение выбора устройства
+   output                 wb_ack_o,   // подтверждение выбора устройства
 
 // обработка прерывания   
    output reg             irq,         // запрос
@@ -19,7 +23,7 @@ module rk11 (
 // DMA
    output reg             dma_req,    // запрос DMA
    input                  dma_gnt,    // подтверждение DMA
-   output reg[15:0]       dma_adr_o,  // выходной адрес при DMA-обмене
+   output reg[17:0]       dma_adr_o,  // выходной адрес при DMA-обмене
    input[15:0]            dma_dat_i,  // входная шина данных DMA
    output reg[15:0]       dma_dat_o,  // выходная шина данных DMA
    output reg             dma_stb_o,  // строб цикла шины DMA
@@ -46,10 +50,9 @@ module rk11 (
    ); 
 
    // Сигналы упраления обменом с шиной
-   
-   wire bus_strobe = wb_cyc_i & wb_stb_i;         // строб цикла шины
-   wire bus_read_req = bus_strobe & ~wb_we_i;     // запрос чтения
-   wire bus_write_req = bus_strobe & wb_we_i;     // запрос записи
+   wire bus_strobe = wb_cyc_i & wb_stb_i & ~wb_ack_o;   // строб цикла шины
+   wire bus_read_req = bus_strobe & ~wb_we_i;           // запрос чтения
+   wire bus_write_req = bus_strobe & wb_we_i;           // запрос записи
    wire reset=wb_rst_i;
  
    reg interrupt_trigger;     // триггер запроса прерывания
@@ -95,7 +98,7 @@ module rk11 (
    reg rkcs_scp;            // search complete
    reg rkcs_iba;            // inhibit increment rkba
    reg rkcs_fmt;            // format
-   reg rkcs_exb;            // extra bit, unused?
+   reg rkcs_exb;            
    reg rkcs_sse;            // stop on soft error
    reg rkcs_rdy;            // ready
    reg rkcs_ide;            // interrupt on done enable
@@ -123,7 +126,7 @@ module rk11 (
    reg start;               // флаг запуска команды
    reg update_rkwc;         // признак обновления счетчика слов
    reg[15:0] wcp;           // счетчик читаемых слов, положительный (не инверсия)
-   reg[15:1] ram_phys_addr; // адрес для DMA-обмена
+   reg[17:1] ram_phys_addr; // адрес для DMA-обмена
    reg[11:0] rkclock;       // счетчик для формирования индексных импульсов диска
    reg[1:0] rksi[7:0];      // таймер эмуляции времени позиционирования для каждого диска
    reg scpset;              // флаг запроса прерывания по окончанию позиционирования
@@ -171,8 +174,7 @@ module rk11 (
    assign rker = {rker_dre, rker_ovr, rker_wlo, rker_ske, rker_pge, rker_nxm, rker_dlt, rker_te, rker_nxd, rker_nxc, rker_nxs, 3'b000, rker_cse, rker_wce} ;
 
    // интерфейс к SDSPI
-wire [26:0] sdaddr;       // адрес сектора карты
-reg [26:0] sdcard_addr;       // адрес сектора карты
+wire [26:0] sdcard_addr;       // адрес сектора карты
 wire sdcard_error;             // флаг ошибки
 wire [15:0] sdbuf_dataout;     // слово; читаемое из буфера чтения
 wire sdcard_idle;              // признак готовности контроллера
@@ -217,20 +219,21 @@ sdspi sd1 (
 ); 
 
  
-   // формирователь ответа на цикл шины   
-   wire reply=wb_cyc_i & wb_stb_i & ~wb_ack_o;
+//**************************************
+//*  Сигнал ответа 
+//**************************************
+reg reply;
+always @(posedge wb_clk_i or posedge wb_rst_i)
+    if (wb_rst_i == 1) reply <= 1'b0;
+    else if (wb_stb_i) reply <= 1'b1;
+    else reply <= 1'b0;
 
-   //**************************************
-   //*  Сигнал ответа 
-   //**************************************
-   always @(posedge wb_clk_i or posedge wb_rst_i)
-     if (wb_rst_i == 1) wb_ack_o <= 0;
-     else wb_ack_o <= reply;
+assign wb_ack_o = reply & wb_stb_i;    
 
-   //**************************************************
-   // Логика обработки прерываний и общего сброса
-   //**************************************************
-   always @(posedge wb_clk_i)  begin
+//**************************************************
+// Логика обработки прерываний и общего сброса
+//**************************************************
+always @(posedge wb_clk_i)  begin
       if (reset == 1'b1) begin
          // сброс системы
          interrupt_trigger <= 1'b0 ; 
@@ -536,7 +539,7 @@ sdspi sd1 (
                                     if (nxm == 1'b0 & sdcard_error == 1'b0)  begin
                                     
                                        // запись окончилась без ошибок 
-                                       rkcs_mex <= 2'b00; //ram_phys_addr[17:16] ;  // адрес окончания записи - старшая часть, пока, увы, не нужна
+                                       rkcs_mex <= ram_phys_addr[17:16] ;  // адрес окончания записи - старшая часть, пока, увы, не нужна
                                        rkba <= {ram_phys_addr[15:1], 1'b0} ;  // младшая часть
                                        
                                        // ----- переход к следующему сектору -----
@@ -578,11 +581,12 @@ sdspi sd1 (
                                     
                                     // обработка ошибок записи
                                     else begin
-                                       rkcs_mex <= 2'b00; //ram_phys_addr[17:16] ; 
+                                       rkcs_mex <= ram_phys_addr[17:16] ; 
                                        rkba <= {ram_phys_addr[15:1], 1'b0} ; 
                                        rkcs_rdy <= 1'b1 ;                   // выходим в готовность
                                        if (nxm == 1'b1)  rker_nxm <= 1'b1 ; // ошибка NXM - запись в несуществующую память
                                        if (sdcard_error == 1'b1) rker_dre <= 1'b1 ;   // ошибка SD-карты
+													rkwc <= 16'o0;
                                        start <= 1'b0;  // завершаем обработку команды
                                     end 
                                  end 
@@ -628,7 +632,7 @@ sdspi sd1 (
                                     read_start <= 1'b0;
                                     if (nxm == 1'b0 & sdcard_error == 1'b0)   begin
                                        // чтение завершено без ошибок
-                                       rkcs_mex <= 2'b00; //ram_phys_addr[17:16] ; 
+                                       rkcs_mex <= ram_phys_addr[17:16] ; 
                                        rkba <= {ram_phys_addr[15:1], 1'b0} ; // адрес буфера к ОЗУ хоста
                                          
                                        // переход на следующий сектор  
@@ -678,11 +682,12 @@ sdspi sd1 (
                                     
                                     else  begin
                                        // обработка ошибок чтения
-                                       rkcs_mex <= 2'b00; //ram_phys_addr[17:16] ; 
+                                       rkcs_mex <= ram_phys_addr[17:16] ; 
                                        rkba <= {ram_phys_addr[15:1], 1'b0} ; 
                                        rkcs_rdy <= 1'b1 ; 
                                        if (nxm == 1'b1)  rker_nxm <= 1'b1 ; 
                                        if (sdcard_error == 1'b1)  rker_dre <= 1'b1 ; 
+													rkwc <= 16'o0;
                                        start <= 1'b0;
                                     end 
                                  end 
@@ -863,6 +868,25 @@ sdspi sd1 (
       end  
    end 
 
+   //**********************************************
+   // Вычисление адреса блока на SD-карте
+   //**********************************************
+   wire[16:0] hs_offset; 
+   wire[16:0] ca_offset; 
+   wire[16:0] dn_offset;
+   // 
+   // Головка
+   assign hs_offset = (rkda_hd == 1'b1) ? 17'b00000000000001100 : 17'b00000000000000000 ;
+   // Цилиндр
+   assign ca_offset = {5'b00000, rkda_cy, 4'b0000} + {6'b000000, (rkda_cy), 3'b000} ;
+   // Начало образа диска на карте
+   //
+   //  0 0ddd 0000 0000 0000   1000 + 0800 = 1800
+   //  0 00dd d000 0000 0000
+   //
+   assign dn_offset = {2'b00, rkda_dr, 12'b000000000000} + {3'b000, rkda_dr, 11'b00000000000} ;
+   // полный абсолютный адрес 
+   assign sdcard_addr = {6'b000000, dn_offset} + hs_offset + ca_offset + rkda_sc + start_offset ;
 
    // DMA и работа с картой памяти
    //---------------------------------------
@@ -888,11 +912,10 @@ sdspi sd1 (
                            
                            // старт процедуры записи
                            if (write_start == 1'b1) begin
-                              sdcard_addr <= sdaddr;
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1) begin               // ждем подтверждения DMA
                                  busmaster_state <= busmaster_write1 ; // переходим к этапу 1 записи
-                                 ram_phys_addr <= rkba[15:1];          // полный физический адрес памяти
+                                 ram_phys_addr <= {rkcs_mex, rkba[15:1]};          // полный физический адрес памяти
                                  
                                  // вычисление количества байтов в текущем секторе (передача может быть неполной)
                                  if (wcp >= 16'o400) sector_data_index <= 9'o400;               // запрошен полный сектор или больше
@@ -903,20 +926,19 @@ sdspi sd1 (
                            end
                            // старт процедуры чтения
                            else if (read_start == 1'b1) begin
-                              sdcard_addr <= sdaddr;
-                              dma_req <= 1'b1 ;                        // поднимаем запрос DMA
-                              if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
-                                 ram_phys_addr <= rkba[15:1];          // полный физический адрес буфера в ОЗУ
-                                 
                                  // проверка на режим чтения заголовков
-                                 if (rkcs_fmt == 1'b1) busmaster_state <= busmaster_readh ; // переходим к чтению заголовков
+                                 if (rkcs_fmt == 1'b1) begin
+                                    dma_req <= 1'b1 ;                        // поднимаем запрос DMA
+                                    ram_phys_addr <= {rkcs_mex, rkba[15:1]};  // полный физический адрес буфера в ОЗУ
+                                    if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
+												   busmaster_state <= busmaster_readh ; // переходим к чтению заголовков
+												end	
+                                 end 
                                  else  busmaster_state <= busmaster_readsector;                 // переходим к чтению данных
-                                 
                                  // коррекция счетчика читаемых слов
                                  if (wcp >= 16'o400)  sector_data_index <= 9'o400;             // запрошен сектор и больше
                                  else                 sector_data_index <= {1'b0, wcp[7:0]} ;  // запрошено меньше сектора
                                  sdbuf_addr <= 0 ;                                       // начальный адрес в буфере SD-контроллера
-                              end 
                            end 
                            else iocomplete <= 1'b0;
                         end
@@ -924,16 +946,16 @@ sdspi sd1 (
                         // чтение заголовоков секторов
                busmaster_readh : 
                         begin
-                           dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; 
+                           dma_adr_o <= {ram_phys_addr[17:1], 1'b0} ; 
                            dma_dat_o <= {3'b000, rkda_cy, 5'b00000} ; 
                            dma_stb_o <= 1'b1 ; 
                            dma_we_o <= 1'b1;
                            if (rkcs_iba == 1'b0)       ram_phys_addr <= ram_phys_addr + 1'b1 ; 
-                           if (dma_ack_i == 1'b1) busmaster_state <= busmaster_readh2 ; 
+                           if (dma_ack_i == 1'b1) busmaster_state <= busmaster_read_done ; 
                         end
                busmaster_readh2 :
                         begin
-                           dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; 
+                           dma_adr_o <= {ram_phys_addr[17:1], 1'b0} ; 
                            dma_dat_o <= 16'h1111 ; 
                            dma_stb_o <= 1'b1 ; 
                            dma_we_o <= 1'b1;
@@ -946,7 +968,13 @@ sdspi sd1 (
                         begin
                            sdspi_start <= 1'b1;          // запускаем SDSPI
                            sdspi_write_mode <= 1'b0;     // режим чтения
-                           if (sdspi_io_done == 1'b1) busmaster_state <= busmaster_preparebus; // sdspi закончил работу
+                           if (sdspi_io_done == 1'b1) begin
+                            dma_req <= 1'b1 ;                        // поднимаем запрос DMA
+                            ram_phys_addr <= {rkcs_mex, rkba[15:1]};  // полный физический адрес буфера в ОЗУ
+                            if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
+									   busmaster_state <= busmaster_preparebus; // sdspi закончил работу
+									 end	
+									end 
                         end   
                         
                         // чтение данных - подготовка шины к DMA
@@ -954,10 +982,11 @@ sdspi sd1 (
                         begin
                            sdspi_start <= 1'b0;
                            busmaster_state <= busmaster_read ; 
-                           dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; // выставляем адрес на шину
+                           dma_adr_o <= {ram_phys_addr[17:1], 1'b0} ; // выставляем адрес на шину
                            dma_stb_o <= 1'b0 ;                        // снимаем строб данных 
                            dma_we_o <= 1'b0 ;                         // снимаем строб записи
                            reply_count <= 6'b111111;                  // взводим таймер ожидания шины
+							      busmaster_state <= busmaster_read ; // переходим к чтению заголовков
                         end
                         // чтение данных - обмен по шине
                busmaster_read :
@@ -1009,7 +1038,7 @@ sdspi sd1 (
                               sdbuf_addr <= sdbuf_addr + 1'b1 ; // адрес буфера sdspi++
                               dma_stb_o <= 1'b1 ;  // поднимаем строб чтения
                               if (rkcs_iba == 1'b0)  ram_phys_addr <= ram_phys_addr + 1'b1 ; // если разрешено, увеличиваем адрес
-                              dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; // выставляем на шину адрес
+                              dma_adr_o <= {ram_phys_addr[17:1], 1'b0} ; // выставляем на шину адрес
                               busmaster_state <= busmaster_write ;  // 
                               reply_count <= 6'b111111;  // взводим таймер обменв
                         end
@@ -1026,12 +1055,13 @@ sdspi sd1 (
                            end  
                              if (dma_ack_i == 1'b1) begin   // устройство подтвердило обмен
                                  sdbuf_datain <= dma_dat_i ; // передаем байт данные с шины на вход sdspi
-                                 dma_adr_o <= {ram_phys_addr[15:1], 1'b0} ; // выставляем на шину адрес
+                                 dma_adr_o <= {ram_phys_addr[17:1], 1'b0} ; // выставляем на шину адрес
                                  dma_stb_o <= 1'b0 ; 
                               if (sector_data_index == 9'o0) begin
+										  // конец данных - освобождаем шину
                                 if (sdbuf_addr == 255) busmaster_state <= busmaster_write_wait ; 
                                 else                         busmaster_state <= busmaster_write_fill; 
-                                dma_req <= 1'b0 ; 
+                                dma_req <= 1'b0 ;   
                               end 
                               else  busmaster_state <= busmaster_write_delay ;  
                            end   
@@ -1072,25 +1102,4 @@ sdspi sd1 (
             endcase 
       end  
    end 
-
-//**********************************************
-// Вычисление адреса блока на SD-карте
-//**********************************************
-wire[16:0] hs_offset; 
-wire[16:0] ca_offset; 
-wire[16:0] dn_offset;
-// 
-// Головка
-assign hs_offset = (rkda_hd == 1'b1) ? 17'b00000000000001100 : 17'b00000000000000000 ;
-// Цилиндр
-assign ca_offset = {5'b00000, rkda_cy, 4'b0000} + {6'b000000, (rkda_cy), 3'b000} ;
-// Начало образа диска на карте
-//
-//  0 0ddd 0000 0000 0000   1000 + 0800 = 1800
-//  0 00dd d000 0000 0000
-//
-assign dn_offset = {2'b00, rkda_dr, 12'b000000000000} + {3'b000, rkda_dr, 11'b00000000000} ;
-// полный абсолютный адрес 
-assign sdaddr = {6'b000000, dn_offset} + hs_offset + ca_offset + rkda_sc + start_offset ;
-
 endmodule

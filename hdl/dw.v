@@ -1,6 +1,6 @@
-//
-//  Контроллер жесткого диска RD50C в варианте ДВК
-//
+//================================================================
+//  Контроллер жесткого диска RD50C (DW:) в варианте ДВК
+//================================================================
 module dw (
 
 // шина wishbone
@@ -180,14 +180,20 @@ sdspi sd1 (
 //**************************************
 // формирователь ответа на цикл шины   
 //**************************************
-wire reply=wb_cyc_i & wb_stb_i & ~wb_ack_o;
+reg [1:0]reply;
+
+always @(posedge wb_clk_i) begin
+  reply[0] <= (~wb_ack_o & wb_stb_i);
+  reply[1] <= reply[0];
+end
 
 //**************************************
 //*  Сигнал ответа 
 //**************************************
 always @(posedge wb_clk_i or posedge wb_rst_i)
-    if (wb_rst_i == 1'b1) wb_ack_o <= 1'b0;
-    else wb_ack_o <= reply;
+    if (wb_rst_i == 1) wb_ack_o <= 1'b0;
+    else if (wb_stb_i) wb_ack_o <= 1'b1;
+	 else wb_ack_o <= 1'b0;
 
 //**************************************************
 // Логика обработки прерываний 
@@ -196,42 +202,8 @@ always @(posedge wb_clk_i)
       if (reset == 1'b1 || rstreq == 1'b1) begin
        // сброс системы
          interrupt_state <= i_idle ; 
+		   interrupt_trigger <= 1'b0;
          irq <= 1'b0 ;    // снимаем запрос на прерывания
-      end
-      
-      else   begin
-        //******************************
-        //* обработка прерывания
-        //******************************
-        case (interrupt_state)
-                // нет активного прерывания
-              i_idle :
-                        begin
-                     //  Если поднят флаг A или B - поднимаем триггер прерывания
-                           if ((ide ==1'b1) & (rqa == 1'b1 | drq== 1'b1))  begin
-                              interrupt_state <= i_req ; 
-                              irq <= 1'b1 ;    // запрос на прерывание
-                           end 
-                           else   irq <= 1'b0 ;    // снимаем запрос на прерывания
-                        end
-               // Формирование запроса на прерывание         
-               i_req :     if (ide == 1'b0) interrupt_state <= i_idle ;    
-                           else if (iack == 1'b1) begin
-                              // если получено подтверждение прерывания от процессора
-                              irq <= 1'b0 ;               // снимаем запрос
-                              interrupt_state <= i_wait ; // переходим к ожиданию окончания обработки
-                           end 
-               // Ожидание окончания обработки прерывания         
-               i_wait :    if (iack == 1'b0)  interrupt_state <= i_idle ; 
-       endcase
-end
-
-//**************************************************
-// Работа с шиной и SDSPI
-//**************************************************
-always @(posedge wb_clk_i)  
-      if (reset == 1'b1 || rstreq == 1'b1) begin
-       // сброс системы
          start <= 1'b0 ; 
          rqa <= 1'b1;
          ide <= 1'b0;
@@ -252,6 +224,35 @@ always @(posedge wb_clk_i)
       
       // рабочие состояния
       else   begin
+        //******************************
+        //* обработка прерывания
+        //******************************
+        case (interrupt_state)
+                // нет активного прерывания
+              i_idle :
+                        begin
+                     //  Если поднят флаг A или B - поднимаем триггер прерывания
+                           if ((ide ==1'b1) & interrupt_trigger)  begin
+                              interrupt_state <= i_req ; 
+                              irq <= 1'b1 ;    // запрос на прерывание
+                           end 
+                           else   irq <= 1'b0 ;    // снимаем запрос на прерывания
+                        end
+               // Формирование запроса на прерывание         
+               i_req :     if (ide == 1'b0) interrupt_state <= i_idle ;    
+                           else if (iack == 1'b1) begin
+                              // если получено подтверждение прерывания от процессора
+                              irq <= 1'b0 ;               // снимаем запрос
+										interrupt_trigger <= 1'b0;
+                              interrupt_state <= i_wait ; // переходим к ожиданию окончания обработки
+                           end 
+               // Ожидание окончания обработки прерывания         
+               i_wait :    if (iack == 1'b0)  interrupt_state <= i_idle ; 
+       endcase
+
+//**************************************************
+// Работа с шиной и SDSPI
+//**************************************************
             
          //*********************************************
          //* Обработка unibus-транзакций 
@@ -267,9 +268,10 @@ always @(posedge wb_clk_i)
                               end   
                   4'b0100 :   begin                       // 174010 - DWBUF
                                  wb_dat_o <= sdbuf_dataout;      
-                                 if (wb_ack_o) begin
+                                 if (~sdbuf_write & reply[1]) begin
                                        if (&sdbuf_addr == 1'b1) begin
                                           rqa <= 1'b1;
+														interrupt_trigger <= 1'b1;
                                           drq <= 1'b0;
                                        end   
                                        else sdbuf_addr <= sdbuf_addr + 1'b1;
@@ -303,7 +305,14 @@ always @(posedge wb_clk_i)
                     // 174010 - DWBUF
                      4'b0100 :  begin   
                                  sdbuf_datain<= wb_dat_i; 
-                                 if (reply)  sdbuf_addr <= sdbuf_addr + 1'b1;                              
+                                 if (reply[0])  begin
+											  		if (&sdbuf_addr == 1'b1) begin
+                                          sdbuf_write <= 1'b0;
+                                          drq <= 1'b0;
+														interrupt_trigger <= 1'b0;
+													end	
+													sdbuf_addr <= sdbuf_addr + 1'b1;                              
+											end		
                                 end
                     // 174012 - DWCYL
                      4'b0101 :  begin
@@ -319,6 +328,7 @@ always @(posedge wb_clk_i)
                                     cmderr <= 1'b0;
                                     start <= 1'b1;
                                     rqa <= 1'b0;
+												interrupt_trigger <= 1'b0;
                                 end
                     // 174020 - DWSTRS
                      4'b1000 :  begin  
@@ -339,6 +349,7 @@ always @(posedge wb_clk_i)
                   8'o20:    begin
                               start <= 1'b0;
                               rqa <= 1'b1;
+										interrupt_trigger <= 1'b1;
                            end   
                         
                 
@@ -362,6 +373,7 @@ always @(posedge wb_clk_i)
                                       // чтение окончилось без ошибок
                                          sdbuf_addr <= 8'b00000000;   // инициализируем адрес секторного буфера
                                          drq <= 1'b1;
+													  interrupt_trigger <= 1'b1;
                                       end     
                                       // ошибка чтения
                                       else  cmderr <= 1'b1;
@@ -374,19 +386,23 @@ always @(posedge wb_clk_i)
                                  // подготовка к приему секторного буфера
                                  w_prepare: begin
                                           drq <= 1'b1;                 // запрос данных
+														interrupt_trigger <= 1'b1;
                                           sdbuf_write <= 1'b1;         // буфер sdspi - в режим записи
-                                          sdbuf_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
+                                   //       sdbuf_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
+                                          sdbuf_addr <= 8'o0;   // инициализируем адрес секторного буфера
                                           wstate <= w_skip;
                                        end   
                                        
-                                 w_skip:   
-                                       if (|sdbuf_addr == 1'b0) wstate <=w_waitdata;
+                                 w_skip: begin  
+                                       if (|sdbuf_addr != 1'b0) wstate <=w_waitdata;
+													end
                                  // ожидание заполнения секторного буфера 
                                  w_waitdata:
-                                       if (&sdbuf_addr == 1'b1) begin
+                                       if (|sdbuf_addr == 1'b0) begin
                                           // буфер заполнен
-                                          sdbuf_write <= 1'b0;
-                                          drq <= 1'b0;
+//                                          sdbuf_write <= 1'b0;
+//                                          drq <= 1'b0;
+//														interrupt_trigger <= 1'b0;
                                           wstate <= w_start;
                                        end
                                           
@@ -410,6 +426,7 @@ always @(posedge wb_clk_i)
                                  // запись подтверждена - освобождаем sdspi
                                  w_done: begin
                                     sdspi_start <= 1'b0 ;              // снимаем строб записи
+												interrupt_trigger <= 1'b1;
                                     rqa <= 1'b1;                       // флаг завершения команды
                                     start <= 1'b0;                     // заканчиваем обработку команды
                                     busy <= 1'b0;

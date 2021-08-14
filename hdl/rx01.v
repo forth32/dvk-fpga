@@ -1,3 +1,7 @@
+//================================================================
+//  Контроллер гибкого диска DEC RX11 (DX:)
+//  Советский аналог - КНГМД, диск - ГМД-70
+//================================================================
 module rx01 (
 
 // шина wishbone
@@ -10,7 +14,7 @@ module rx01 (
    input                  wb_we_i,    // разрешение записи (0 - чтение)
    input                  wb_stb_i,   // строб цикла шины
    input    [1:0]         wb_sel_i,   // выбор конкретных байтов для записи - старший, младший или оба
-   output reg             wb_ack_o,   // подтверждение выбора устройства
+   output                 wb_ack_o,   // подтверждение выбора устройства
 
 // обработка прерывания   
    output reg             irq,        // запрос
@@ -72,7 +76,7 @@ module rx01 (
 
 // Сигналы упраления обменом с шиной
    
-wire bus_strobe = wb_cyc_i & wb_stb_i;         // строб цикла шины
+wire bus_strobe = wb_stb_i & ~wb_ack_o;   // строб цикла шины
 wire bus_read_req = bus_strobe & ~wb_we_i;     // запрос чтения
 wire bus_write_req = bus_strobe & wb_we_i;     // запрос записи
 wire reset=wb_rst_i;
@@ -106,8 +110,7 @@ reg io_phase;
 reg delflag;     // признак удаленного сектора
       
 // интерфейс к SDSPI
-wire [26:0] sdaddr;   // адрес сектора карты
-reg  [26:0] sdcard_addr;   // адрес сектора карты
+wire [26:0] sdcard_addr;   // адрес сектора карты
 wire sdspi_io_done;        // флаг окончагия чтения
 reg  sdspi_write_mode;     //  выбо режима чтения-записи
 wire sdcard_error;         // флаг ошибки
@@ -159,20 +162,21 @@ sdspi sd1 (
       .sdclk(sdclock)                             // синхросигнал SD-карты
 ); 
    
-// формирователь ответа на цикл шины   
-wire reply=wb_cyc_i & wb_stb_i & ~wb_ack_o;
-
 //**************************************
 //*  Сигнал ответа 
 //**************************************
+reg reply;
 always @(posedge wb_clk_i or posedge wb_rst_i)
-    if (wb_rst_i == 1) wb_ack_o <= 0;
-    else wb_ack_o <= reply;
+    if (wb_rst_i == 1) reply <= 1'b0;
+    else if (wb_stb_i) reply <= 1'b1;
+    else reply <= 1'b0;
 
+assign wb_ack_o = reply & wb_stb_i;    
+
+always @(posedge wb_clk_i)   begin
 //**************************************************
 // Логика обработки прерываний 
 //**************************************************
-always @(posedge wb_clk_i)   begin
    //******************************
    //* обработка прерывания
    //******************************
@@ -237,13 +241,13 @@ always @(posedge wb_clk_i)   begin
          //* Обработка шинных транзакций 
          //*********************************************
             // чтение регистров
-            if (bus_read_req == 1'b1)   begin
+            if (bus_read_req)   begin
                case (wb_adr_i[1])
                   1'b0 : begin  // 177170 - DXCSR
                                       //  15                 7     6    5
                            wb_dat_o <= {cmderr, 1'b0, 6'b0, drq, ide, done, 5'b0};   
                            // эмуляция сброса-установки бита done после сброса
-                           if (reply & !donetrigger) begin
+                           if (!donetrigger) begin
                               donetrigger <= 1'b1;
                               done <= 1'b1;
                            end   
@@ -252,14 +256,16 @@ always @(posedge wb_clk_i)   begin
                              case(cmd) 
                               // чтение буфера                                
                               3'b001: begin  
-                                wb_dat_o <= {8'b00000000, sdbuf_dataout[7:0]};
-                                if (drq & reply) begin 
-                                  sdbuf_addr <= sdbuf_addr + 1'b1;
+                                wb_dat_o <= {8'b00000000, sdbuf_dataout[7:0]}; // очередное слово из буфера
+										  // последовательное чтение - только при наличии активного запроса DRQ
+                                if (drq) begin 
+                                  sdbuf_addr <= sdbuf_addr + 1'b1;  // адрес++
+											 // конец буфера
                                   if (sdbuf_addr == 8'b01111111) begin
-                                    drq <= 1'b0;
-                                    done <= 1'b1;
-                                    interrupt_trigger <= 1'b1;
-                                    start <= 1'b0;
+                                    drq <= 1'b0;    // снимаем запрос данных
+                                    done <= 1'b1;   // флаг завершения обработки команды
+                                    interrupt_trigger <= 1'b1; // поднимаем запрос прерывания
+                                    start <= 1'b0;  // завершаем команду
                                   end  
                                 end
                               end   
@@ -269,7 +275,7 @@ always @(posedge wb_clk_i)   begin
                                       end      
                               // чтение регистра ошибок 
                               3'b111: begin
-                                       wb_dat_o<=16'o0;
+                                       wb_dat_o<=16'o0;  // в нашем случае ошибок не бывает
                                       end       
                               default: wb_dat_o<=16'o0;
                              endcase
@@ -284,7 +290,7 @@ always @(posedge wb_clk_i)   begin
                     case (wb_adr_i[1])
                      // 177170 - DXCSR
                      1'b0:  
-                            if (reply) begin
+                            begin
                                 // принят бит GO при незапущенной операции
                                 if ((start == 1'b0) && (wb_dat_i[0] == 1'b1)) begin 
                                     // Ввод новой команды
@@ -303,25 +309,25 @@ always @(posedge wb_clk_i)   begin
                                     sec_phase <= 1'b1;
                                 end         
                                 ide <= wb_dat_i[6];            // флаг разрешения прерывания - доступен для записи всегда
-                                if ((wb_dat_i[6] == 1'b1) && (done == 1'b1)) interrupt_trigger <= 1'b1;
+                                if ((wb_dat_i[6] == 1'b1) && (done == 1'b1)) interrupt_trigger <= 1'b1; // запрос прерывания по окончании обработки команды
                             end
                     // 177172 - DXBUF
                      1'b1 :   
                              case(cmd)
                               // запись буфера
                               3'b000:  begin
-                                 if (drq) begin
-                                  sdbuf_datain<= {8'b00000000, wb_dat_i[7:0]}; 
-                                   sdbuf_write <= 1'b1;
-                                  if (!reply) sdbuf_addr <= sdbuf_addr + 1'b1;
-                                  else  begin  
-                                    if (sdbuf_addr == 8'b01111111) begin
-                                       drq <= 1'b0;
+                                 if (drq) begin // операции с буфером - только при поднятом DRQ
+                                  sdbuf_datain<= {8'b00000000, wb_dat_i[7:0]};  // передаем байт на вход sdspi
+                                  sdbuf_write <= 1'b1;                          // включаем режим записи
+                                  sdbuf_addr <= sdbuf_addr + 1'b1;              // адрес++
+											 // конец буфера
+                                  if (sdbuf_addr == 8'b01111111) begin
+											      sdbuf_write <= 1'b0;  // отключаем режим записи
+                                       drq <= 1'b0;         
                                        done <= 1'b1;
                                        interrupt_trigger <= 1'b1;
-                                       start <= 1'b0;
-                                    end  
-                                  end
+                                       start <= 1'b0;  // завершаем обработку команды
+                                  end  
                                  end 
                               end
                               
@@ -330,27 +336,23 @@ always @(posedge wb_clk_i)   begin
                                // фаза чтения номера сектора
                                if (sec_phase) begin
                                 sec <= wb_dat_i[4:0];
-                                if (reply) begin
-                                  sec_phase <= 1'b0;
-                                  trk_phase <= 1'b1;
-                                end
+                                sec_phase <= 1'b0;
+                                trk_phase <= 1'b1;
                                end  
                               
                                // фаза чтения номера дорожки
                                else if (trk_phase) begin
                                 cyl <= wb_dat_i[6:0];
-                                if (reply) begin
-                                  trk_phase <= 1'b0;
-                                  io_phase <= 1'b1;
-                                  drq <= 1'b0;
-                                end
+                                trk_phase <= 1'b0;
+                                io_phase <= 1'b1;
+                                drq <= 1'b0;
                                end  
                            endcase
                   endcase 
             
                if ((wb_sel_i[1] == 1'b1) && (wb_adr_i[1] == 1'b0))  begin
-                    // запись старших байтов
-                    rstreq <= wb_dat_i[14];
+                    // запись старших байтов регистра CSR
+                    rstreq <= wb_dat_i[14];  // запрос программного сброса
                end 
             end
             
@@ -359,11 +361,18 @@ always @(posedge wb_clk_i)   begin
          //*********************************************
            if (start == 1'b1)  begin
            case (cmd)  // выбор действия по коду функции 
-            // запись буфера, чтение буфера      
-            3'b000,3'b001: begin
+            // запись буфера
+            3'b000:  begin
                            if (drq == 0) begin
                                 drq <= 1'b1;
-                                sdbuf_addr <= 8'o0;
+                                sdbuf_addr <= 8'o377; // при записи начинаем с адреса -1
+                           end
+                        end
+            //  чтение буфера      
+            3'b001: begin
+                           if (drq == 0) begin
+                                drq <= 1'b1;
+                                sdbuf_addr <= 8'o0; // при чтении начинаем с адреса 0
                            end
                         end
                         
@@ -390,8 +399,7 @@ always @(posedge wb_clk_i)   begin
                               sdbuf_datain <= {15'o0,cmd[2]};  // cmd[2]=0 для обычных секторов, 1 для удаленных
                               // получен ответ sdack
                               if (sdack) begin
-                                 sdcard_addr <= sdaddr;
-                                 sdspi_write_mode=1'b1;
+                                 sdspi_write_mode<=1'b1;
                                  sdspi_start <= 1'b1 ;  // запускаем SDSPI
                                  iostate <= io_wait;
                               end   
@@ -405,7 +413,7 @@ always @(posedge wb_clk_i)   begin
                      // запись подтверждена - освобождаем sdspi
                      io_done: begin
                         sdspi_start <= 1'b0 ;              // снимаем строб записи
-                        sdspi_write_mode=1'b0;
+                        sdspi_write_mode<=1'b0;
                         done <= 1'b1;                       // флаг завершения команды
                         interrupt_trigger <= 1'b1;
                         start <= 1'b0;                     // заканчиваем обработку команды
@@ -436,9 +444,8 @@ always @(posedge wb_clk_i)   begin
                            else begin
                               sdreq <= 1'b1;   // запрос доступа к карте
                               if (sdack) begin
-                                 sdcard_addr <= sdaddr;
                                  sdspi_start <= 1'b1 ; 
-                                 sdspi_write_mode=1'b0;
+                                 sdspi_write_mode<=1'b0;
                                  iostate <= io_wait;
                               end   
                            end   
@@ -495,6 +502,6 @@ end
 //reg [4:0] sec;
 //
 // полный абсолютный адрес 
-assign sdaddr = start_offset + {10'b0,drv,cyl,sec[4:0]};
+assign sdcard_addr = start_offset + {10'b0,drv,cyl,sec[4:0]};
 
 endmodule
