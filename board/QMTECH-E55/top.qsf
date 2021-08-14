@@ -339,7 +339,7 @@ set_location_assignment PIN_A6 -to led[4]
 
 set_global_assignment -name VERILOG_FILE qmtech.v
 set_global_assignment -name VERILOG_FILE config.v
-set_global_assignment -name VERILOG_FILE ../../hdl/topboard.v
+set_global_assignment -name VERILOG_FILE ../../hdl/topboard16.v
 set_global_assignment -name VERILOG_FILE "../../hdl/mc1201-02.v"
 set_global_assignment -name VERILOG_FILE "../../hdl/mc1201-01.v"
 set_global_assignment -name VERILOG_FILE ../../hdl/mc1260.v
@@ -393,5 +393,228 @@ set_global_assignment -name VERILOG_FILE "ip-components/rom000.v"
 set_global_assignment -name QIP_FILE "ip-components/kgdvram.qip"
 set_global_assignment -name QIP_FILE "ip-components/sectorbuf.qip"
 set_global_assignment -name SDC_FILE ../../hdl/altera.sdc
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id STREAM
+set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_clk -to "topboard:kernel|clk_p" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "topboard16:kernel|dw:hdd|bus_read_req" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[1] -to "topboard16:kernel|dw:hdd|bus_write_req" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[2] -to "topboard16:kernel|dw:hdd|busy" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[3] -to "topboard16:kernel|dw:hdd|drq" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[4] -to "topboard16:kernel|dw:hdd|irq" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[5] -to "topboard16:kernel|dw:hdd|sdbuf_addr[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[6] -to "topboard16:kernel|dw:hdd|sdbuf_addr[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[7] -to "topboard16:kernel|dw:hdd|sdbuf_addr[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[8] -to "topboard16:kernel|dw:hdd|sdbuf_addr[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[9] -to "topboard16:kernel|dw:hdd|sdbuf_addr[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[10] -to "topboard16:kernel|dw:hdd|sdbuf_addr[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[11] -to "topboard16:kernel|dw:hdd|sdbuf_addr[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[12] -to "topboard16:kernel|dw:hdd|sdbuf_addr[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[13] -to "topboard16:kernel|dw:hdd|sdbuf_datain[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[14] -to "topboard16:kernel|dw:hdd|sdbuf_datain[10]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[15] -to "topboard16:kernel|dw:hdd|sdbuf_datain[11]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[16] -to "topboard16:kernel|dw:hdd|sdbuf_datain[12]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[17] -to "topboard16:kernel|dw:hdd|sdbuf_datain[13]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[18] -to "topboard16:kernel|dw:hdd|sdbuf_datain[14]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[19] -to "topboard16:kernel|dw:hdd|sdbuf_datain[15]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[20] -to "topboard16:kernel|dw:hdd|sdbuf_datain[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[21] -to "topboard16:kernel|dw:hdd|sdbuf_datain[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[22] -to "topboard16:kernel|dw:hdd|sdbuf_datain[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[23] -to "topboard16:kernel|dw:hdd|sdbuf_datain[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[24] -to "topboard16:kernel|dw:hdd|sdbuf_datain[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[25] -to "topboard16:kernel|dw:hdd|sdbuf_datain[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[26] -to "topboard16:kernel|dw:hdd|sdbuf_datain[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[27] -to "topboard16:kernel|dw:hdd|sdbuf_datain[8]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[28] -to "topboard16:kernel|dw:hdd|sdbuf_datain[9]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[29] -to "topboard16:kernel|dw:hdd|sdbuf_write" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[30] -to "topboard16:kernel|dw:hdd|start" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[31] -to "topboard16:kernel|dw:hdd|wstate.w_done" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[32] -to "topboard16:kernel|dw:hdd|wstate.w_prepare" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[33] -to "topboard16:kernel|dw:hdd|wstate.w_skip" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[34] -to "topboard16:kernel|dw:hdd|wstate.w_start" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[35] -to "topboard16:kernel|dw:hdd|wstate.w_wait" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[36] -to "topboard16:kernel|dw:hdd|wstate.w_waitdata" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[37] -to "topboard:kernel|cpu_ack" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[38] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[39] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[10]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[40] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[11]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[41] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[12]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[42] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[13]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[43] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[14]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[44] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[15]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[45] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[46] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[47] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[48] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[49] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[50] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[51] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[52] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[8]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[53] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[9]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[54] -to "topboard:kernel|wb_mux[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[55] -to "topboard:kernel|wb_mux[10]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[56] -to "topboard:kernel|wb_mux[11]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[57] -to "topboard:kernel|wb_mux[12]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[58] -to "topboard:kernel|wb_mux[13]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[59] -to "topboard:kernel|wb_mux[14]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[60] -to "topboard:kernel|wb_mux[15]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[61] -to "topboard:kernel|wb_mux[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[62] -to "topboard:kernel|wb_mux[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[63] -to "topboard:kernel|wb_mux[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[64] -to "topboard:kernel|wb_mux[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[65] -to "topboard:kernel|wb_mux[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[66] -to "topboard:kernel|wb_mux[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[67] -to "topboard:kernel|wb_mux[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[68] -to "topboard:kernel|wb_mux[8]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[69] -to "topboard:kernel|wb_mux[9]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[70] -to "topboard:kernel|wb_stb" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[71] -to "topboard:kernel|wb_we" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[0] -to "topboard16:kernel|dw:hdd|bus_read_req" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[1] -to "topboard16:kernel|dw:hdd|bus_write_req" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[2] -to "topboard16:kernel|dw:hdd|busy" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[3] -to "topboard16:kernel|dw:hdd|drq" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[4] -to "topboard16:kernel|dw:hdd|iack" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[5] -to "topboard16:kernel|dw:hdd|irq" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[6] -to "topboard16:kernel|dw:hdd|sdbuf_addr[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[7] -to "topboard16:kernel|dw:hdd|sdbuf_addr[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[8] -to "topboard16:kernel|dw:hdd|sdbuf_addr[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[9] -to "topboard16:kernel|dw:hdd|sdbuf_addr[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[10] -to "topboard16:kernel|dw:hdd|sdbuf_addr[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[11] -to "topboard16:kernel|dw:hdd|sdbuf_addr[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[12] -to "topboard16:kernel|dw:hdd|sdbuf_addr[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[13] -to "topboard16:kernel|dw:hdd|sdbuf_addr[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[14] -to "topboard16:kernel|dw:hdd|sdbuf_datain[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[15] -to "topboard16:kernel|dw:hdd|sdbuf_datain[10]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[16] -to "topboard16:kernel|dw:hdd|sdbuf_datain[11]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[17] -to "topboard16:kernel|dw:hdd|sdbuf_datain[12]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[18] -to "topboard16:kernel|dw:hdd|sdbuf_datain[13]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -to "topboard16:kernel|dw:hdd|sdbuf_datain[14]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "topboard16:kernel|dw:hdd|sdbuf_datain[15]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "topboard16:kernel|dw:hdd|sdbuf_datain[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[22] -to "topboard16:kernel|dw:hdd|sdbuf_datain[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[23] -to "topboard16:kernel|dw:hdd|sdbuf_datain[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[24] -to "topboard16:kernel|dw:hdd|sdbuf_datain[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[25] -to "topboard16:kernel|dw:hdd|sdbuf_datain[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[26] -to "topboard16:kernel|dw:hdd|sdbuf_datain[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[27] -to "topboard16:kernel|dw:hdd|sdbuf_datain[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[28] -to "topboard16:kernel|dw:hdd|sdbuf_datain[8]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[29] -to "topboard16:kernel|dw:hdd|sdbuf_datain[9]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[30] -to "topboard16:kernel|dw:hdd|sdbuf_write" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[31] -to "topboard16:kernel|dw:hdd|start" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[32] -to "topboard16:kernel|dw:hdd|wstate.w_done" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[33] -to "topboard16:kernel|dw:hdd|wstate.w_prepare" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[34] -to "topboard16:kernel|dw:hdd|wstate.w_skip" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[35] -to "topboard16:kernel|dw:hdd|wstate.w_start" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[36] -to "topboard16:kernel|dw:hdd|wstate.w_wait" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[37] -to "topboard16:kernel|dw:hdd|wstate.w_waitdata" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[38] -to "topboard:kernel|cpu_ack" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[39] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[40] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[10]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[41] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[11]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[42] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[12]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[43] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[13]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[44] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[14]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[45] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[15]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[46] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[47] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[48] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[49] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[50] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[51] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[52] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[53] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[8]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[54] -to "topboard:kernel|mc1201_02:cpu|cpu_adr_o[9]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[55] -to "topboard:kernel|wb_mux[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[56] -to "topboard:kernel|wb_mux[10]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[57] -to "topboard:kernel|wb_mux[11]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[58] -to "topboard:kernel|wb_mux[12]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[59] -to "topboard:kernel|wb_mux[13]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[60] -to "topboard:kernel|wb_mux[14]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[61] -to "topboard:kernel|wb_mux[15]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[62] -to "topboard:kernel|wb_mux[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[63] -to "topboard:kernel|wb_mux[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[64] -to "topboard:kernel|wb_mux[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[65] -to "topboard:kernel|wb_mux[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[66] -to "topboard:kernel|wb_mux[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[67] -to "topboard:kernel|wb_mux[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[68] -to "topboard:kernel|wb_mux[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[69] -to "topboard:kernel|wb_mux[8]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[70] -to "topboard:kernel|wb_mux[9]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[71] -to "topboard:kernel|wb_out[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[72] -to "topboard:kernel|wb_out[10]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[73] -to "topboard:kernel|wb_out[11]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[74] -to "topboard:kernel|wb_out[12]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[75] -to "topboard:kernel|wb_out[13]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[76] -to "topboard:kernel|wb_out[14]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[77] -to "topboard:kernel|wb_out[15]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[78] -to "topboard:kernel|wb_out[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[79] -to "topboard:kernel|wb_out[2]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[80] -to "topboard:kernel|wb_out[3]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[81] -to "topboard:kernel|wb_out[4]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[82] -to "topboard:kernel|wb_out[5]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[83] -to "topboard:kernel|wb_out[6]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[84] -to "topboard:kernel|wb_out[7]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[85] -to "topboard:kernel|wb_out[8]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[86] -to "topboard:kernel|wb_out[9]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[87] -to "topboard:kernel|wb_sel[0]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[88] -to "topboard:kernel|wb_sel[1]" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[89] -to "topboard:kernel|wb_stb" -section_id STREAM
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[90] -to "topboard:kernel|wb_we" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_BLOCK_TYPE=AUTO" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=91" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_BITS=72" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=91" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_NODE_INFO=805334528" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_POWER_UP_TRIGGER=0" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=244" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_INVERSION_MASK_LENGTH=0" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SEGMENT_SIZE=16384" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ATTRIBUTE_MEM_MODE=OFF" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_FLOW_USE_GENERATED=0" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_BITS=11" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_BUFFER_FULL_STOP=1" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_CURRENT_RESOURCE_WIDTH=1" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INCREMENTAL_ROUTING=1" -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[0] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[1] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[2] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[4] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[7] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[8] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[9] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[10] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[12] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[14] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[16] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[18] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[19] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[20] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[21] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[25] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to STREAM|vcc -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to STREAM|gnd -section_id STREAM
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to STREAM|vcc -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL=1" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=16384" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_IN_ENABLED=0" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_PIPELINE=0" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_PIPELINE=0" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_COUNTER_PIPELINE=0" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ADVANCED_TRIGGER_ENTITY=basic,1," -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL_PIPELINE=1" -section_id STREAM
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ENABLE_ADVANCED_TRIGGER=0" -section_id STREAM
 set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

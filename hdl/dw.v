@@ -13,7 +13,7 @@ module dw (
    input                wb_we_i,    // разрешение записи (0 - чтение)
    input                wb_stb_i,   // строб цикла шины
    input    [1:0]       wb_sel_i,   // выбор конкретных байтов для записи - старший, младший или оба
-   output reg           wb_ack_o,   // подтверждение выбора устройства
+   output               wb_ack_o,   // подтверждение выбора устройства
 
 // обработка прерывания   
    output reg           irq,        // запрос
@@ -92,7 +92,7 @@ module dw (
 
 // Сигналы упраления обменом с шиной
    
-wire bus_strobe = wb_cyc_i & wb_stb_i;         // строб цикла шины
+wire bus_strobe = wb_stb_i & ~wb_ack_o;   // строб цикла шины
 wire bus_read_req = bus_strobe & ~wb_we_i;     // запрос чтения
 wire bus_write_req = bus_strobe & wb_we_i;     // запрос записи
 wire reset=wb_rst_i;
@@ -180,20 +180,13 @@ sdspi sd1 (
 //**************************************
 // формирователь ответа на цикл шины   
 //**************************************
-reg [1:0]reply;
-
-always @(posedge wb_clk_i) begin
-  reply[0] <= (~wb_ack_o & wb_stb_i);
-  reply[1] <= reply[0];
-end
-
-//**************************************
-//*  Сигнал ответа 
-//**************************************
+reg reply;
 always @(posedge wb_clk_i or posedge wb_rst_i)
-    if (wb_rst_i == 1) wb_ack_o <= 1'b0;
-    else if (wb_stb_i) wb_ack_o <= 1'b1;
-	 else wb_ack_o <= 1'b0;
+    if (wb_rst_i == 1) reply <= 1'b0;
+    else if (wb_stb_i) reply <= 1'b1;
+    else reply <= 1'b0;
+
+assign wb_ack_o = reply & wb_stb_i;    
 
 //**************************************************
 // Логика обработки прерываний 
@@ -268,7 +261,7 @@ always @(posedge wb_clk_i)
                               end   
                   4'b0100 :   begin                       // 174010 - DWBUF
                                  wb_dat_o <= sdbuf_dataout;      
-                                 if (~sdbuf_write & reply[1]) begin
+                                 if (~sdbuf_write) begin
                                        if (&sdbuf_addr == 1'b1) begin
                                           rqa <= 1'b1;
 														interrupt_trigger <= 1'b1;
@@ -305,14 +298,13 @@ always @(posedge wb_clk_i)
                     // 174010 - DWBUF
                      4'b0100 :  begin   
                                  sdbuf_datain<= wb_dat_i; 
-                                 if (reply[0])  begin
-											  		if (&sdbuf_addr == 1'b1) begin
-                                          sdbuf_write <= 1'b0;
-                                          drq <= 1'b0;
-														interrupt_trigger <= 1'b0;
-													end	
-													sdbuf_addr <= sdbuf_addr + 1'b1;                              
-											end		
+//                                 if (reply[0])  begin
+//											  		if (&sdbuf_addr == 1'b1) begin
+//                                          sdbuf_write <= 1'b0;
+//                                          drq <= 1'b0;
+//														interrupt_trigger <= 1'b0;
+//													end	
+											sdbuf_addr <= sdbuf_addr + 1'b1;                              
                                 end
                     // 174012 - DWCYL
                      4'b0101 :  begin
@@ -388,21 +380,21 @@ always @(posedge wb_clk_i)
                                           drq <= 1'b1;                 // запрос данных
 														interrupt_trigger <= 1'b1;
                                           sdbuf_write <= 1'b1;         // буфер sdspi - в режим записи
-                                   //       sdbuf_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
-                                          sdbuf_addr <= 8'o0;   // инициализируем адрес секторного буфера
+                                          sdbuf_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
+//                                          sdbuf_addr <= 8'o0;   // инициализируем адрес секторного буфера
                                           wstate <= w_skip;
                                        end   
                                        
                                  w_skip: begin  
-                                       if (|sdbuf_addr != 1'b0) wstate <=w_waitdata;
+                                       if (|sdbuf_addr == 1'b0) wstate <=w_waitdata;
 													end
                                  // ожидание заполнения секторного буфера 
                                  w_waitdata:
-                                       if (|sdbuf_addr == 1'b0) begin
+                                       if (&sdbuf_addr == 1'b1) begin
                                           // буфер заполнен
-//                                          sdbuf_write <= 1'b0;
-//                                          drq <= 1'b0;
-//														interrupt_trigger <= 1'b0;
+                                          sdbuf_write <= 1'b0;
+                                          drq <= 1'b0;
+														interrupt_trigger <= 1'b0;
                                           wstate <= w_start;
                                        end
                                           
