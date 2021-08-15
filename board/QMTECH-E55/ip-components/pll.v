@@ -102,18 +102,25 @@ module pll (
             .vcounderrange ());
    defparam
       altpll_component.bandwidth_type = "AUTO",
+		
+		// CLK+, основная тактовая частота
       altpll_component.clk0_divide_by = `PLL_DIV,
       altpll_component.clk0_duty_cycle = 50,
       altpll_component.clk0_multiply_by = `PLL_MUL,
       altpll_component.clk0_phase_shift = "0",
+		
+		// CLK-, инверсная тактовая частота
       altpll_component.clk1_divide_by = `PLL_DIV,
       altpll_component.clk1_duty_cycle = 50,
       altpll_component.clk1_multiply_by = `PLL_MUL,
       altpll_component.clk1_phase_shift = "5000",
-      altpll_component.clk2_divide_by = 10,
+		
+		// SDCLK, тактовая частота SD-карты, CLK+/4
+      altpll_component.clk2_divide_by = `PLL_DIV*4,
       altpll_component.clk2_duty_cycle = 50,
-      altpll_component.clk2_multiply_by = 3,
+      altpll_component.clk2_multiply_by = `PLL_MUL,
       altpll_component.clk2_phase_shift = "0",
+		
       altpll_component.compensate_clock = "CLK0",
       altpll_component.inclk0_input_frequency = 20000,
       altpll_component.intended_device_family = "Cyclone IV E",

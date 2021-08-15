@@ -297,14 +297,8 @@ always @(posedge wb_clk_i)
                                 end
                     // 174010 - DWBUF
                      4'b0100 :  begin   
-                                 sdbuf_datain<= wb_dat_i; 
-//                                 if (reply[0])  begin
-//											  		if (&sdbuf_addr == 1'b1) begin
-//                                          sdbuf_write <= 1'b0;
-//                                          drq <= 1'b0;
-//														interrupt_trigger <= 1'b0;
-//													end	
-											sdbuf_addr <= sdbuf_addr + 1'b1;                              
+                                 sdbuf_datain<= wb_dat_i;           // запись слова в буфер SDSPI
+											sdbuf_addr <= sdbuf_addr + 1'b1;   // продвигаем адрес буфера
                                 end
                     // 174012 - DWCYL
                      4'b0101 :  begin
@@ -381,19 +375,18 @@ always @(posedge wb_clk_i)
 														interrupt_trigger <= 1'b1;
                                           sdbuf_write <= 1'b1;         // буфер sdspi - в режим записи
                                           sdbuf_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
-//                                          sdbuf_addr <= 8'o0;   // инициализируем адрес секторного буфера
                                           wstate <= w_skip;
                                        end   
-                                       
+                                 // пропуск первого цикла записи по адресу 0       
                                  w_skip: begin  
                                        if (|sdbuf_addr == 1'b0) wstate <=w_waitdata;
 													end
                                  // ожидание заполнения секторного буфера 
                                  w_waitdata:
-                                       if (&sdbuf_addr == 1'b1) begin
+                                       if (&sdbuf_addr == 1'b1) begin // ждем до адреса 255
                                           // буфер заполнен
-                                          sdbuf_write <= 1'b0;
-                                          drq <= 1'b0;
+                                          sdbuf_write <= 1'b0;  // снимаем разрешение записи буфера
+                                          drq <= 1'b0;          // снимаем запрос данных
 														interrupt_trigger <= 1'b0;
                                           wstate <= w_start;
                                        end
@@ -402,7 +395,7 @@ always @(posedge wb_clk_i)
                                  w_start: begin
                                        sdreq <= 1'b1;   // запрос доступа к карте
                                        if (sdack & (sdcard_idle == 1)) begin
-                                          sdspi_write_mode <= 1'b1 ;  // ражим записи
+                                          sdspi_write_mode <= 1'b1 ;  // режим записи
                                           sdspi_start <= 1'b1;        // запускаем sdspi
                                           busy <= 1'b1;               // снимаем бит готовности контроллера
                                           wstate <= w_wait;

@@ -6,17 +6,19 @@
 //
 //  Плата       Процессор     ЭВМ           Тактовая частота
 //-------------------------------------------------------------
-//  МС1201.01   К1801ВМ1     ДВК-1,ДВК-2        75 Мгц
-//  МС1201.02   К1801ВМ2     ДВК-3              50 Мгц
+//  МС1201.01   К1801ВМ1     ДВК-1,ДВК-2        50 Мгц
+//  МС1201.02   К1801ВМ2     ДВК-3              60 Мгц
 //  МС1260      М2 (LSI-11)  Электроника-60     50 Мгц
 //  МС1280      М4 (LSI-11M)                    50 МГц
+//  PDP2011     PDP-11/70    Электроника-85     50 МГц 
 //------------------------------------------------------------
 // Раскомментируйте одну из строк для включения выбранной платы в схему
 
 //`define mc1201_01_board
-`define mc1201_02_board
+//`define mc1201_02_board
 //`define mc1260_board
 //`define mc1280_board
+`define pdp2011_board
 
 //======================================================================================================
 //
@@ -30,8 +32,9 @@
 `define IRPR_module       // параллельный порт ИРПР
 `define RK_module         // диск RK-11/RK05
 `define DM_module         // диск RK611/RK07
-`define DW_module         // жесткий диск DW
+`define DB_module         // диск RH70/RP06
 `define DX_module         // гибкий диск RX01
+`define DW_module         // жесткий диск DW
 `define MY_module         // гибкий диск двойной плотности MY
 `define bootrom_module    // монитор-загрузчик M9312
 
@@ -101,7 +104,7 @@
 //*   МС1280
 //****************************************
  `define BOARD mc1280        // имя подключаемого модуля процессорной платы
- `define clkref 50000000     // тактовая частота процессора в герцах
+ `define TOPBOARD topboard16 // имя соединительной платы-корзины
  `define PLL_MUL 1           // умножитель PLL
  `define PLL_DIV 1           // делитель PLL
  
@@ -111,7 +114,7 @@
 //*   МС1260
 //****************************************
  `define BOARD mc1260        // имя подключаемого модуля процессорной платы
- `define clkref 50000000     // тактовая частота процессора в герцах
+ `define TOPBOARD topboard16 // имя соединительной платы-корзины
  `define PLL_MUL 1           // умножитель PLL
  `define PLL_DIV 1           // делитель PLL
  `define CPUSLOW 15          // число тактов, пропускаемых процессором в режиме замедления
@@ -122,7 +125,7 @@
 //*   МС1201.02
 //****************************************
  `define BOARD mc1201_02    // имя подключаемого модуля процессорной платы
- `define clkref 50000000    // тактовая частота процессора в герцах
+ `define TOPBOARD topboard16 // имя соединительной платы-корзины
  `define PLL_MUL 1         // умножитель PLL
  `define PLL_DIV 1         // делитель PLL
  `define CPUSLOW 15         // число тактов, пропускаемых процессором в режиме замедления
@@ -139,18 +142,32 @@
 //*   МС1201.01
 //****************************************
  `define BOARD mc1201_01     // имя подключаемого модуля процессорной платы
- `define clkref 75000000    // тактовая частота процессора в герцах
+ `define TOPBOARD topboard16 // имя соединительной платы-корзины
  `define PLL_MUL 3           // умножитель PLL
  `define PLL_DIV 2           // делитель PLL
  `define CPUSLOW 15          // число тактов, пропускаемых процессором в режиме замедления
  `define timer_init 1'b1     // Начальное состояние таймера: 0 - выключен, 1 - включен 
-  
+
+//--------------------------------------------------
+`elsif pdp2011_board
+//****************************************
+//*  PDP2011  PDP11/70
+//****************************************
+ `define BOARD pdp2011       // имя подключаемого модуля процессорной платы
+ `define TOPBOARD topboard22 // имя соединительной платы-корзины
+ `define PLL_MUL 1           // умножитель PLL
+ `define PLL_DIV 1           // делитель PLL
+
+ 
 `endif  
 
 
 //==========================================================================================================================================
 //------------------ конец списка настраиваемых параметров -------------------------------------------------------------
 //==========================================================================================================================================
+
+// тактовая частота процессора в герцах
+`define clkref 50000000/`PLL_DIV*`PLL_MUL
 
 // фиктивный CPUSLOW для неподдерживаемых процессорных плат
 `ifndef CPUSLOW
@@ -169,6 +186,7 @@
   `define MY_sdmode 1'b0
   `define DX_sdmode 1'b0
   `define DW_sdmode 1'b0
+  `define DB_sdmode 1'b0
   `define def_mosi  rk_mosi
   `define def_cs    rk_cs
   `define def_sclk  rk_sclk
@@ -179,6 +197,7 @@
   `define MY_sdmode 1'b0
   `define DX_sdmode 1'b0
   `define DW_sdmode 1'b0
+  `define DB_sdmode 1'b0
   `define def_mosi  dm_mosi
   `define def_cs    dm_cs
   `define def_sclk  dm_sclk
@@ -189,6 +208,7 @@
   `define DM_sdmode 1'b0  
   `define DX_sdmode 1'b0
   `define DW_sdmode 1'b0
+  `define DB_sdmode 1'b0
   `define def_mosi  my_mosi
   `define def_cs    my_cs
   `define def_sclk  my_sclk
@@ -199,9 +219,21 @@
   `define DM_sdmode 1'b0  
   `define RK_sdmode 1'b0  
   `define DW_sdmode 1'b0
+  `define DB_sdmode 1'b0
   `define def_mosi  dx_mosi
   `define def_cs    dx_cs
   `define def_sclk  dx_sclk
+
+`elsif DB_module
+  `define DB_sdmode 1'b1  
+  `define DX_sdmode 1'b0
+  `define MY_sdmode 1'b0
+  `define DM_sdmode 1'b0  
+  `define RK_sdmode 1'b0  
+  `define DW_sdmode 1'b0
+  `define def_mosi  db_mosi
+  `define def_cs    db_cs
+  `define def_sclk  db_sclk
   
 `else
   `define DW_sdmode 1'b1
