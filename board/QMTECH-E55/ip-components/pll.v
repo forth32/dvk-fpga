@@ -116,9 +116,9 @@ module pll (
       altpll_component.clk1_phase_shift = "5000",
 		
 		// SDCLK, тактовая частота SD-карты, CLK+/4
-      altpll_component.clk2_divide_by = `PLL_DIV*4,
+      altpll_component.clk2_divide_by = 10, //`PLL_DIV*4,
       altpll_component.clk2_duty_cycle = 50,
-      altpll_component.clk2_multiply_by = `PLL_MUL,
+      altpll_component.clk2_multiply_by = 3, //`PLL_MUL,
       altpll_component.clk2_phase_shift = "0",
 		
       altpll_component.compensate_clock = "CLK0",

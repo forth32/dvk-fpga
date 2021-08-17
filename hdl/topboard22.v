@@ -275,7 +275,7 @@ wbc_rst reset
 assign sdram_reset=global_reset;       // сигнал сброса модуля SDRAM
 assign sdram_we=wb_we;                 // признак транзакции записи
 assign sdram_sel=wb_sel;               // выбор байтов
-assign sdram_adr=wb_adr;               // шина адреса
+assign sdram_adr=wb_adr[21:1];               // шина адреса
 assign sdram_out=wb_out;               // выходная шина данных
 
 //**********************************************************

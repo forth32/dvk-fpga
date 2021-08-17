@@ -951,7 +951,7 @@ always @(posedge wb_clk_i)  begin
                            dma_stb_o <= 1'b1 ; 
                            dma_we_o <= 1'b1;
                            if (rkcs_iba == 1'b0)       ram_phys_addr <= ram_phys_addr + 1'b1 ; 
-                           if (dma_ack_i == 1'b1) busmaster_state <= busmaster_read_done ; 
+                           if (dma_ack_i == 1'b1) busmaster_state <= busmaster_readh2 ; 
                         end
                busmaster_readh2 :
                         begin
