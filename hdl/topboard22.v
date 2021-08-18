@@ -1147,10 +1147,10 @@ assign sdram_stb = (my_dma_state)    ? my_dma_stb:
                                            
 assign cpu_ack = (~dma_ack) ? global_ack: 1'b0;
                   
-assign rk11_dma_ack = (rk11_dma_state) ? global_ack: 1'b0;
-assign rk611_dma_ack = (rk611_dma_state) ? global_ack: 1'b0;
-assign my_dma_ack = (my_dma_state) ? global_ack: 1'b0;
-assign rh70_dma_ack = (rh70_dma_state) ? global_ack: 1'b0;
+assign rk11_dma_ack = global_ack;
+assign rk611_dma_ack = global_ack;
+assign my_dma_ack = global_ack;
+assign rh70_dma_ack = global_ack;
 
 assign dma_stb = rk11_dma_stb | rk611_dma_stb;
   

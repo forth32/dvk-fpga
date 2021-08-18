@@ -895,6 +895,8 @@ always @(posedge wb_clk_i)  begin
                             end  
                             if (dma_ack_i == 1'b1) begin   // устройство подтвердило обмен
                                 DMA_state <= DMA_preparebus; 
+                                dma_stb_o <= 1'b0 ;                        // снимаем строб данных 
+                                dma_we_o <= 1'b0 ;                         // снимаем строб записи
                                 if (rkcs2_bai == 1'b0) ram_phys_addr <= ram_phys_addr + 1'b1 ; // если разрешено, увеличиваем физический адрес
                                 sector_buf_ptr <= sector_buf_ptr - 1'b1 ;       // уменьшаем счетчик данных сектора
                                 sdbuf_addr <= sdbuf_addr + 1'b1 ;         // увеличиваем адрес буфера SD

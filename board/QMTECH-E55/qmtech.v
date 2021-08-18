@@ -180,15 +180,25 @@ sdram_top sdram(
 );
          
 // формирователь сигнала подверждения транзакции
+/*
 reg [1:0]dack;
 
 assign sdram_ack = sdram_stb & (dack[1]);
 
 // задержка сигнала подтверждения на 1 такт clk
 always @ (posedge clk_p)  begin
-   dack[0] <= sdram_stb & (sdr_rd_ack | sdr_wr_ack);
+   if  sdram_stb & (sdr_rd_ack | sdr_wr_ack); dack[0] <=
    dack[1] <= sdram_stb & dack[0];
 end
+*/
+reg reply;
+always @ (posedge clk_p)  begin
+   if (sdram_reset) reply <= 1'b0;
+   else if(sdram_stb & (sdram_we)? sdr_wr_ack : sdr_rd_ack) reply <= 1'b1;
+	else if (~sdram_stb) reply <= 1'b0;
+end
+assign sdram_ack = sdram_stb & reply;
+
 
 //************************************
 //*  Управление VGA DAC

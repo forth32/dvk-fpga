@@ -503,18 +503,11 @@ always @(posedge clk) begin
 			
 		  	io_ack:
 		      if (bus_ack | ~DMA_stb_i)  begin
-				  if (bus_ack) cpu_ack <= 1'b1;
-				  io_state <= io_reply;
-				end
-	
-         io_reply: begin
-		        cpu_ack <= 1'b0;
 		        RAM_stb_o <= 1'b0;
 				  BUS_stb_o <= 1'b0;
-			     cpu_ack <= 1'b0;
 				  io_state <= io_idle;
-		     end	 
-			  
+				end
+	
 			default: io_state <= io_idle;
 	      endcase    		
 		end  

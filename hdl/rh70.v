@@ -332,22 +332,22 @@ reg nxm;
 reg[8:0] sector_data_index; // counter within sector
 
 // машина состояний контроллера
-parameter[3:0] busmaster_idle = 0; 
-parameter[3:0] busmaster_read = 1; 
-parameter[3:0] busmaster_readh = 2; 
-parameter[3:0] busmaster_readh2 = 3; 
-parameter[3:0] busmaster_preparebus = 4; 
-parameter[3:0] busmaster_read_done = 5; 
-parameter[3:0] busmaster_write1 = 6; 
-parameter[3:0] busmaster_write = 7; 
-parameter[3:0] busmaster_write_fill = 8; 
-parameter[3:0] busmaster_write_wait = 9; 
-parameter[3:0] busmaster_write_done = 10; 
-parameter[3:0] busmaster_wait = 11; 
-parameter[3:0] busmaster_write_delay = 12; 
-parameter[3:0] busmaster_readsector = 13; 
+parameter[3:0] dma_idle = 0; 
+parameter[3:0] dma_read = 1; 
+parameter[3:0] dma_readh = 2; 
+parameter[3:0] dma_readh2 = 3; 
+parameter[3:0] dma_preparebus = 4; 
+parameter[3:0] dma_read_done = 5; 
+parameter[3:0] dma_write1 = 6; 
+parameter[3:0] dma_write = 7; 
+parameter[3:0] dma_write_fill = 8; 
+parameter[3:0] dma_write_wait = 9; 
+parameter[3:0] dma_write_done = 10; 
+parameter[3:0] dma_wait = 11; 
+parameter[3:0] dma_write_delay = 12; 
+parameter[3:0] dma_readsector = 13; 
 
-reg[3:0] busmaster_state; 
+reg[3:0] dma_state; 
 
 // Сборка регистров для чтения
 assign rhcs1_sc = rhcs1_tre;
@@ -1130,7 +1130,7 @@ always @(posedge wb_clk_i)    begin
       if (wb_rst_i == 1'b1) begin
       
          // сброс системы
-         busmaster_state <= busmaster_idle ; 
+         dma_state <= dma_idle ; 
          dma_req <= 1'b0 ; 
          sdspi_write_mode <= 1'b0 ; 
          sdspi_start <= 1'b0;
@@ -1139,9 +1139,9 @@ always @(posedge wb_clk_i)    begin
       end
       
       else   begin
-            case (busmaster_state)
+            case (dma_state)
                // ожидание запроса
-               busmaster_idle :
+               dma_idle :
                         begin
                            nxm <= 1'b0 ; //  снимаем флаг ошибки nxm
                            iocomplete <= 1'b0; // снимаем флаг завершения ввода-вывода
@@ -1150,7 +1150,7 @@ always @(posedge wb_clk_i)    begin
                            if (write_start == 1'b1) begin
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1) begin               // ждем подтверждения DMA
-                                 busmaster_state <= busmaster_write1 ; // переходим к этапу 1 записи
+                                 dma_state <= dma_write1 ; // переходим к этапу 1 записи
                                  if (rhcs1_fnc == 5'b11001) ram_phys_addr <= ({rhbae, rhba[15:1]}) + 2'd2 ; 
                                  else                       ram_phys_addr <= {rhbae, rhba[15:1]} ; 
                                  
@@ -1168,11 +1168,11 @@ always @(posedge wb_clk_i)    begin
                                  if (rhcs1_fnc[0] == 1'b1) begin
                                     dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                                     if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
-												   busmaster_state <= busmaster_readh ; // переходим к чтению заголовков
+												   dma_state <= dma_readh ; // переходим к чтению заголовков
 									         end	
                                  end 
                                  // режим чтения данных
-                                 else  busmaster_state <= busmaster_readsector;                 // переходим к чтению данных
+                                 else  dma_state <= dma_readsector;                 // переходим к чтению данных
                                  // коррекция счетчика читаемых слов
                                  if (wcp >= 16'o400)  sector_data_index <= 9'o400;             // запрошен сектор и больше
                                  else                 sector_data_index <= {1'b0, wcp[7:0]} ;  // запрошено меньше сектора
@@ -1181,7 +1181,7 @@ always @(posedge wb_clk_i)    begin
                         end
            
                // Чтение заголовков- слово 1
-               busmaster_readh :
+               dma_readh :
                         begin
                            dma_adr_o <= {ram_phys_addr, 1'b0} ; 
                            dma_dat_o <= {3'b110, rhof_fmt, rhdc[11:0]} ; 
@@ -1189,26 +1189,26 @@ always @(posedge wb_clk_i)    begin
                            dma_we_o <= 1'b1;
                            ram_phys_addr <= ram_phys_addr + 1'b1 ; 
                            if (dma_ack_i == 1'b1) begin
-                              busmaster_state <= busmaster_readh2; 
+                              dma_state <= dma_readh2; 
                               dma_stb_o <= 1'b0;
                            end   
                         end
                         
                // Чтение заголовков- слово 2
-               busmaster_readh2 :
+               dma_readh2 :
                         begin
                            dma_adr_o <= {ram_phys_addr, 1'b0} ; 
                            dma_dat_o <= {rmda_hd, rmda_sa} ; 
                            dma_stb_o <= 1'b1 ; 
                            ram_phys_addr <= ram_phys_addr + 1'b1 ; 
                            if (dma_ack_i == 1'b1) begin
-                              busmaster_state <= busmaster_readsector; 
+                              dma_state <= dma_readsector; 
                               dma_stb_o <= 1'b0;
                            end   
                         end
                         
                // Чтение сектора данных в буфер SDSPI     
-               busmaster_readsector :
+               dma_readsector :
                         begin
                            sdspi_start <= 1'b1;          // запускаем SDSPI
                            sdspi_write_mode <= 1'b0;     // режим чтения
@@ -1217,22 +1217,22 @@ always @(posedge wb_clk_i)    begin
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               ram_phys_addr <= {rhbae, rhba[15:1]} ;   // выставляем физический адрес на шину
 									   // ждем подтверждения DMA
-                              if (dma_gnt == 1'b1)  busmaster_state <= busmaster_preparebus; 
+                              if (dma_gnt == 1'b1)  dma_state <= dma_preparebus; 
                            end 
                         end   
                         // чтение данных - подготовка шины к DMA
-               busmaster_preparebus :
+               dma_preparebus :
                         begin
                            sdspi_start <= 1'b0;
-                           busmaster_state <= busmaster_read ; 
+                           dma_state <= dma_read ; 
                            dma_adr_o <= {ram_phys_addr, 1'b0} ; // выставляем адрес на шину
                            dma_stb_o <= 1'b0 ;                        // снимаем строб данных 
                            dma_we_o <= 1'b0 ;                         // снимаем строб записи
                            reply_count <= 6'b111111;                  // взводим таймер ожидания шины
-                           busmaster_state <= busmaster_read ; // переходим к чтению заголовков
+                           dma_state <= dma_read ; // переходим к чтению заголовков
                         end
                         // чтение данных - обмен по шине
-               busmaster_read :
+               dma_read :
                         begin
                            if (sector_data_index != 9'o0)  begin
                               // передача данных сектора
@@ -1243,10 +1243,12 @@ always @(posedge wb_clk_i)    begin
                               if (|reply_count == 1'b0) begin
                                 // таймаут шины
                                 nxm <= 1'b1;
-                                busmaster_state <= busmaster_read_done ; 
+                                dma_state <= dma_read_done ; 
                               end  
                               if (dma_ack_i == 1'b1) begin   // устройство подтвердило обмен
-                                  busmaster_state <= busmaster_preparebus; 
+                                  dma_state <= dma_preparebus; 
+                                  dma_stb_o <= 1'b0 ;                        // снимаем строб данных 
+                                  dma_we_o <= 1'b0 ;                         // снимаем строб записи
                                   ram_phys_addr <= ram_phys_addr + 1'b1 ; // если разрешено, увеличиваем физический адрес
                                   sector_data_index <= sector_data_index - 1'b1 ;       // уменьшаем счетчик данных сектора
                                   sdbuf_addr <= sdbuf_addr + 1'b1 ;         // увеличиваем адрес буфера SD
@@ -1254,19 +1256,19 @@ always @(posedge wb_clk_i)    begin
                            end
                            else begin
                               // все сектора прочитаны 
-                              busmaster_state <= busmaster_read_done ; 
+                              dma_state <= dma_read_done ; 
                               dma_stb_o <= 1'b0 ; 
                               dma_we_o <= 1'b0 ; 
                            end 
                         end
-               busmaster_read_done :
+               dma_read_done :
                         begin
                            dma_req <= 1'b0 ;        // освобождаем шину
                            dma_stb_o <= 1'b0 ; 
                            dma_we_o <= 1'b0 ; 
                            // ждем подтверждения завершения операции
                            if (read_start == 1'b0) begin
-                              busmaster_state <= busmaster_idle ; // переходим в состояние ожидания команды
+                              dma_state <= dma_idle ; // переходим в состояние ожидания команды
                               iocomplete <= 1'b0;                 // снимаем подтверждение окончания работы
                            end 
                            else iocomplete <= 1'b1;  // подтверждаем окончание обмена
@@ -1274,7 +1276,7 @@ always @(posedge wb_clk_i)    begin
                         
 
                // этап 1 записи - подготовка шины к DMA
-               busmaster_write1 :
+               dma_write1 :
                         begin
                               sector_data_index <= sector_data_index - 1'b1 ; // уменьшаем счетчик записанных данных
                               sdbuf_we <= 1'b1 ;         // поднимаем флаг режима записи sdspi
@@ -1283,18 +1285,18 @@ always @(posedge wb_clk_i)    begin
                               dma_stb_o <= 1'b1 ;  // поднимаем строб чтения
                               ram_phys_addr <= ram_phys_addr + 1'b1 ; // если разрешено, увеличиваем адрес
                               dma_adr_o <= {ram_phys_addr, 1'b0} ; // выставляем адрес на шину
-                              busmaster_state <= busmaster_write ;  
+                              dma_state <= dma_write ;  
                               reply_count <= 6'b111111;  // взводим таймер ожидания ответа
                         end
                         
                // перепись данных сектора из памяти в буфер контроллера через DMA         
-               busmaster_write :
+               dma_write :
                         begin
                            // еще есть данные для записи
                            reply_count <= reply_count - 1'b1;
                            if (|reply_count == 1'b0) begin
                                 nxm <= 1'b1;
-                                busmaster_state <= busmaster_write_done ; 
+                                dma_state <= dma_write_done ; 
                            end  
                              if (dma_ack_i == 1'b1) begin   // устройство подтвердило обмен
                                  sdbuf_datain <= dma_dat_i ; // передаем байт данные с шины на вход sdspi
@@ -1302,20 +1304,20 @@ always @(posedge wb_clk_i)    begin
                                  dma_stb_o <= 1'b0 ; 
                               if (sector_data_index == 9'o0) begin
 										  // конец данных - освобождаем шину
-                                if (sdbuf_addr == 255) busmaster_state <= busmaster_write_wait ; 
-                                else                         busmaster_state <= busmaster_write_fill; 
+                                if (sdbuf_addr == 255) dma_state <= dma_write_wait ; 
+                                else                         dma_state <= dma_write_fill; 
                                 dma_req <= 1'b0 ;   
                               end 
-                              else  busmaster_state <= busmaster_write_delay ;  
+                              else  dma_state <= dma_write_delay ;  
                            end   
                         end
                // задержка 1 такт между операциями DMA-чтения         
-               busmaster_write_delay: busmaster_state <= busmaster_write1;         
+               dma_write_delay: dma_state <= dma_write1;         
                // дописывание нулей в конец неполного сектора         
-               busmaster_write_fill :
+               dma_write_fill :
                         begin
                            //dma_req <= 1'b0 ; 
-                           if (sdbuf_addr == 255)  busmaster_state <= busmaster_write_wait ; 
+                           if (sdbuf_addr == 255)  dma_state <= dma_write_wait ; 
                            else   begin
                               sdbuf_datain <= {16{1'b0}} ; 
                               sdbuf_addr <= sdbuf_addr + 1'b1 ; 
@@ -1323,23 +1325,23 @@ always @(posedge wb_clk_i)    begin
                            end 
                         end
                         
-               busmaster_write_wait :
+               dma_write_wait :
                         begin
                            sdspi_start <= 1'b1 ; 
                            sdspi_write_mode <= 1'b1;
                            sdbuf_we <= 1'b0 ; 
                            if (sdspi_io_done == 1'b1)   begin
-                              busmaster_state <= busmaster_write_done ; 
+                              dma_state <= dma_write_done ; 
                               sdspi_start <= 1'b0 ; 
                                 sdspi_write_mode <= 1'b0;
                               iocomplete <= 1'b1;
                            end 
                         end
-               busmaster_write_done :
+               dma_write_done :
                         begin
                            if (write_start == 1'b0)  begin
                               iocomplete <= 1'b0;
-                              busmaster_state <= busmaster_idle ; 
+                              dma_state <= dma_idle ; 
                            end 
                         end
                         
