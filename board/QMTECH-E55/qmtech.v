@@ -194,7 +194,7 @@ end
 reg reply;
 always @ (posedge clk_p)  begin
    if (sdram_reset) reply <= 1'b0;
-   else if(sdram_stb & (sdram_we)? sdr_wr_ack : sdr_rd_ack) reply <= 1'b1;
+   else if(sdram_stb & ((sdram_we)? sdr_wr_ack : sdr_rd_ack)) reply <= 1'b1;
 	else if (~sdram_stb) reply <= 1'b0;
 end
 assign sdram_ack = sdram_stb & reply;

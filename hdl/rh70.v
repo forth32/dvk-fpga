@@ -367,7 +367,8 @@ assign rhds_err = rher1_dck | rher1_uns | rher1_opi | rher1_dte | rher1_wle | rh
 //*  Контроллер SD-карты
 //***********************************************
 // интерфейс к SDSPI
-wire [26:0] sdcard_addr;       // адрес сектора карты
+wire [26:0] sdaddr;       // адрес сектора карты
+reg  [26:0] sdcard_addr;       // адрес сектора карты
 wire sdcard_error;             // флаг ошибки
 wire [15:0] sdbuf_dataout;     // слово; читаемое из буфера чтения
 wire sdcard_idle;              // признак готовности контроллера
@@ -1148,11 +1149,12 @@ always @(posedge wb_clk_i)    begin
                            
                            // старт процедуры записи
                            if (write_start == 1'b1) begin
+                              sdcard_addr <= sdaddr;                   // получаем адрес SD-сектора                
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1) begin               // ждем подтверждения DMA
                                  dma_state <= dma_write1 ; // переходим к этапу 1 записи
-                                 if (rhcs1_fnc == 5'b11001) ram_phys_addr <= ({rhbae, rhba[15:1]}) + 2'd2 ; 
-                                 else                       ram_phys_addr <= {rhbae, rhba[15:1]} ; 
+                                 if (rhcs1_fnc == 5'b11001) ram_phys_addr <= ({rhbae, rhba[15:1]}) + 2'd2 ; // запись с заголовком
+                                 else                       ram_phys_addr <= {rhbae, rhba[15:1]} ;          // запись без заголовка
                                  
                                  // вычисление количества байтов в текущем секторе (передача может быть неполной)
                                  if (wcp >= 16'o400) sector_data_index <= 9'o400;               // запрошен полный сектор или больше
@@ -1163,6 +1165,7 @@ always @(posedge wb_clk_i)    begin
                            end
                            // старт процедуры чтения
                            else if (read_start == 1'b1) begin
+                                 sdcard_addr <= sdaddr;                   // получаем адрес SD-сектора                
                                  // проверка на режим чтения заголовков
                                  ram_phys_addr <= {rhbae, rhba[15:1]} ; 
                                  if (rhcs1_fnc[0] == 1'b1) begin
@@ -1279,36 +1282,40 @@ always @(posedge wb_clk_i)    begin
                dma_write1 :
                         begin
                               sector_data_index <= sector_data_index - 1'b1 ; // уменьшаем счетчик записанных данных
-                              sdbuf_we <= 1'b1 ;         // поднимаем флаг режима записи sdspi
-                              dma_we_o <= 1'b0 ; 
-                              sdbuf_addr <= sdbuf_addr + 1'b1 ; // адрес буфера sdspi++
+                              dma_we_o <= 1'b0 ;   // режим передачи DMA - из памяти к устройству
                               dma_stb_o <= 1'b1 ;  // поднимаем строб чтения
-                              ram_phys_addr <= ram_phys_addr + 1'b1 ; // если разрешено, увеличиваем адрес
                               dma_adr_o <= {ram_phys_addr, 1'b0} ; // выставляем адрес на шину
-                              dma_state <= dma_write ;  
+                              ram_phys_addr <= ram_phys_addr + 1'b1 ;  //  физический адрес в памяти ++
+                              sdbuf_we <= 1'b1 ;         // поднимаем флаг режима записи sdspi
+                              sdbuf_addr <= sdbuf_addr + 1'b1 ; // адрес буфера sdspi++
                               reply_count <= 6'b111111;  // взводим таймер ожидания ответа
+										
+                              dma_state <= dma_write ;  
                         end
                         
                // перепись данных сектора из памяти в буфер контроллера через DMA         
                dma_write :
                         begin
-                           // еще есть данные для записи
-                           reply_count <= reply_count - 1'b1;
+                           reply_count <= reply_count - 1'b1; // таймер ожидания ответа
+									
+  							      // таймаут шины
                            if (|reply_count == 1'b0) begin
-                                nxm <= 1'b1;
-                                dma_state <= dma_write_done ; 
+                                nxm <= 1'b1;    // ошибка NXM
+                                dma_stb_o <= 1'b0 ;      // снимаем строб записи
+                                dma_state <= dma_write_done ; // прекращаем обработку DMA 
                            end  
-                             if (dma_ack_i == 1'b1) begin   // устройство подтвердило обмен
+									// ожидание ответа шины
+                           else if (dma_ack_i) begin   // шина подтвердила готовность данных
                                  sdbuf_datain <= dma_dat_i ; // передаем байт данные с шины на вход sdspi
-                                 dma_adr_o <= {ram_phys_addr, 1'b0} ; // выставляем адрес на шину
-                                 dma_stb_o <= 1'b0 ; 
-                              if (sector_data_index == 9'o0) begin
-										  // конец данных - освобождаем шину
-                                if (sdbuf_addr == 255) dma_state <= dma_write_wait ; 
-                                else                         dma_state <= dma_write_fill; 
-                                dma_req <= 1'b0 ;   
-                              end 
-                              else  dma_state <= dma_write_delay ;  
+//                                 dma_adr_o <= {ram_phys_addr, 1'b0} ; // выставляем адрес на шину
+                                 dma_stb_o <= 1'b0 ;      // снимаем строб записи
+                                 if (sector_data_index == 9'o0) begin
+										      // конец данных - освобождаем шину
+                                    if (sdbuf_addr == 255) dma_state <= dma_write_wait ;  // сектор дописан полностью
+                                    else                   dma_state <= dma_write_fill;   // сектор недописан
+                                    dma_req <= 1'b0 ;   // снимаем запрос DMA
+                                  end 
+                                 else  dma_state <= dma_write_delay ;  
                            end   
                         end
                // задержка 1 такт между операциями DMA-чтения         
@@ -1316,7 +1323,6 @@ always @(posedge wb_clk_i)    begin
                // дописывание нулей в конец неполного сектора         
                dma_write_fill :
                         begin
-                           //dma_req <= 1'b0 ; 
                            if (sdbuf_addr == 255)  dma_state <= dma_write_wait ; 
                            else   begin
                               sdbuf_datain <= {16{1'b0}} ; 
@@ -1333,7 +1339,7 @@ always @(posedge wb_clk_i)    begin
                            if (sdspi_io_done == 1'b1)   begin
                               dma_state <= dma_write_done ; 
                               sdspi_start <= 1'b0 ; 
-                                sdspi_write_mode <= 1'b0;
+                              sdspi_write_mode <= 1'b0;
                               iocomplete <= 1'b1;
                            end 
                         end
@@ -1375,7 +1381,7 @@ assign dn_offset = (unit[1:0] == 2'b00) ? 23'h000000 :
 assign udn_offset = ((unit[2]) == 1'b1) ? 23'h180000 : 23'h000000;
 
 // полный SD-адрес - цилиндр, головка, сектор
-assign sdcard_addr = 
+assign sdaddr = 
      start_offset +
 	  udn_offset +
 	  dn_offset + 

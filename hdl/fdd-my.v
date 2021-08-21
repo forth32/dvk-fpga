@@ -22,7 +22,7 @@ module fdd_my (
 // DMA
    output reg           dma_req,    // запрос DMA
    input                dma_gnt,    // подтверждение DMA
-   output reg[15:0]     dma_adr_o,  // выходной адрес при DMA-обмене
+   output reg[21:0]     dma_adr_o,  // выходной адрес при DMA-обмене
    input[15:0]          dma_dat_i,  // входная шина данных DMA
    output reg[15:0]     dma_dat_o,  // выходная шина данных DMA
    output reg           dma_stb_o,  // строб цикла шины DMA
@@ -73,7 +73,7 @@ module fdd_my (
 //                    D5    R     DONE, признак завершения операции
 //                    D6    R/W   IE, разрешение прерывания
 //                    D7    R     DRQ  запрос на запись регистра данных
-//                    D8-D13 W    расширение адреса, здесь не используется
+//                    D8-D13 W    расширение адреса до 22 бит
 //                    D14   W     сброс
 //                    D15   R     ошибка
 //
@@ -126,11 +126,12 @@ reg hd;               // головка
 reg [3:0] sec;        // сектор 0 - 10
 reg [1:0] drv;        // номер привода
 reg [15:0] wordcount; // число читаемых слов
-reg [15:0] ioadr;     // адрес для чтения-записи данных
+reg [21:0] ioadr;     // адрес для чтения-записи данных
 reg alltrk_mode;      // признак режима чтения полной дорожки
 reg start;            // признак запуска команды на выполнение (go)
 reg [3:0] cmd;        // код команды
 reg rstreq;           // запрос на программный сброс
+reg [5:0] extadr;     // расширение адреса до 22 бит
 
 // Флаги ошибок
 reg nxp;         // таймаут шины при DMA-обмене
@@ -292,6 +293,7 @@ always @(posedge wb_clk_i)   begin
         err_sec <= 1'b0;
         interrupt_trigger <= 1'b0;
         cmdstate <= CMD_START;
+		  extadr <= 6'o0;
     end
       
    // рабочие состояния
@@ -335,6 +337,7 @@ always @(posedge wb_clk_i)   begin
                                     alltrk_mode <= 1'b0;         // сброс режима полной дорожки
                                 end         
                                 ie <= wb_dat_i[6];               // флаг разрешения прерывания - доступен для записи всегда
+										  extadr <= wb_dat_i[13:8];        // расширение адреса
                             end
                     // 177172 - MYDR
                      1'b1 :    
@@ -559,7 +562,8 @@ always @(posedge wb_clk_i)
       end
     // загрузка блока параметров - слово 2   
     DMA_LOADPARM3: begin
-      ioadr <= pdata;     // адрес буфера в памяти хоста
+      ioadr[15:0] <= pdata;     // адрес буфера в памяти хоста - младшая часть
+		ioadr[21:16] <= extadr;   // старшая часть адреса
       dmanextstate <= DMA_LOADPARM4;
       dma_adr_o <= {parm_addr+2'd2, 1'b0};
       dma_state <= DMA_LOADWORD;
@@ -639,7 +643,7 @@ always @(posedge wb_clk_i)
          if (dma_gnt == 1'b1) begin  // получили доступ к шине
             sdbuf_addr <= 8'o0;   // начальный адрес в буфере sdspi
             dma_we_o <= 1'b1;     // режим записи данных в буфер
-            dma_adr_o <= {ioadr[15:1],1'b0};  // начальный адрес на шине для обмена
+            dma_adr_o <= {ioadr[21:1],1'b0};  // начальный адрес на шине для обмена
             dma_state <= DMA_BUF2HOST;
             dma_timer <= 8'd200;  // взводим таймер ожидания ответа
          end
@@ -675,7 +679,7 @@ always @(posedge wb_clk_i)
                   else err_cyl1 <= 1'b1;  // выход за границы дискеты
                end   
             end
-            ioadr <= ioadr + 16'o1000;  // сдвигаем адрес хост-буфера
+            ioadr <= ioadr + 22'o1000;  // сдвигаем адрес хост-буфера
             dma_req <= 1'b0;  // освобождаем шину
             dma_state <= DMA_STARTREAD; // и продолжаем чтение секторов
          end   
@@ -702,7 +706,7 @@ always @(posedge wb_clk_i)
             sdbuf_addr <= 8'o0; // адрес в буфере sdspi начинается с 0
             dma_we_o <= 1'b0;   // снимаем флаг записи на шину
             sdbuf_we <= 1'b1;   // включаем режим записи буфера
-            dma_adr_o <= {ioadr[15:1],1'b0};  // начальный адрес хост-буфера
+            dma_adr_o <= {ioadr[21:1],1'b0};  // начальный адрес хост-буфера
             dma_timer <= 8'd200;  // взводим таймер ожидания ответа
             dma_state <= DMA_ZEROBUF;
          end
@@ -725,19 +729,20 @@ always @(posedge wb_clk_i)
          if (|dma_timer == 0) begin
             // таймаут шины
             nxp <= 1'b1;    // флаг таймаута
+            dma_stb_o <= 1'b0;  // снимаем строб транзакции
             dma_state <= DMA_IDLE;  // завершаем процесс
          end
          // получен ответ от шины
-         else if (dma_ack_i == 1'b1) begin
+         else if (dma_ack_i) begin
             dma_state <= DMA_HOST2BUF_NEXT;
             sdbuf_datain <= dma_dat_i;  // вводим в буфер полученное слово
+            dma_stb_o <= 1'b0;  // снимаем строб транзакции
          end   
         end   
         
       // продолжение передачи слова в буфер sdspi   
       DMA_HOST2BUF_NEXT: begin
-         dma_stb_o <= 1'b0;  // снимаем строб транзакции
-         if (dma_ack_i == 1'b0) begin  // ждем снятия сигнала подтверждения
+         if (~dma_ack_i) begin  // ждем снятия сигнала подтверждения
             sdbuf_addr <= sdbuf_addr + 1'b1;  // сдвигаем адрес блочного буфера sdspi
             dma_adr_o <= dma_adr_o+2'o2;      // сдвигаем адрес на шине хоста
             wordcount <= wordcount - 1'b1;    // счетчик слов --
@@ -776,7 +781,7 @@ always @(posedge wb_clk_i)
                      else err_cyl1 <= 1'b1;  // выход за границы дискеты
                   end   
                end
-               ioadr <= ioadr + 16'o1000;  // сдвигаем адрес в памяти хоста
+               ioadr <= ioadr + 22'o1000;  // сдвигаем адрес в памяти хоста
                dma_state <= DMA_STARTWRITE; // продолжаем запись данных
             end   
          end   
@@ -794,7 +799,7 @@ always @(posedge wb_clk_i)
          sec <= 4'o0;   // сектор 0
          drv <= parm_addr[1:0]; // номер привода
          wordcount <= 16'd256;  // число читаемых слов (1 сектор)
-         ioadr <= 16'o0;  // адрес в памяти
+         ioadr <= 22'o0;  // адрес в памяти
          io_complete <= 1'b1;
          if (start_bootparm == 1'b0) dma_state <= DMA_IDLE;
        end   

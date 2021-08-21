@@ -49,132 +49,133 @@ module rk11 (
    output [3:0]           sdcard_debug
    ); 
 
-   // Сигналы упраления обменом с шиной
-   wire bus_strobe = wb_cyc_i & wb_stb_i & ~wb_ack_o;   // строб цикла шины
-   wire bus_read_req = bus_strobe & ~wb_we_i;           // запрос чтения
-   wire bus_write_req = bus_strobe & wb_we_i;           // запрос записи
-   wire reset=wb_rst_i;
- 
-   reg interrupt_trigger;     // триггер запроса прерывания
-   // состояние машины обработки прерывания
-   parameter[1:0] i_idle = 0; 
-   parameter[1:0] i_req = 1; 
-   parameter[1:0] i_wait = 2; 
-   reg[1:0] interrupt_state; 
-   
-   // регистр данных - rkds - 177400
-   reg[2:0] rkds_dri;        // Номер устройства, вызвавшего прерывание
-   wire rkds_dpl=1'b0;       // потеря электропитания
-   wire rkds_rk05=1'b1;      // признак устройства типа RK05
-   wire rkds_dru=1'b0;       // нестабильное состояние
-   wire rkds_sin=1'b0;       // позиционирование не закончено - у нас так не бывает
-   wire rkds_sok=1'b1;       // sector counter ok
-   wire rkds_dry;            // drive ready
-   wire rkds_rwsrdy;         // read/write/seek ready
-   reg rkds_wps;             // write protected if 1
-   reg rkds_scsa;            // disk address = sector counter
-   reg[3:0] rkds_sc;         // sector counter
-   wire[15:0] rkds; 
-   
-   // регистр ошибок - rker - 177402
-   reg rker_wce;             // write check error
-   reg rker_cse;             // checksum error
-   reg rker_nxs;             // nx sector
-   reg rker_nxc;             // nx cylinder
-   reg rker_nxd;             // nx disk
-   reg rker_te;              // timing error
-   reg rker_dlt;             // data late
-   reg rker_nxm;             // nxm
-   reg rker_pge;             // programming error
-   reg rker_ske;             // seek error
-   reg rker_wlo;             // write lockout
-   reg rker_ovr;             // overrun
-   reg rker_dre;             // drive error
-   wire[15:0] rker; 
-   
-   // регистр управления/состояния - rkcs - 177404
-   wire rkcs_err;           // error
-   wire rkcs_he;            // hard error
-   reg rkcs_scp;            // search complete
-   reg rkcs_iba;            // inhibit increment rkba
-   reg rkcs_fmt;            // format
-   reg rkcs_exb;            
-   reg rkcs_sse;            // stop on soft error
-   reg rkcs_rdy;            // ready
-   reg rkcs_ide;            // interrupt on done enable
-   reg[1:0] rkcs_mex;       // bit 18, 17 of address
-   reg[2:0] rkcs_fu;        // function code
-   reg rkcs_go;             // go
-   wire[15:0] rkcs; 
-   
-   // счетчик пересылаемых слов - rkwc - 177406
-   reg[15:0] rkwc; 
-   
-   // логический адрес буфера в памяти - rkba - 177410
-   reg[15:0] rkba; 
-   
-   // адрес CHS- rkda - 177412
-   reg[2:0] rkda_dr;        // номер устройства
-   reg[7:0] rkda_cy;        // цилиндр
-   reg rkda_hd;             // головка
-   reg[3:0] rkda_sc;        // сектор
-   wire[15:0] rkda;
-   
-   // регистр данных - rkdb - 177416
-   reg[15:0] rkdb; 
+// Сигналы упраления обменом с шиной
+wire bus_strobe = wb_cyc_i & wb_stb_i & ~wb_ack_o;   // строб цикла шины
+wire bus_read_req = bus_strobe & ~wb_we_i;           // запрос чтения
+wire bus_write_req = bus_strobe & wb_we_i;           // запрос записи
+wire reset=wb_rst_i;
 
-   reg start;               // флаг запуска команды
-   reg update_rkwc;         // признак обновления счетчика слов
-   reg[15:0] wcp;           // счетчик читаемых слов, положительный (не инверсия)
-   reg[17:1] ram_phys_addr; // адрес для DMA-обмена
-   reg[11:0] rkclock;       // счетчик для формирования индексных импульсов диска
-   reg[1:0] rksi[7:0];      // таймер эмуляции времени позиционирования для каждого диска
-   reg scpset;              // флаг запроса прерывания по окончанию позиционирования
-   reg[17:0] rkdelay;       
-   reg[13:0] rkcs_godelay;  // таймер задержки перед запуском команды
-   reg write_start;         // запуск записи
-   reg read_start;          // запуск чтения
-   reg iocomplete;          // признак завершения работы DMA-контроллера
-   reg [5:0] reply_count;   // таймер ожидания ответа при DMA-обмене
-      
-   // регистры контроллера DMA
-   reg nxm;                    // признак таймаута шины
-   reg[8:0] sector_data_index; // указатель текущего слова в секторном буфере
-   // машина состояний контроллера
-   parameter[3:0] dma_idle = 0; 
-   parameter[3:0] dma_read = 1; 
-   parameter[3:0] dma_readh = 2; 
-   parameter[3:0] dma_readh2 = 3; 
-   parameter[3:0] dma_preparebus = 4; 
-   parameter[3:0] dma_read_done = 5; 
-   parameter[3:0] dma_write1 = 6; 
-   parameter[3:0] dma_write = 7; 
-   parameter[3:0] dma_write_fill = 8; 
-   parameter[3:0] dma_write_wait = 9; 
-   parameter[3:0] dma_write_done = 10; 
-   parameter[3:0] dma_wait = 11; 
-   parameter[3:0] dma_write_delay = 12; 
-   parameter[3:0] dma_readsector = 13; 
-   
-   reg[3:0] dma_state; 
+reg interrupt_trigger;     // триггер запроса прерывания
+// состояние машины обработки прерывания
+parameter[1:0] i_idle = 0; 
+parameter[1:0] i_req = 1; 
+parameter[1:0] i_wait = 2; 
+reg[1:0] interrupt_state; 
+
+// регистр данных - rkds - 177400
+reg[2:0] rkds_dri;        // Номер устройства, вызвавшего прерывание
+wire rkds_dpl=1'b0;       // потеря электропитания
+wire rkds_rk05=1'b1;      // признак устройства типа RK05
+wire rkds_dru=1'b0;       // нестабильное состояние
+wire rkds_sin=1'b0;       // позиционирование не закончено - у нас так не бывает
+wire rkds_sok=1'b1;       // sector counter ok
+wire rkds_dry;            // drive ready
+wire rkds_rwsrdy;         // read/write/seek ready
+reg rkds_wps;             // write protected if 1
+reg rkds_scsa;            // disk address = sector counter
+reg[3:0] rkds_sc;         // sector counter
+wire[15:0] rkds; 
+
+// регистр ошибок - rker - 177402
+reg rker_wce;             // write check error
+reg rker_cse;             // checksum error
+reg rker_nxs;             // nx sector
+reg rker_nxc;             // nx cylinder
+reg rker_nxd;             // nx disk
+reg rker_te;              // timing error
+reg rker_dlt;             // data late
+reg rker_nxm;             // nxm
+reg rker_pge;             // programming error
+reg rker_ske;             // seek error
+reg rker_wlo;             // write lockout
+reg rker_ovr;             // overrun
+reg rker_dre;             // drive error
+wire[15:0] rker; 
+
+// регистр управления/состояния - rkcs - 177404
+wire rkcs_err;           // error
+wire rkcs_he;            // hard error
+reg rkcs_scp;            // search complete
+reg rkcs_iba;            // inhibit increment rkba
+reg rkcs_fmt;            // format
+reg rkcs_exb;            
+reg rkcs_sse;            // stop on soft error
+reg rkcs_rdy;            // ready
+reg rkcs_ide;            // interrupt on done enable
+reg[1:0] rkcs_mex;       // bit 18, 17 of address
+reg[2:0] rkcs_fu;        // function code
+reg rkcs_go;             // go
+wire[15:0] rkcs; 
+
+// счетчик пересылаемых слов - rkwc - 177406
+reg[15:0] rkwc; 
+
+// логический адрес буфера в памяти - rkba - 177410
+reg[15:0] rkba; 
+
+// адрес CHS- rkda - 177412
+reg[2:0] rkda_dr;        // номер устройства
+reg[7:0] rkda_cy;        // цилиндр
+reg rkda_hd;             // головка
+reg[3:0] rkda_sc;        // сектор
+wire[15:0] rkda;
+
+// регистр данных - rkdb - 177416
+reg[15:0] rkdb; 
+
+reg start;               // флаг запуска команды
+reg update_rkwc;         // признак обновления счетчика слов
+reg[15:0] wcp;           // счетчик читаемых слов, положительный (не инверсия)
+reg[17:1] ram_phys_addr; // адрес для DMA-обмена
+reg[11:0] rkclock;       // счетчик для формирования индексных импульсов диска
+reg[1:0] rksi[7:0];      // таймер эмуляции времени позиционирования для каждого диска
+reg scpset;              // флаг запроса прерывания по окончанию позиционирования
+reg[17:0] rkdelay;       
+reg[13:0] rkcs_godelay;  // таймер задержки перед запуском команды
+reg write_start;         // запуск записи
+reg read_start;          // запуск чтения
+reg iocomplete;          // признак завершения работы DMA-контроллера
+reg [5:0] reply_count;   // таймер ожидания ответа при DMA-обмене
+	
+// регистры контроллера DMA
+reg nxm;                    // признак таймаута шины
+reg[8:0] sector_data_index; // указатель текущего слова в секторном буфере
+// машина состояний контроллера
+parameter[3:0] dma_idle = 0; 
+parameter[3:0] dma_read = 1; 
+parameter[3:0] dma_readh = 2; 
+parameter[3:0] dma_readh2 = 3; 
+parameter[3:0] dma_preparebus = 4; 
+parameter[3:0] dma_read_done = 5; 
+parameter[3:0] dma_write1 = 6; 
+parameter[3:0] dma_write = 7; 
+parameter[3:0] dma_write_fill = 8; 
+parameter[3:0] dma_write_wait = 9; 
+parameter[3:0] dma_write_done = 10; 
+parameter[3:0] dma_wait = 11; 
+parameter[3:0] dma_write_delay = 12; 
+parameter[3:0] dma_readsector = 13; 
+
+reg[3:0] dma_state; 
 
 
-   // сборка регистров RK11
+// сборка регистров RK11
 
-   assign rkcs_err = (rker_wce == 1'b1 | rker_cse == 1'b1 | rker_nxs == 1'b1 | rker_nxc == 1'b1 | rker_nxd == 1'b1 | rker_te == 1'b1 | rker_dlt == 1'b1 | rker_nxm == 1'b1 | rker_pge == 1'b1 | rker_ske == 1'b1 | rker_wlo == 1'b1 | rker_ovr == 1'b1 | rker_dre == 1'b1) ? 1'b1 : 1'b0 ;
-   assign rkcs_he = (rker_nxs == 1'b1 | rker_nxc == 1'b1 | rker_nxd == 1'b1 | rker_te == 1'b1 | rker_dlt == 1'b1 | rker_nxm == 1'b1 | rker_pge == 1'b1 | rker_ske == 1'b1 | rker_wlo == 1'b1 | rker_ovr == 1'b1 | rker_dre == 1'b1) ? 1'b1 : 1'b0 ;
-   assign rkcs = {rkcs_err, rkcs_he, rkcs_scp, 1'b0, rkcs_iba, rkcs_fmt, rkcs_exb, rkcs_sse, rkcs_rdy, rkcs_ide, rkcs_mex, rkcs_fu, rkcs_go} ;
+assign rkcs_err = (rker_wce == 1'b1 | rker_cse == 1'b1 | rker_nxs == 1'b1 | rker_nxc == 1'b1 | rker_nxd == 1'b1 | rker_te == 1'b1 | rker_dlt == 1'b1 | rker_nxm == 1'b1 | rker_pge == 1'b1 | rker_ske == 1'b1 | rker_wlo == 1'b1 | rker_ovr == 1'b1 | rker_dre == 1'b1) ? 1'b1 : 1'b0 ;
+assign rkcs_he = (rker_nxs == 1'b1 | rker_nxc == 1'b1 | rker_nxd == 1'b1 | rker_te == 1'b1 | rker_dlt == 1'b1 | rker_nxm == 1'b1 | rker_pge == 1'b1 | rker_ske == 1'b1 | rker_wlo == 1'b1 | rker_ovr == 1'b1 | rker_dre == 1'b1) ? 1'b1 : 1'b0 ;
+assign rkcs = {rkcs_err, rkcs_he, rkcs_scp, 1'b0, rkcs_iba, rkcs_fmt, rkcs_exb, rkcs_sse, rkcs_rdy, rkcs_ide, rkcs_mex, rkcs_fu, rkcs_go} ;
 
-   assign rkds_dry = 1'b1;
-   assign rkds_rwsrdy = (rksi[rkda_dr] == 0 & sdcard_idle == 1'b1) ? 1'b1 : 1'b0 ;
-   assign rkds = {rkds_dri, rkds_dpl, rkds_rk05, rkds_dru, rkds_sin, rkds_sok, rkds_dry, rkds_rwsrdy, rkds_wps, rkds_scsa, rkds_sc} ;
+assign rkds_dry = 1'b1;
+assign rkds_rwsrdy = (rksi[rkda_dr] == 0 & sdcard_idle == 1'b1) ? 1'b1 : 1'b0 ;
+assign rkds = {rkds_dri, rkds_dpl, rkds_rk05, rkds_dru, rkds_sin, rkds_sok, rkds_dry, rkds_rwsrdy, rkds_wps, rkds_scsa, rkds_sc} ;
 
-   assign rkda = {rkda_dr, rkda_cy, rkda_hd, rkda_sc} ;
+assign rkda = {rkda_dr, rkda_cy, rkda_hd, rkda_sc} ;
 
-   assign rker = {rker_dre, rker_ovr, rker_wlo, rker_ske, rker_pge, rker_nxm, rker_dlt, rker_te, rker_nxd, rker_nxc, rker_nxs, 3'b000, rker_cse, rker_wce} ;
+assign rker = {rker_dre, rker_ovr, rker_wlo, rker_ske, rker_pge, rker_nxm, rker_dlt, rker_te, rker_nxd, rker_nxc, rker_nxs, 3'b000, rker_cse, rker_wce} ;
 
-   // интерфейс к SDSPI
-wire [26:0] sdcard_addr;       // адрес сектора карты
+// интерфейс к SDSPI
+wire [26:0] sdaddr;       // адрес сектора карты
+reg  [26:0] sdcard_addr;       // адрес сектора карты
 wire sdcard_error;             // флаг ошибки
 wire [15:0] sdbuf_dataout;     // слово; читаемое из буфера чтения
 wire sdcard_idle;              // признак готовности контроллера
@@ -866,28 +867,9 @@ always @(posedge wb_clk_i)  begin
                end 
             end 
       end  
-   end 
+end 
 
-   //**********************************************
-   // Вычисление адреса блока на SD-карте
-   //**********************************************
-   wire[16:0] hs_offset; 
-   wire[16:0] ca_offset; 
-   wire[16:0] dn_offset;
-   // 
-   // Головка
-   assign hs_offset = (rkda_hd == 1'b1) ? 17'b00000000000001100 : 17'b00000000000000000 ;
-   // Цилиндр
-   assign ca_offset = {5'b00000, rkda_cy, 4'b0000} + {6'b000000, (rkda_cy), 3'b000} ;
-   // Начало образа диска на карте
-   //
-   //  0 0ddd 0000 0000 0000   1000 + 0800 = 1800
-   //  0 00dd d000 0000 0000
-   //
-   assign dn_offset = {2'b00, rkda_dr, 12'b000000000000} + {3'b000, rkda_dr, 11'b00000000000} ;
-   // полный абсолютный адрес 
-   assign sdcard_addr = {6'b000000, dn_offset} + hs_offset + ca_offset + rkda_sc + start_offset ;
-
+   //************************************************
    // DMA и работа с картой памяти
    //---------------------------------------
    always @(posedge wb_clk_i)  begin
@@ -912,6 +894,7 @@ always @(posedge wb_clk_i)  begin
                            
                            // старт процедуры записи
                            if (write_start == 1'b1) begin
+                              sdcard_addr <= sdaddr;                   // получаем адрес SD-сектора                
                               dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                               if (dma_gnt == 1'b1) begin               // ждем подтверждения DMA
                                  dma_state <= dma_write1 ; // переходим к этапу 1 записи
@@ -927,6 +910,7 @@ always @(posedge wb_clk_i)  begin
                            // старт процедуры чтения
                            else if (read_start == 1'b1) begin
                                  // проверка на режим чтения заголовков
+                                 sdcard_addr <= sdaddr;                   // получаем адрес SD-сектора                
                                  if (rkcs_fmt == 1'b1) begin
                                     dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                                     ram_phys_addr <= {rkcs_mex, rkba[15:1]};  // полный физический адрес буфера в ОЗУ
@@ -1104,4 +1088,25 @@ always @(posedge wb_clk_i)  begin
             endcase 
       end  
    end 
+	
+//**********************************************
+// Вычисление адреса блока на SD-карте
+//**********************************************
+wire[16:0] hs_offset; 
+wire[16:0] ca_offset; 
+wire[16:0] dn_offset;
+// 
+// Головка
+assign hs_offset = (rkda_hd == 1'b1) ? 17'b00000000000001100 : 17'b00000000000000000 ;
+// Цилиндр
+assign ca_offset = {5'b00000, rkda_cy, 4'b0000} + {6'b000000, (rkda_cy), 3'b000} ;
+// Начало образа диска на карте
+//
+//  0 0ddd 0000 0000 0000   1000 + 0800 = 1800
+//  0 00dd d000 0000 0000
+//
+assign dn_offset = {2'b00, rkda_dr, 12'b000000000000} + {3'b000, rkda_dr, 11'b00000000000} ;
+// полный абсолютный адрес 
+assign sdaddr = {6'b000000, dn_offset} + hs_offset + ca_offset + rkda_sc + start_offset ;
+	
 endmodule

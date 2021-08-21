@@ -41,6 +41,8 @@ module topboard22 (
    output         dx_led,               // запрос обмена диска DX
    output         db_led,               // запрос обмена диска DB
    output         timer_led,            // индикация включения таймера
+	output         idle_led,             // признак ожидания прерывания по WAIT
+	output         run_led,              // признак ативности секвенсера
    
    // Интерфейс SDRAM
    output         sdram_reset,       // сброс/переинициализация SDRAM
@@ -307,8 +309,8 @@ assign sdram_out=wb_out;               // выходная шина данных
    .dclo(vm_dclo_in),              // Вход сброса процессора
    .aclo(vm_aclo_in),              // Сигнал аварии питания
    .resume(bt_halt),               // Прерывание входа в пультовоый режим
-	.led_idle(led_idle),         // индикация бездействия (WAIT)
-	.led_run(led_run),          // индикация работы процессора (~HALT)
+	.led_idle(idle_led),         // индикация бездействия (WAIT)
+	.led_run(run_led),          // индикация работы процессора (~HALT)
 
 // Шины обработки прерываний                                       
    .irq_i({br5_irq, br4_irq}),      // Запрос на векторное прерывание 
@@ -1032,7 +1034,7 @@ wire br5_irq;
 wire br4_iack;
 wire br5_iack;
 
-
+// приоритет 4
 wbc_vic #(.N(4)) vic4
 (
    .wb_clk_i(wb_clk),
@@ -1048,7 +1050,7 @@ wbc_vic #(.N(4)) vic4
 );
 
 // приоритет 5
-wbc_vic #(.N(5)) vic5
+wbc_vic #(.N(6)) vic5
 (
    .wb_clk_i(wb_clk),
    .wb_rst_i(sys_init),
@@ -1056,10 +1058,10 @@ wbc_vic #(.N(5)) vic5
    .wb_dat_o(irq5_ivec),
    .wb_stb_i(istb[5]),
    .wb_ack_o(br5_iack),
-//      RX-11            DW          RK11        RH70 	      RK611
-   .ivec({16'o000264, 16'o000300, 16'o000220, 16'o000254,   16'o000210}),
-   .ireq({rx_irq,      dw_irq,     rk11_irq,    rh70_irq,   rk611_irq}),
-   .iack({rx_iack,     dw_iack,    rk11_iack,   rh70_iack,  rk611_iack})
+//      RX-11            DW          RK11        RH70 	      RK611         MY
+   .ivec({16'o000264, 16'o000300, 16'o000220, 16'o000254,   16'o000210, 16'o000170}),
+   .ireq({rx_irq,      dw_irq,     rk11_irq,    rh70_irq,   rk611_irq,   my_irq}),
+   .iack({rx_iack,     dw_iack,    rk11_iack,   rh70_iack,  rk611_iack,  my_iack})
 );
 
 assign vector= (istb[4]) ? irq4_ivec[8:0]:
