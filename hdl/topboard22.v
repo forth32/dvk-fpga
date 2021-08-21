@@ -42,8 +42,8 @@ module topboard22 (
    output         db_led,               // запрос обмена диска DB
    output         timer_led,            // индикация включения таймера
 	output         idle_led,             // признак ожидания прерывания по WAIT
-	output         mmu_led,
-	output         run_led,              // признак ативности секвенсера
+	output         mmu_led,              // признак включения MMU 
+	output         run_led,              // признак активности секвенсера
    
    // Интерфейс SDRAM
    output         sdram_reset,       // сброс/переинициализация SDRAM
@@ -94,16 +94,16 @@ wire [2:0] vspeed;   // индекс скорости порта
 wire        sys_init;         // общий сброс
 
 // шина WISHBONE                                       
-wire        wb_clk;                    
-wire [21:0] wb_adr;                    
-wire [15:0] wb_out;                    
-wire [15:0] wb_mux;                    
-wire        wb_we;                     
-wire [1:0]  wb_sel;                    
-wire        wb_stb;                    
-wire        global_ack;                    
-wire [17:0] dma_adr18; 
-wire        dma_stb;
+wire        wb_clk;                  // тактовая частота
+wire [21:0] wb_adr;                  // полный 22-битный адрес  
+wire [15:0] wb_out;                  // выход данных от процессора   
+wire [15:0] wb_mux;                  // вход данных в процессор  
+wire        wb_we;                   // разрешение записи  
+wire [1:0]  wb_sel;                  // выбор байтов из слова  
+wire        wb_stb;                  // строб обмена по шине  
+wire        global_ack;              // подтверждение обмена от устройств на шине      
+wire [17:0] dma_adr18;               // 18-битный unibus-адрес от устройств, использующих DMA в режиме UBM
+wire        dma_stb;                 // строб обмена от устройств, работающих с шиной через DMA
 
 // Основная шина процессора
 wire        cpu_access_req;          // разрешение доступа к шине
@@ -112,7 +112,6 @@ wire [15:0] cpu_data_out;            // выход шины данных
 wire        cpu_we;                  // направление передачи (1 - от процессора)
 wire [1:0]  cpu_bsel;                // выбор байтов из слова
 wire        cpu_ram_stb;             // строб доступа к памяти со  стороны процессора
-wire        cpu_ack;                 // подтверждение транзакции
 
 // сигналы выбора периферии
 wire uart1_stb;
@@ -128,6 +127,7 @@ wire my_stb;
 wire kgd_stb;
 
 wire bus_stb;
+
 // линии подтверждения обмена, исходяшие из устройства
 wire uart1_ack;
 wire uart2_ack;
@@ -140,12 +140,6 @@ wire dw_ack;
 wire rx_ack;
 wire my_ack;
 wire kgd_ack;
-
-// линии подтверждения, входящие в DMA-контроллеры устройств
-wire rk11_dma_ack;
-wire rk611_dma_ack;
-wire my_dma_ack;
-wire rh70_dma_ack;
 
 //  Шины данных от периферии
 wire [15:0] uart1_dat;
@@ -295,7 +289,7 @@ assign sdram_out=wb_out;               // выходная шина данных
    .wb_dat_i(wb_mux),             // вход шины данных
    .wb_we_o(cpu_we),              // разрешение записи
    .wb_sel_o(cpu_bsel),           // выбор байтов для передачи
-   .global_ack(cpu_ack),          // подтверждение обмена от памяти и устройств страницы ввода-вывода
+   .global_ack(global_ack),       // подтверждение обмена от памяти и устройств страницы ввода-вывода
    .ram_stb(cpu_ram_stb),         // строб обращения к основной памяти
    .bus_stb(bus_stb),             // строб обращения к общей шине
    
@@ -598,7 +592,7 @@ rk11 rkdisk (
    .dma_dat_o(rk11_dma_out), // выходная шина данных DMA
    .dma_stb_o(rk11_dma_stb), // строб цикла шины DMA
    .dma_we_o(rk11_dma_we),   // направление передачи DMA (0 - память->диск, 1 - диск->память) 
-   .dma_ack_i(rk11_dma_ack), // Ответ от устройства, с которым идет DMA-обмен
+   .dma_ack_i(global_ack), // Ответ от устройства, с которым идет DMA-обмен
    
 // интерфейс SD-карты
    .sdcard_cs(rk_cs), 
@@ -668,7 +662,7 @@ rk611 dmdisk (
    .dma_dat_o(rk611_dma_out), // выходная шина данных DMA
    .dma_stb_o(rk611_dma_stb), // строб цикла шины DMA
    .dma_we_o(rk611_dma_we),   // направление передачи DMA (0 - память->диск, 1 - диск->память) 
-   .dma_ack_i(rk611_dma_ack), // Ответ от устройства, с которым идет DMA-обмен
+   .dma_ack_i(global_ack), // Ответ от устройства, с которым идет DMA-обмен
    
 // интерфейс SD-карты
    .sdcard_cs(dm_cs), 
@@ -839,7 +833,7 @@ fdd_my mydisk (
    .dma_dat_o(my_dma_out),  // выходная шина данных DMA
    .dma_stb_o(my_dma_stb),  // строб цикла шины DMA
    .dma_we_o(my_dma_we),    // направление передачи DMA (0 - память->диск, 1 - диск->память) 
-   .dma_ack_i(my_dma_ack),  // Ответ от устройства, с которым идет DMA-обмен
+   .dma_ack_i(global_ack),  // Ответ от устройства, с которым идет DMA-обмен
    
 // интерфейс SD-карты
    .sdcard_cs(my_cs), 
@@ -908,7 +902,7 @@ rh70 db_disk (
    .dma_dat_o(rh70_dma_out), // выходная шина данных DMA
    .dma_stb_o(rh70_dma_stb), // строб цикла шины DMA
    .dma_we_o(rh70_dma_we),   // направление передачи DMA (0 - память->диск, 1 - диск->память) 
-   .dma_ack_i(rh70_dma_ack), // Ответ от устройства, с которым идет DMA-обмен
+   .dma_ack_i(global_ack), // Ответ от устройства, с которым идет DMA-обмен
    
 // интерфейс SD-карты
    .sdcard_cs(db_cs), 
@@ -1148,16 +1142,11 @@ assign wb_we =  (rk11_dma_state)  ? rk11_dma_we:
                                            
 assign wb_sel =   (dma_ack) ? 2'b11: cpu_bsel;
                                           
-assign sdram_stb = (my_dma_state)    ? my_dma_stb:
+/*assign sdram_stb = (my_dma_state)    ? my_dma_stb:
                    (rh70_dma_state)  ? rh70_dma_stb  : 
                       cpu_ram_stb;
-                                           
-assign cpu_ack = (~dma_ack) ? global_ack: 1'b0;
-                  
-assign rk11_dma_ack = global_ack;
-assign rk611_dma_ack = global_ack;
-assign my_dma_ack = global_ack;
-assign rh70_dma_ack = global_ack;
+*/
+assign sdram_stb = my_dma_stb | rh70_dma_stb | cpu_ram_stb;
 
 assign dma_stb = rk11_dma_stb | rk611_dma_stb;
   
