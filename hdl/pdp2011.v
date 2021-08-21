@@ -35,6 +35,8 @@ module pdp2011 (
 
 	output led_idle,         // индикация бездействия (WAIT)
 	output led_run,          // индикация работы процессора (~HALT)
+	output led_mmu,
+	output led_timer,
 	
 // Шины обработки прерываний                                       
    input [5:4] irq_i,      // Векторное прерывание уровня 5
@@ -44,7 +46,6 @@ module pdp2011 (
 );   
    
 //==========================================================================================
-wire sw_cont=1'b0;
 wire        sys_init;              
                                       
 wire [21:0] mmu_adr; 
@@ -86,6 +87,12 @@ wire cpu_illegal_halt;
 wire [7:4] vstb;
 wire [7:4] virq;
 
+wire iwait;
+wire run;
+assign led_mmu= ~(cons_map18 | cons_map22);
+assign led_run=~run;
+assign led_idle=~iwait;
+
 reg timer_ie;
 reg timer_rdy;
 reg timer_irq;
@@ -93,7 +100,6 @@ wire timer_istb;
 wire timer_iack=timer_istb;
 
 wire bus_timeout;
-wire run;
 
 assign      sys_init = bus_reset;
 
@@ -164,9 +170,9 @@ cpu2011 cpu (
    .psw_in_we_odd(cpu_psw_we_odd),    // Разрешение записи старшего байта PSW
    .psw_out(cpu_psw_out),   // Вывод PSW , читаемого под адресу 177776
 
-	.sw_cont(sw_cont),
-   .iwait(led_idle),       // 1 - процессор стоит на команде wait и ждет прерывания
-   .run(led_run),
+	.sw_cont(resume),
+   .iwait(iwait),       // 1 - процессор стоит на команде wait и ждет прерывания
+   .run(run),
 	
    .fpu_enable(`fpu_present),         // Признак наличия FPU в схеме процессора
 
@@ -278,9 +284,8 @@ mmu mmu1(
 	.DMA_stb_i(dma_stb),       // строб транзакции DMA
 	
 	// индикаторы режима работы
-//   .cons_map16(cons_map16),                      // режим 16-битного адреса
-//   .cons_map18(cons_map18),                      // режим 18-битного адреса 
-//   .cons_map22(cons_map22),                      // режим 22-битного адреса
+   .cons_map18(cons_map18),                      // режим 18-битного адреса 
+   .cons_map22(cons_map22),                      // режим 22-битного адреса
 //   .cons_id(cons_id),                         // режим разделения I/D
 //	.cons_ubm(cons_ubm),                        // режим Unibus Mapping
 	
@@ -349,6 +354,7 @@ end
 //************************************************
 reg tirq_prev_state;  // состояние таймера в предыдущем такте
 assign kw11l_dat = {8'o0, timer_rdy, timer_ie, 6'o0};
+assign led_timer=~timer_ie;
 
 always @ (posedge clk_p) 
   // сброс системы

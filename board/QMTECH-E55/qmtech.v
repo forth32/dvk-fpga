@@ -63,13 +63,24 @@ module qmtech(
 //********************************************
 //* Светодиоды
 //********************************************
-wire rk_led, dw_led, dm_led, my_led, dx_led, timer_led;
+wire rk_led, dw_led, dm_led, my_led, dx_led, db_led, timer_led, run_led, idle_led, mmu_led;
 
+// Распределение светодиодов для 16-битных процессоров
+`ifdef adr16
 assign led[0]=rk_led & dm_led;  // запрос обмена диска RK и DM
 assign led[1]=dx_led;        // запрос обмена диска DX
 assign led[2]=my_led;        // запрос обмена диска MY 
 assign led[3]=dw_led;        // запрос обмена диска DW
 assign led[4]=timer_led;     // индикация включения таймера
+`else
+// Распределение светодиодов для 22-битных процессоров
+assign led[0]=rk_led & dm_led & dx_led & my_led & dw_led & db_led;  // запрос обмена диска 
+assign led[1]=run_led;    // признак работы секвенсера команд
+assign led[2]=idle_led;   // признак ожидания прерывания по инструкции WAIT
+assign led[3]=mmu_led;    // признак включения MMU
+assign led[4]=timer_led;  // индикация включения таймера
+
+`endif
 
 //************************************************
 //* тактовый генератор 
@@ -221,7 +232,7 @@ assign vgar = (vgared == 1'b1)   ? 5'b11110  : 5'b00000 ;
    .clkrdy(clkrdy),                 // готовность PLL
    
    .bt_reset(~button[0]),            // общий сброс
-   .bt_halt(~button[1]),             // режим программа-пульт
+   .bt_halt(~button[1]),             // режим программа-пульт / выход из состояния HALT
    .bt_terminal_rst(~button[2]),     // сброс терминальной подсистемы
    .bt_timer(~button[3]),            // выключатель таймера
    
@@ -236,6 +247,12 @@ assign vgar = (vgared == 1'b1)   ? 5'b11110  : 5'b00000 ;
    .my_led(my_led),               // запрос обмена диска MY
    .dx_led(dx_led),               // запрос обмена диска DX
    .timer_led(timer_led),         // индикация включения таймера
+`ifdef adr22
+   .db_led(db_led),               // запрос обмена диска DB
+	.idle_led(idle_eld),           // признак ожидания прерывания по WAIT
+	.mmu_led(mmu_led),             // признак включения MMU 
+	.run_led(run_led),             // признак ативности секвенсера
+`endif	
    
    // Интерфейс SDRAM
    .sdram_reset(sdram_reset),     // сброс

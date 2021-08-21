@@ -42,6 +42,7 @@ module topboard22 (
    output         db_led,               // запрос обмена диска DB
    output         timer_led,            // индикация включения таймера
 	output         idle_led,             // признак ожидания прерывания по WAIT
+	output         mmu_led,
 	output         run_led,              // признак ативности секвенсера
    
    // Интерфейс SDRAM
@@ -308,10 +309,14 @@ assign sdram_out=wb_out;               // выходная шина данных
    .bus_reset(bus_reset_out),      // Выход сброса для периферии
    .dclo(vm_dclo_in),              // Вход сброса процессора
    .aclo(vm_aclo_in),              // Сигнал аварии питания
-   .resume(bt_halt),               // Прерывание входа в пультовоый режим
-	.led_idle(idle_led),         // индикация бездействия (WAIT)
-	.led_run(run_led),          // индикация работы процессора (~HALT)
-
+   .resume(bt_halt),               // Запуск после HALT
+	
+// Индикаторы	
+	.led_idle(idle_led),            // индикация бездействия (WAIT)
+	.led_run(run_led),              // индикация работы процессора (~HALT)
+	.led_mmu(mmu_led),              // индикация включения MMU
+   .led_timer(timer_led),          // индикация включения таймера
+	
 // Шины обработки прерываний                                       
    .irq_i({br5_irq, br4_irq}),      // Запрос на векторное прерывание 
    .istb_o(istb),      
