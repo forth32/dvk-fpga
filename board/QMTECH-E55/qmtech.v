@@ -249,7 +249,7 @@ assign vgar = (vgared == 1'b1)   ? 5'b11110  : 5'b00000 ;
    .timer_led(timer_led),         // индикация включения таймера
 `ifdef adr22
    .db_led(db_led),               // запрос обмена диска DB
-	.idle_led(idle_eld),           // признак ожидания прерывания по WAIT
+	.idle_led(idle_led),           // признак ожидания прерывания по WAIT
 	.mmu_led(mmu_led),             // признак включения MMU 
 	.run_led(run_led),             // признак ативности секвенсера
 `endif	
