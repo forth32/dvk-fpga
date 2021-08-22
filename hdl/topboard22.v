@@ -41,9 +41,9 @@ module topboard22 (
    output         dx_led,               // запрос обмена диска DX
    output         db_led,               // запрос обмена диска DB
    output         timer_led,            // индикация включения таймера
-	output         idle_led,             // признак ожидания прерывания по WAIT
-	output         mmu_led,              // признак включения MMU 
-	output         run_led,              // признак активности секвенсера
+   output         idle_led,             // признак ожидания прерывания по WAIT
+   output         mmu_led,              // признак включения MMU 
+   output         run_led,              // признак активности секвенсера
    
    // Интерфейс SDRAM
    output         sdram_reset,       // сброс/переинициализация SDRAM
@@ -598,9 +598,8 @@ rk11 rkdisk (
    .sdmode(`RK_sdmode),           // режим ведущего-ведомого
    
 // Адрес массива дисков на карте
-   .start_offset({1'b0,sw_diskbank,22'h0}),
+   .start_offset({1'b0,sw_diskbank,22'h0})
 
-// отладочные сигналы
    ); 
 
 `else 

@@ -10,13 +10,15 @@
 //  МС1201.02   К1801ВМ2     ДВК-3              60 Мгц
 //  МС1260      М2 (LSI-11)  Электроника-60     60 Мгц
 //  МС1280      М4 (LSI-11M)                    60 МГц
+//  PDP2011     PDP-11/70    Электроника-79     50 МГц 
 //------------------------------------------------------------
 // Раскомментируйте одну из строк для включения выбранной платы в схему
 
 //`define mc1201_01_board
-`define mc1201_02_board
+//`define mc1201_02_board
 //`define mc1260_board
 //`define mc1280_board
+`define pdp2011_board
 
 //======================================================================================================
 //
@@ -25,14 +27,15 @@
 //
 
 `define KSM_module        // текстовый контроллер КСМ
-`define KGD_module        // графический контроллер КГД
-`define IRPS2_module      // второй последовательный порт ИРПС
-`define IRPR_module       // параллельный порт ИРПР
-`define RK_module         // диск RK-11/RK05
+//`define KGD_module        // графический контроллер КГД
+//`define IRPS2_module      // второй последовательный порт ИРПС
+//`define IRPR_module       // параллельный порт ИРПР
+//`define RK_module         // диск RK-11/RK05
 `define DM_module         // диск RK611/RK07
-`define DW_module         // жесткий диск DW
+//`define DW_module         // жесткий диск DW
+//`define DB_module         // диск RH70/RP06
 `define DX_module         // гибкий диск RX01
-`define MY_module         // гибкий диск двойной плотности MY
+//`define MY_module         // гибкий диск двойной плотности MY
 `define bootrom_module    // монитор-загрузчик M9312
 
 //======================================================================================================
@@ -104,7 +107,14 @@
 //*   МС1280
 //****************************************
  `define BOARD mc1280        // имя подключаемого модуля процессорной платы
- `define PLL_DIV 16          // делитель PLL
+ `define PLL_DIV 16       // Определение типа модуля соединительной платы-корзины
+`ifdef adr22
+   `define TOPBOARD topboard22 // 22-битный
+`else	
+   `define TOPBOARD topboard16 // 16-битный
+`endif
+
+   // делитель PLL
  `define CPUSLOW 12          // число тактов, пропускаемых процессором в режиме замедления
  
 //-------------------------------------------------- 
@@ -140,6 +150,17 @@
  `define PLL_DIV 16          // делитель PLL
  `define CPUSLOW 12          // число тактов, пропускаемых процессором в режиме замедления
  `define timer_init 1'b1     // Начальное состояние таймера: 0 - выключен, 1 - включен 
+
+//--------------------------------------------------
+`elsif pdp2011_board
+//****************************************
+//*  PDP2011
+//****************************************
+ `define BOARD pdp2011       // имя подключаемого модуля процессорной платы
+ `define adr22               // признак 22-битной процессорной платы
+ `define PLL_DIV 16          // делитель PLL
+ `define CPUSLOW 125         // число тактов, пропускаемых процессором в режиме замедления
+ `define fpu_present 1'b0    // признак наличия FPP: 0-нет, 1-есть
   
 `endif  
 
@@ -154,11 +175,17 @@
 //  Делитель частоты тактирования SD-карты. Задается относительно частоты VCO - 960 МГц.
 `define SD_DIV 4*`PLL_DIV
 
+// Определение типа модуля соединительной платы-корзины
+`ifdef adr22
+   `define TOPBOARD topboard22 // 22-битный
+`else	
+   `define TOPBOARD topboard16 // 16-битный
+`endif
+
 // удаление графического модуля при отсутствии текcтового терминала
 `ifndef KSM_module
 `undef KGD_module
 `endif
-
 
 // Выбор ведущего и ведомых SDSPI
 `ifdef RK_module
@@ -167,16 +194,18 @@
   `define MY_sdmode 1'b0
   `define DX_sdmode 1'b0
   `define DW_sdmode 1'b0
+  `define DB_sdmode 1'b0
   `define def_mosi  rk_mosi
   `define def_cs    rk_cs
   `define def_sclk  rk_sclk
 
-`elsif DM_module
+  `elsif DM_module
   `define DM_sdmode 1'b1  
   `define RK_sdmode 1'b0  
   `define MY_sdmode 1'b0
   `define DX_sdmode 1'b0
   `define DW_sdmode 1'b0
+  `define DB_sdmode 1'b0
   `define def_mosi  dm_mosi
   `define def_cs    dm_cs
   `define def_sclk  dm_sclk
@@ -187,6 +216,7 @@
   `define DM_sdmode 1'b0  
   `define DX_sdmode 1'b0
   `define DW_sdmode 1'b0
+  `define DB_sdmode 1'b0
   `define def_mosi  my_mosi
   `define def_cs    my_cs
   `define def_sclk  my_sclk
@@ -197,9 +227,21 @@
   `define DM_sdmode 1'b0  
   `define RK_sdmode 1'b0  
   `define DW_sdmode 1'b0
+  `define DB_sdmode 1'b0
   `define def_mosi  dx_mosi
   `define def_cs    dx_cs
   `define def_sclk  dx_sclk
+
+`elsif DB_module
+  `define DB_sdmode 1'b1  
+  `define DX_sdmode 1'b0
+  `define MY_sdmode 1'b0
+  `define DM_sdmode 1'b0  
+  `define RK_sdmode 1'b0  
+  `define DW_sdmode 1'b0
+  `define def_mosi  db_mosi
+  `define def_cs    db_cs
+  `define def_sclk  db_sclk
   
 `else
   `define DW_sdmode 1'b1
