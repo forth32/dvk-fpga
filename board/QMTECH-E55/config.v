@@ -154,6 +154,7 @@
  `define adr22               // признак 22-битной процессорной платы
  `define PLL_MUL 1           // умножитель PLL
  `define PLL_DIV 1           // делитель PLL
+ `define CPUSLOW 125         // число тактов, пропускаемых процессором в режиме замедления
  `define fpu_present 1'b0    // признак наличия FPP: 0-нет, 1-есть
  
 `endif  

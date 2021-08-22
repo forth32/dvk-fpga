@@ -45,7 +45,7 @@ module cpu2011 (
    // DMA
    input npr,              // запрос DMA
    output reg npg,         // подтверждение DMA
-   output oddabort,         // признак словного обращения по нечетному адресу
+   output oddabort,        // признак словного обращения по нечетному адресу
    
    output reg illhalt,     // признак недопустимости инструкции HALT в текущем режиме процессора
 	output     bus_timeout, // флаг таймаута шины
@@ -56,17 +56,19 @@ module cpu2011 (
    output[15:0] sr1,       // sr1/mmr1 - адрес текущей инструкции
    output reg[15:0] sr2,   // sr2/MMR2 - информация об автоинкременте и автодекременте
    output reg dstfreference,  // 1 - финальная адресация приемника
-   output dw8,             // признак байтового обмена 
+   output dw8,             // признак байтового обмена \
 	
+	// PSW
    input[15:0] psw_in,     // Ввод PSW , записываемого под адресу 177776
    input psw_in_we_even,   // Разрешение записи младшего байта PSW
    input psw_in_we_odd,    // Разрешение записи старшего байта PSW
    output[15:0] psw_out,   // Вывод PSW , читаемого под адресу 177776
 
-   input fpu_enable,         // Признак наличия FPU в схеме процессора
+   input fpu_enable,       // Признак наличия FPU в схеме процессора
+	input cpuslow,  			// Включение замедленного режима процессора
 
-   input[15:0] init_r7,    // Адрес старта по сбросу
-   input[15:0] init_psw,   // Стартовое PSW
+   input[15:0] startup_adr, // Адрес старта по сбросу
+   input[15:0] startup_psw, // Стартовое PSW
 
    input clk,              // тактовый синхросигнал
    input reset             // сброс процессора
@@ -330,7 +332,7 @@ wire[15:0] rbus_data_pv;       // Содержимое регистра посл
 reg rsv_flag;
 reg [15:0] prev_sp;
 
-// sr1/mmr1
+// SR1/MMR1
 wire[7:0] sr1_dst;    // описатель приемника
 wire[7:0] sr1_src;    // описатель источника
 reg[4:0] sr1_dstd;    // размер автоинкремента приемника       
@@ -346,7 +348,7 @@ wire cp_mf;
 wire cp_mt; 
 reg cp_latch;
 
-// id selector and calc, output i/d based on state with some calculated exceptions
+// Признаки режима инструкций/данных
 wire id_current;
 reg id_latch;
 
@@ -441,6 +443,9 @@ reg nxmabort_pend;
 reg [5:0] bus_timer;  // таймер шинных транзакций
 
 assign bus_timeout=nxmabort;
+
+// Таймер замедления процессора
+reg [6:0] cpudelay;
    
 //********************************************************
 //*   Блок регистров процессора , шина RBUS
@@ -685,10 +690,10 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
       //*********************************************
       //*   Сброс системы
       //*********************************************
-         r7 <= init_r7 ;                    // Засылаем стартовый адрес в R7
-         psw <= init_psw ;                  // Начальное PSW
-         rbus_cpu_mode <= init_psw[15:14] ; // Начальный режим работы процессора - psw[15:14]
-         rbus_cpu_psw11 <= init_psw[11] ;   // Начальный набор регистров - psw[11]
+         r7 <= startup_adr ;                    // Засылаем стартовый адрес в R7
+         psw <= startup_psw ;                  // Начальное PSW
+         rbus_cpu_mode <= startup_psw[15:14] ; // Начальный режим работы процессора - psw[15:14]
+         rbus_cpu_psw11 <= startup_psw[11] ;   // Начальный набор регистров - psw[11]
          ir_rtt <= 1'b0 ; 
 			wbm_stb_o <= 1'b0;
          iwait <= 1'b0 ;  // снимаем флаг ожидания  подтверждения прерывания
@@ -707,11 +712,11 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
          fps <= 16'h0000;   // регистр состояния
          fea <= 16'h0000;   // регистр адреса ошибки
          fec <= 4'b0000 ;   // регистр кода ошибки
-         falu_load <= 1'b0 ; // not doing a load of the fp11 fpao alu
+         falu_load <= 1'b0 ; 
          psw_delayedupdate_even <= 1'b0 ;
          psw_delayedupdate_odd <= 1'b0 ; 
 	      spl_psw_update <= 1'b0;
-         
+         cpudelay <= 5'd`CPUSLOW;  // счетчик замедления процессора         
          state <= sq_init ; // Начальное состояние секвенсера
          initcycles <= 7 ;     // Число тактов задержки перед снятием сброса - ширина выходного импульса сброса шины
          init <= 1'b1 ;        // выставляем сигнал сброса шины
@@ -747,7 +752,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
          ack_mmutrap <= 1'b0 ; 
          // Снятие флага ошибки исполнения HALT в режимах, отлиных от KERNEL
          illhalt <= 1'b0 ; 
-         falu_pending_clear <= 1'b0 ; // not clearing any pending fp11 interrupt flags
+         falu_pending_clear <= 1'b0 ; 
 
          // Обработка триггеров запроса прерывания от схем контроля границ стека
          if (yellow_stack_event_trigger == 1'b1)    yellow_stack_event <= 1'b1 ; // Желтая граница
@@ -804,7 +809,10 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                // Подготовка к выборке очередной инструкции из памяти
                //*********************************************************         
                sq_ifetch :
-                        begin
+                         // Пропуск тактов в режиме замедления процессора
+		                   if (cpuslow & (|cpudelay != 1'b0)) cpudelay <= cpudelay-1'b1;
+                         else begin
+		                     cpudelay <= 7'd`CPUSLOW ;  
 								   rbus_we <= 1'b0;
                            rbus_cpu_mode <= pswmf[15:14] ; // Установка текущего режима работы процессора из PSW
                            rbus_cpu_psw11 <= pswmf[11] ;   // Выбор текущего набора регистров по биту 11 PSW

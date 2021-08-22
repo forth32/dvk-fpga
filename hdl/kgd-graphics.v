@@ -14,7 +14,7 @@ module kgd (
    input                wb_we_i,    // разрешение записи (0 - чтение)
    input                wb_stb_i,   // строб цикла шины
    input    [1:0]       wb_sel_i,   // выбор конкретных байтов для записи - старший, младший или оба
-   output reg           wb_ack_o,   // подтверждение выбоора устройства
+   output               wb_ack_o,   // подтверждение выбоора устройства
 
    input                clk50,      // тактовый сигнал 50 Мгц
    
@@ -40,7 +40,7 @@ reg vbuf_write;
 wire [7:0] vbufdata;
 
 // Сигналы упраления обменом с шиной
-wire bus_strobe = wb_cyc_i & wb_stb_i;         // строб цикла шины
+wire bus_strobe = wb_cyc_i & wb_stb_i & ~(reply|reply0);         // строб цикла шины
 wire bus_read_req = bus_strobe & ~wb_we_i;     // запрос чтения
 wire bus_write_req = bus_strobe & wb_we_i;     // запрос записи
 
@@ -67,19 +67,21 @@ kgdvram vbuf(
 //*  Сигнал ответа 
 //**************************************
 // формирователь ответа на цикл шины   
-wire reply=wb_cyc_i & wb_stb_i & ~wb_ack_o;
+reg reply;
 reg reply0;
 
-always @(posedge wb_clk_i or posedge wb_rst_i)
-    if (wb_rst_i == 1'b1) begin 
-      wb_ack_o <= 1'b0;
-      reply0 <= 1'b0;
-    end   
-    // задержка ответа на 1 такт, чтобы модуль altsyncram успел записать данные
-    else begin
-      reply0 <= reply;
-      wb_ack_o <= reply0;
-    end
+always @(posedge wb_clk_i or posedge wb_rst_i) 
+    if (wb_rst_i == 1) begin 
+	   reply <= 1'b0;
+		reply0 <= 1'b0;
+	 end	
+    else begin 
+	   if (wb_stb_i) reply <= 1'b1;
+      else reply <= 1'b0;
+		reply0 <= reply;
+	 end	
+
+assign wb_ack_o = reply0 & wb_stb_i;    
 
 //*******************************************
 //* Обработка шинных транзакций
@@ -119,9 +121,7 @@ always @(posedge wb_clk_i)
                     end   
                     
             // 176640 - регистр данных
-            2'b01:  if (wb_sel_i[0] == 1'b1) 
-                        if (reply0 == 1'b0) vbuf_write <=1'b1;
-                        else vbuf_write <= 1'b0;
+            2'b01:  if (wb_sel_i[0] == 1'b1) vbuf_write <=1'b1;
                      
             // 176644 - регистр адреса            
             2'b10:     begin
@@ -129,6 +129,7 @@ always @(posedge wb_clk_i)
                     if (wb_sel_i[1] == 1'b1) areg[13:8] <= wb_dat_i[13:8];
              end     
          endcase
+		  else vbuf_write <= 1'b0;	
    end
    
 //******************************************************

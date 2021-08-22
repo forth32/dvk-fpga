@@ -1142,10 +1142,6 @@ assign wb_we =  (rk11_dma_state)  ? rk11_dma_we:
                                            
 assign wb_sel =   (dma_ack) ? 2'b11: cpu_bsel;
                                           
-/*assign sdram_stb = (my_dma_state)    ? my_dma_stb:
-                   (rh70_dma_state)  ? rh70_dma_stb  : 
-                      cpu_ram_stb;
-*/
 assign sdram_stb = my_dma_stb | rh70_dma_stb | cpu_ram_stb;
 
 assign dma_stb = rk11_dma_stb | rk611_dma_stb;
