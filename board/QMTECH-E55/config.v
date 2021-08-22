@@ -27,9 +27,9 @@
 //
 
 `define KSM_module        // текстовый контроллер КСМ
-`define KGD_module        // графический контроллер КГД
+//`define KGD_module        // графический контроллер КГД
 `define IRPS2_module      // второй последовательный порт ИРПС
-`define IRPR_module       // параллельный порт ИРПР
+//`define IRPR_module       // параллельный порт ИРПР
 `define RK_module         // диск RK-11/RK05
 `define DM_module         // диск RK611/RK07
 `define DB_module         // диск RH70/RP06

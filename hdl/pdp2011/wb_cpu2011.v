@@ -3,7 +3,6 @@
 //======================================================================================================
 
 // длительность программного сброса командой reset в тактах
-`define initcycles_reset 1023
 `define initcycles_reset 100
 // Время ожидание ответа шины в тактах
 `define busdelay 50
@@ -477,13 +476,8 @@ reg [6:0] cpudelay;
 //*    Подсистема контроля границы стека
 //********************************************************
 	
-// EK-KB11C-TM-001_1170procMan.pdf, par 6.2.2.2, pg II-6-8 etc
-// EK-KB11A-MM-004_Aug76.pdf, par 8.4.4, pg 8-27; par 8.6.5, pg 8-46
-
 //  Состояния, в которых желтая граница стека возникает по адресам 0-376
 assign yellow_stack_immediate_states = (state == sq_dst4)     // -(R)
-                           //          | (state == sq_dst5a)    // @-(R)
-									//			 | (state == sq_src4)     // -(R)
 												 | (state == sq_jsra)     // Запись в стек при вызове подпрограммы
 												 | (state == sq_trapc)    // Запись PSW при прерывании
 												 | (state == sq_trapd);   // Запись PC при прерывании
@@ -491,11 +485,7 @@ assign yellow_stack_immediate_states = (state == sq_dst4)     // -(R)
 //  Состояния, в которых производится проверка желтой и красной границы через регистр SL
 assign stack_check_states =             (state == sq_dst1)     // (R)
 												  | (state == sq_dst2)     // (R)+
-												//  | (state == sq_dst3a)    // @(R)+
 												    | (state == sq_dst4)     // -(R)
-												//  | (state == sq_dst5a)    // @-(R)
-												//  | (state == sq_src4)     // -(R)
-												//  | (state == sq_src5a)    // @-(R)
 												  | (state == sq_jsra)     //  JSR - запись SP в стек
 												  | (state == sq_trapc)    // прерывание, запись PSW в стек
 												  | (state == sq_trapd) ;  // прерывание, запись PC в стек
@@ -562,6 +552,7 @@ assign ir_dstm2r7 = (ir[5:0] == 6'b010111) ? 1'b0 : 1'b1 ;  // (R7)+
 assign ir_srcr7 = (ir[8:6] == 3'b111) ? 1'b0 : 1'b1 ;       // R7 - источник
 assign ir_dstr7 = (ir[2:0] == 3'b111) ? 1'b0 : 1'b1 ;       // R7 - приемник
 
+// Формирование прзнака I/D текущей инструкции
 assign id_current = (state == sq_idecode) ? 1'b0 : 
                    (state == sq_ifetch) ? 1'b0 : 
 						 (state == sq_dst1) ? ir_dstr7 : 
@@ -613,14 +604,6 @@ assign id_current = (state == sq_idecode) ? 1'b0 :
 						 (state == sq_rtib) ? 1'b1 : 
 						 (state == sq_store_alu_w) ? ir_dstm2r7 : 
 														  1'b0 ; 
-														  
-//assign id_current = id_select; /*
-//				(ir_mfpi == 1'b1 & psw[15:12] == 4'b1111 & cp_req == 1'b1) ? 1'b1 : 
-//				(ir_mfpi == 1'b1 & cp_req == 1'b1) ? 1'b0 : 
-//				(ir_mfpd == 1'b1 & cp_req == 1'b1) ? 1'b1 : 
-//				(ir_mtpi == 1'b1 & cp_req == 1'b1) ? 1'b0 : 
-//				(ir_mtpd == 1'b1 & cp_req == 1'b1) ? 1'b1 : 
-//														 id_select ;*/
 
 // выходное PSW - передается в блок MMU
 assign psw_out = {rbus_cpu_mode, pswmf[13:8], psw[7:0]} ;
@@ -653,10 +636,10 @@ assign rbus_data_pv = (ir_fpmaf == 1'b1 & ir_fpma48 == 1'b1 & rbus_ix != 3'b111)
 assign ir_mf = ir_mfpi | ir_mfpd;    // инструкции чтения из пространства предыдущего режима
 assign ir_mt = ir_mtpi | ir_mtpd;    // инструкции записи в пространство предыдущего режима
 
-assign sr1_dst = ((sr1_dstd != 5'b00000)/* & (ir[2:0] != 3'b111)*/) ? {sr1_dstd, ir[2:0]} : 8'b00000000 ;
+assign sr1_dst = ((sr1_dstd != 5'b00000)) ? {sr1_dstd, ir[2:0]} : 8'b00000000 ;
 
 assign sr1_src = ((ir_mt | ir_mf | ir_jsr) & (sr1_srcd != 5'b00000)) ? {sr1_srcd, 3'b110} : 
-					  ((sr1_srcd != 5'b00000) & /*(ir[8:6] != 3'b111)*/ & ir_dop) ? {sr1_srcd, ir[8:6]} : 
+					  ((sr1_srcd != 5'b00000) & & ir_dop) ? {sr1_srcd, ir[8:6]} : 
 																									 8'b00000000 ;
 																												
 assign sr1 = ((ir_dop | ir_jsr) & sr1_srcd != 5'b00000) ? {sr1_dst, sr1_src} : 
@@ -770,12 +753,6 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
             ack_mmuabort <= 1'b1 ;     // устанавливаем признак обработки прерывания
          end
          
-         // Обработка прерывания по ошибке нечетного адреса
-//         else if (oddabort == 1'b1)  begin
-//            trap_vector <= 9'o004 ;    // Выставляем вектор 4
-//            state <= sq_trap ;      // переходим к обычной обработке прерывания
-//         end
-			
 			else if (nxmabort == 1'b1)  begin
             trap_vector <= 9'o004 ;    // Выставляем вектор 4
             state <= sq_trap ;      // переходим к обычной обработке прерывания
@@ -1110,8 +1087,8 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                               end
                               else begin
                                  // Для всех fp-команд, не попавших в одну из вышеопределенных категорий
-                                 ir_facfsrc <= 1'b1 ; // then it should be an fsrc format insn
-                                 ir_fpmaf <= 1'b1 ; // needs 4 or 8 byte memory access
+                                 ir_facfsrc <= 1'b1 ; 
+                                 ir_fpmaf <= 1'b1 ; // Требуется доступ к 4 или 8 байтам памяти
                               end 
                            end 
                            
@@ -1228,8 +1205,8 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                                                          // stexp, stc(f/d)(i/l)
                                                          // ldexp
                                                          // ldc(i/l)(f/d)
-                                                         if ({datain[11], datain[9:8]} == 3'b100)  fbus_raddr <= {1'b0, datain[7:6]} ; // fdst insn, need ac
-                                                         else                                      fbus_raddr <= datain[2:0] ; // fsrc insn, need mode 0 fsrc ac
+                                                         if ({datain[11], datain[9:8]} == 3'b100)  fbus_raddr <= {1'b0, datain[7:6]} ; 
+                                                         else                                      fbus_raddr <= datain[2:0] ; 
                                                          state <= sq_fpao ; 
                                                       end 
                                                    end
@@ -1242,12 +1219,12 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                                                 
                                                 else if (fpu_enable == 1 & v_fpsop2 == 1'b1) begin
                                                    if (datain[2:1] == 2'b11)  begin
-                                                      // ac6 and ac7 do not exist
+                                                      // Регистров AC6 и 7 не существует - трап при попытке работы с ними
                                                       fec <= 4'b0010 ; 
                                                       state <= sq_fptrap ; 
                                                    end
                                                    else begin
-                                                      fbus_raddr <= datain[2:0] ; // fsrc insn, need mode 0 fsrc ac
+                                                      fbus_raddr <= datain[2:0] ; 
                                                       state <= sq_fpso2 ; 
                                                    end 
                                                 end
@@ -1335,7 +1312,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                                        // st(f|d), stc(f|d)(d|f)
                                        // stc(f|d)(i|l)
                                     if (datain[11:8] == 4'b1101 | datain[11:8] == 4'b1010 | {datain[11], datain[9:8]} == 3'b100 | datain[11:8] == 4'b1011) 
-                                       fbus_raddr <= {1'b0, datain[7:6]} ; // needed for st(f|d), stc(f|d)(d|f), ldexp, stexp
+                                       fbus_raddr <= {1'b0, datain[7:6]} ; // st(f|d), stc(f|d)(d|f), ldexp, stexp
                                  end
                                  else  dst_mode_processor <= sq_illegalop ; 
                               end 
@@ -1352,7 +1329,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                                        state <= sq_trap ; 
                                     end
                                     else  begin
-                                       // in kernel mode, for a cpu that has it - just halt ;-)
+                                       // в режиме kernel - отключаем секвенсор
                                        run <= 1'b0 ; 
                                        state <= sq_halt ; 
                                     end
@@ -1360,7 +1337,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                                  if (datain[7:0] == 8'b00000001)   begin
                                     // wait
                                     iwait <= 1'b1 ; 
-                                    state <= sq_ifetch ; // next state is ifetch
+                                    state <= sq_ifetch ; 
                                  end 
                                  if (datain[7:0] == 8'b00000010)   begin
                                     // rti
@@ -1416,11 +1393,10 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                                  end 
                               end
                               else begin
-                                 // branch group
-                                 // the branch insns used to have a separate state to actually do the branch, including calculating the effective address
-                                 // this variant, however notationally inelegant, uses less logic, and less cycles as well.
+                                 // Команды относительных переходов.
                                  state <= sq_ifetch ; 
                                  case ({datain[15], datain[10:8]})
+											   // Вычисление адреса перехода
                                     4'b0001 :
                                                 // br
                                                 r7 <= r7+16'd2 + ({datain[7], datain[7], datain[7], datain[7], datain[7], datain[7], datain[7], datain[7:0], 1'b0}) ; 
@@ -1470,7 +1446,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                               end 
                            end 
                            if (datain[15:9] == 7'b1000100)  begin
-                              // trap, emt etc
+                              // trap, emt
                               if ((datain[8]) == 1'b0)    trap_vector <= 9'o030; // emt, vector = 030
                               else                        trap_vector <= 9'o034; // trap, vector = 034
                               state <= sq_trap ; 
@@ -1492,7 +1468,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                            end 
                            
                            if (fpu_enable == 1 & datain[15:6] == 10'b1111000000)  begin
-                              // fp11 operate group
+                              // Команды FPP
                               case (datain[5:0])
                                  6'b000000 :
                                           begin
@@ -1526,9 +1502,9 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                                           end
                                  default :
                                           begin
-                                                if (datain[5:3] == 3'b000)  state <= sq_ifetch ; // allow 45/55/70 specific insns ldub, ldsc, stao, mrs, stq0 not to cause a trap
+                                                if (datain[5:3] == 3'b000)  state <= sq_ifetch ; 
                                                 else  begin
-                                                   fec <= 4'b0010 ; // unknown insn, start trap seq
+                                                   fec <= 4'b0010 ;
                                                    state <= sq_fptrap ; 
                                                 end 
                                           end
@@ -1561,7 +1537,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                            
                            // остальные ошибки команд
                            else   begin
-                              trap_vector <= 9'o010; // illegal op, vector = 010
+                              trap_vector <= 9'o010; // недопустимая инструкция, трап 10
                               state <= sq_trap ; 
                            end 
                         end
@@ -1625,7 +1601,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                sq_virq7 :
                         begin
 								      // проверяем, не снят ли запрос прерывания
-										if ((virq[7] == 1'b0) /*&& (vack == 1'b0)*/) begin
+										if (virq[7] == 1'b0) begin
 										   state <= sq_ifetch;
 											vstb[7] <= 1'b0;
 										end	
@@ -1648,7 +1624,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                sq_virq6 :
                         begin
 								      // проверяем, не снят ли запрос прерывания
-										if ((virq[6] == 1'b0) /*&& (vack == 1'b0)*/) begin
+										if (virq[6] == 1'b0) begin
 										   state <= sq_ifetch;
 											vstb[6] <= 1'b0;
 										end	
@@ -1671,7 +1647,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                sq_virq5 :
                         begin
 								      // проверяем, не снят ли запрос прерывания
-										if ((virq[5] == 1'b0) /*&& (vack == 1'b0)*/) begin
+										if (virq[5] == 1'b0)  begin
 										   state <= sq_ifetch;
 											vstb[5] <= 1'b0;
 										end	
@@ -1694,7 +1670,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                sq_virq4 :
                         begin
 								      // проверяем, не снят ли запрос прерывания
-										if ((virq[4] == 1'b0) /*&& (vack == 1'b0)*/) begin
+										if (virq[4] == 1'b0) begin
 										   state <= sq_ifetch;
 											vstb[4] <= 1'b0;
 										end	
@@ -2174,13 +2150,13 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                            psw[3:0] <= eis_psw ; 
                            state <= sq_ifetch ; 
                         end
-               // xor: dispatch to state that stores result
+               // xor
                sq_xor :
                         begin
                            if (ir[5:3] == 3'b000)  state <= sq_store_alu_r ; 
                            else                    state <= sq_store_alu_p ; 
                         end
-               // ldfps - load fpu state
+               // ldfps - чтение состояния FPU
                sq_ldfps :
                         begin
                            fps <= alu_output ; 
@@ -2200,8 +2176,6 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                   state <= sq_wbwrite;
                  end
                            
-               // dispatch insn in the fpso2 group - unless the insn is a clr(f|d), go into the
-               // states that read an fp src operand
                sq_fpso2 :
                         begin
                            addr_indirect <= dest_addr ; 
@@ -2215,11 +2189,6 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                               state <= sq_fprun ; 
                            end 
                         end
-               // dispatch insn groups for the fp acc and operand format, in
-               // all forms - fsrc, fsdt, src, dst, as signalled by the main
-               // state machine - and cycle into the appropriate state to
-               // handle the core accesses that are required to load the
-               // operands, either in f|d, or i|l format.
                sq_fpao :
                         begin
                            if (ir[5:3] != 3'b000)   begin
@@ -2269,7 +2238,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                                     falu_input[39:24] <= rbus_data ; 
                                     falu_input[23:0] <= 24'b000000000000000000000000 ; 
                                  end 
-                                 state <= sq_fprun ; // FIXME, what about long data?
+                                 state <= sq_fprun ; 
                               end 
                            end 
                         end
@@ -2617,13 +2586,13 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                               if (ir[5:3] == 3'b000)  state <= sq_fpd0 ; 
                               else                    state <= sq_fpww ; 
                            end
-                           else                       state <= sq_ifetch ; // FIXME, needed?
+                           else                       state <= sq_ifetch ; 
                         end
                sq_fprunao :
                         begin
                            falu_state <= falu_state + 8'd1 ; 
                            falu_load <= 1'b0 ; 
-                           if (falu_state > 160)  state <= sq_ifetch ; // FIXME, error!
+                           if (falu_state > 160)  state <= sq_ifetch ; 
                            if (falu_done == 1'b1)  begin
                               falu_state <= 0 ; 
                               case (ir[11:8])
@@ -2806,7 +2775,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
                         begin
                            alu_input <= rbus_data ; 
                            state <= dst_mode_processor ; 
-                           rbus_cpu_mode <= pswmf[15:14] ; // may have been set temporarily to handle mode 0 r6 for mfp(i|d)
+                           rbus_cpu_mode <= pswmf[15:14] ; 
                         end
                //***************************************************************************************
                //*  Чтение второго операнда из регистра - R
@@ -3466,7 +3435,7 @@ assign oddabort = ~dw8 & wbm_adr_o[0] & wbm_stb_o;
   							   cp <= 1'b0;
 								if (ir_byte == 0)               datain <= wbm_dat_i;
 								else if (wbm_adr_o[0] == 1'b0)  datain <= wbm_dat_i;
-								else                            datain <= {wbm_dat_i[15:8]/*8'b00000000*/, wbm_dat_i[15:8]};
+								else                            datain <= {wbm_dat_i[15:8], wbm_dat_i[15:8]};
                      end
                    end  
                //**********************************************
@@ -4082,7 +4051,7 @@ always @(*) begin
 		alu_psw[1] <= 1'b0 ; 
 		alu_psw[0] <= psw[0] ; 
 	end
-	// fp11 insns with simple integer result
+	// FPU с целым 16-битным результатом 
 	else if (ir_fpsop1 == 1'b1)   begin
 		alu_psw[3:0] <= psw[3:0] ; 
 		case (ir[7:6])
@@ -4096,7 +4065,7 @@ always @(*) begin
 						begin
 							// stfps
 							result[15:14] = fps[15:14]; 
-							result[13:12] = 2'b00; // set these unused bits to zero to stop the tests complaining
+							result[13:12] = 2'b00; 
 							result[11:0] = fps[11:0]; 
 							alu_output <= result ; 
 						end
