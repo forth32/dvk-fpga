@@ -66,6 +66,7 @@
             <File>ip-components/tang_sectorbuf.v</File>
             <File>ip-components/tang_bootrom.v</File>
             <File>../../hdl/rk611.v</File>
+            <File>../../hdl/topboard16.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
@@ -81,8 +82,8 @@
         <RtlProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-07-12 07:01:40</Step_Last_Change>
-        <Current_Step>0</Current_Step>
+        <Step_Last_Change>2021-08-22 15:26:19</Step_Last_Change>
+        <Current_Step>60</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>

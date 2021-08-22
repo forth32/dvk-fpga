@@ -62,18 +62,26 @@ module pll(refclk,
       .LPF_RESISTOR(8),
       .REFCLK_DIV(1),
       .FBCLK_DIV(4),
+
+      // clk_p
       .CLKC0_ENABLE("ENABLE"),
       .CLKC0_DIV(`PLL_DIV),
       .CLKC0_CPHASE(15),
       .CLKC0_FPHASE(0),
+
+      // sdram_clk
       .CLKC1_ENABLE("ENABLE"),
-      .CLKC1_DIV(`PLL_DIV),
-      .CLKC1_CPHASE(7),
+      .CLKC1_DIV(`PLL_DIV /2),
+      .CLKC1_CPHASE(15),
       .CLKC1_FPHASE(0),
+      
+      // sdclock
       .CLKC2_ENABLE("ENABLE"),
-      .CLKC2_DIV(`SD_DIV),               ///////////////////////
+      .CLKC2_DIV(`SD_DIV),              
       .CLKC2_CPHASE(95),
       .CLKC2_FPHASE(0),
+      
+      // clk50
       .CLKC3_ENABLE("ENABLE"),
       .CLKC3_DIV(20),
       .CLKC3_CPHASE(19),

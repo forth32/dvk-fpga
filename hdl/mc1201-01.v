@@ -256,7 +256,7 @@ end
 reg timer_50;
 reg [20:0] timercnt;
 
-wire [20:0] timer_limit=31'd`clkref/8'd100-1'b1;
+wire [20:0] timer_limit=31'd`clkref / 8'd100-1'b1;
 
 always @ (posedge clk_p) begin
   if (timercnt == timer_limit) begin

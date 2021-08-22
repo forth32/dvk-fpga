@@ -60,15 +60,16 @@ assign led[4]=timer_led;     // индикация включения тайме
 //* тактовый генератор 
 //************************************************
 wire clk_p;
-wire clk_n;
+wire clk_n=~clk_p;
 wire sdclock;
+wire sdram_clk;
 wire clkrdy;
 wire clk50;
 
 pll pll1 (
    .refclk(clk24),       // вход 24 МГц
    .clk0_out(clk_p),     // clk_p прямая фаза, основная тактовая частота
-   .clk1_out(clk_n),     // clk_n инверсная фаза
+   .clk1_out(sdram_clk),     // clk_n инверсная фаза
    .clk2_out(sdclock),   // тактовый сигнал SD-карты
    .clk3_out(clk50),     // 48 МГц, тактовый сигнал терминальной подсистемы
    .extlock(clkrdy),     // флаг готовности PLL
@@ -143,7 +144,7 @@ end
 // контроллер SDRAM
 
 sdram_top sdram(
-    .clk(clk_p),
+    .clk(sdram_clk),
     .rst_n(drs), // запускаем модуль, как только pll выйдет в рабочий режим, запуска процессора не ждем
     .sdram_wr_req(sdram_wr),
     .sdram_rd_req(sdram_rd),
@@ -170,7 +171,7 @@ sdram_top sdram(
 // Физический интерфейс к внутренней SDRAM  
        
 EG_PHY_SDRAM_2M_32 eg4sdram(
- .clk(clk_n),
+ .clk(~sdram_clk),
  .ras_n(ras_n),
  .cas_n(cas_n),
  .we_n(we_n),
@@ -186,15 +187,14 @@ EG_PHY_SDRAM_2M_32 eg4sdram(
  );
 
 // формирователь сигнала подверждения транзакции
-reg [1:0]dack;
-
-assign sdram_ack = sdram_stb & (dack[1]);
-
-// задержка сигнала подтверждения на 1 такт clk
+// формирователь сигнала подверждения транзакции
+reg reply;
 always @ (posedge clk_p)  begin
-   dack[0] <= sdram_stb & (sdr_rd_ack | sdr_wr_ack);
-   dack[1] <= sdram_stb & dack[0];
+   if (sdram_reset) reply <= 1'b0;
+   else if(sdram_stb & ((sdram_we)? sdr_wr_ack : sdr_rd_ack)) reply <= 1'b1;
+   else if (~sdram_stb) reply <= 1'b0;
 end
+assign sdram_ack = sdram_stb & reply;
 
 //************************************
 //*  Управление VGA 
@@ -208,7 +208,7 @@ assign vgar = vgared;
 //************************************
 //* Соединительная плата
 //************************************
-topboard kernel(
+topboard16 kernel(
 
    .clk50(clk50),                   // 50 МГц
    .clk_p(clk_p),                   // тактовая частота процессора, прямая фаза
