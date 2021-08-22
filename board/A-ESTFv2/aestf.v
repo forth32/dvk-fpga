@@ -10,7 +10,7 @@ module aestf(
    input          clk50,        // clock input 50 MHz
    input  [3:0]   button,       // кнопки 
    input  [3:0]   sw,           // переключатели конфигурации
-   output [3:0]   led,          // индикаторные светодиоды   
+   output [4:0]   led,          // индикаторные светодиоды   
    
    // Интерфейс SDRAM
    inout  [15:0]  DRAM_DQ,      //   SDRAM Data bus 16 Bits
@@ -63,12 +63,24 @@ module aestf(
 //********************************************
 //* Светодиоды
 //********************************************
-wire dm_led, rk_led, dw_led, my_led, dx_led, timer_led;
+wire rk_led, dw_led, dm_led, my_led, dx_led, db_led, timer_led, run_led, idle_led, mmu_led;
 
-assign led[0]=rk_led&dm_led; // запрос обмена диска RK и DM
-assign led[1]=dw_led;        // запрос обмена диска DW
-assign led[2]=my_led&dx_led; // запрос обмена диска MY или DX
-assign led[3]=timer_led;     // индикация включения таймера
+// Распределение светодиодов для 16-битных процессоров
+`ifdef adr16
+assign led[0]=rk_led & dm_led;  // запрос обмена диска RK и DM
+assign led[1]=dx_led;        // запрос обмена диска DX и MY
+assign led[2]=my_led;        // запрос обмена диска DW
+assign led[3]=dw_led;        // запрос обмена диска DW
+assign led[4]=timer_led;     // индикация включения таймера
+`else
+// Распределение светодиодов для 22-битных процессоров
+assign led[0]=rk_led & dm_led & dx_led & my_led & dw_led & db_led;  // запрос обмена диска 
+assign led[1]=run_led;    // признак работы секвенсера команд
+assign led[2]=idle_led;   // признак ожидания прерывания по инструкции WAIT
+assign led[3]=mmu_led;    // признак включения MMU
+assign led[4]=timer_led;     // индикация включения таймера
+
+`endif
 
 //************************************************
 //* тактовый генератор 
@@ -76,15 +88,19 @@ assign led[3]=timer_led;     // индикация включения тайме
 wire clk_p;
 wire clk_n;
 wire sdclock;
+wire sdram_clk;
 wire clkrdy;
+
 
 pll pll1 (
    .inclk0(clk50),
-   .c0(clk_p),     // 100МГц прямая фаза, основная тактовая частота
-   .c1(clk_n),     // 100МГц инверсная фаза
-   .c2(sdclock),   // 12.5 МГц тактовый сигнал SD-карты
+   .c0(clk_p),     // основная тактовая частота, прямая фаза
+   .c1(clk_n),     // основная тактовая частота, инверсная фаза
+   .c2(sdclock),   // тактовый сигнал SD-карты
+	.c3(sdram_clk), // тактовый сигнал SDRAM
    .locked(clkrdy) // флаг готовности PLL
 );
+
 
 //**********************************
 //* Модуль динамической памяти
@@ -125,8 +141,8 @@ end
 
 // стробы подтверждения
 wire sdr_wr_ack,sdr_rd_ack;
-// тактовый сигнал на память - инверсия синхросигнала шины
-assign DRAM_CLK=clk_n;
+// тактовый сигнал на память - инверсия синхросигнала контроллера SDRAM
+assign DRAM_CLK=~sdram_clk;
 
 // стробы чтения и записи в sdram
 assign sdram_wr=sdram_we & sdram_stb;
@@ -154,7 +170,7 @@ assign DRAM_LDQM=dram_l;
 // контроллер SDRAM
 
 sdram_top sdram(
-    .clk(clk_p),
+    .clk(sdram_clk),
     .rst_n(drs), // запускаем модуль, как только pll выйдет в рабочий режим, запуска процессора не ждем
     .sdram_wr_req(sdram_wr),
     .sdram_rd_req(sdram_rd),
@@ -179,15 +195,13 @@ sdram_top sdram(
 );
          
 // формирователь сигнала подверждения транзакции
-reg [1:0]dack;
-
-assign sdram_ack = sdram_stb & (dack[1]);
-
-// задержка сигнала подтверждения на 1 такт clk
+reg reply;
 always @ (posedge clk_p)  begin
-   dack[0] <= sdram_stb & (sdr_rd_ack | sdr_wr_ack);
-   dack[1] <= sdram_stb & dack[0];
+   if (sdram_reset) reply <= 1'b0;
+   else if(sdram_stb & ((sdram_we)? sdr_wr_ack : sdr_rd_ack)) reply <= 1'b1;
+	else if (~sdram_stb) reply <= 1'b0;
 end
+assign sdram_ack = sdram_stb & reply;
 
 //************************************
 //*  Управление VGA DAC
@@ -201,8 +215,7 @@ assign vgar = (vgared == 1'b1)   ? 5'b11110  : 5'b00000 ;
 //************************************
 //* Соединительная плата
 //************************************
-topboard kernel(
-
+`TOPBOARD kernel(
    .clk50(clk50),                   // 50 МГц
    .clk_p(clk_p),                   // тактовая частота процессора, прямая фаза
    .clk_n(clk_n),                   // тактовая частота процессора, инверсная фаза
@@ -210,7 +223,7 @@ topboard kernel(
    .clkrdy(clkrdy),                 // готовность PLL
    
    .bt_reset(~button[0]),            // общий сброс
-   .bt_halt(~button[1]),             // режим программа-пульт
+   .bt_halt(~button[1]),             // режим программа-пульт / выход из состояния HALT
    .bt_terminal_rst(~button[2]),     // сброс терминальной подсистемы
    .bt_timer(~button[3]),            // выключатель таймера
    
@@ -220,11 +233,17 @@ topboard kernel(
    
    // индикаторные светодиоды      
    .rk_led(rk_led),               // запрос обмена диска RK
-   .dm_led(rk_led),               // запрос обмена диска DM
    .dw_led(dw_led),               // запрос обмена диска DW
+   .dm_led(dm_led),               // запрос обмена диска DM
    .my_led(my_led),               // запрос обмена диска MY
    .dx_led(dx_led),               // запрос обмена диска DX
    .timer_led(timer_led),         // индикация включения таймера
+`ifdef adr22
+   .db_led(db_led),               // запрос обмена диска DB
+	.idle_led(idle_led),           // признак ожидания прерывания по WAIT
+	.mmu_led(mmu_led),             // признак включения MMU 
+	.run_led(run_led),             // признак ативности секвенсера
+`endif	
    
    // Интерфейс SDRAM
    .sdram_reset(sdram_reset),     // сброс
@@ -268,6 +287,5 @@ topboard kernel(
    .lp_busy(lp_busy),    // сигнал занятости принтера
    .lp_err_n(lp_err_n)   // сигнал ошибки
 );
-
 
 endmodule
