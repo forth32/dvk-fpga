@@ -295,7 +295,10 @@ assign sdram_out=wb_out;               // выходная шина данных
    .bus_reset(sys_init),           // Выход сброса для периферии
    .dclo(vm_dclo_in),              // Вход сброса процессора
    .aclo(vm_aclo_in),              // Сигнал аварии питания
+	
+// Ручное управление	
    .resume(bt_halt),               // Запуск после HALT
+	.csw(16'o0),                    // регистр консольных переключателей
 	
 // Индикаторы	
 	.led_idle(idle_led),            // индикация бездействия (WAIT)
@@ -1094,23 +1097,24 @@ assign wb_adr =   (rh70_dma_state) ? rh70_dma_adr :
 // Адресная шина UNIBUS - DMA-запрсы идут через MMU подсистему Unibus Mapping
 assign dma_adr18 = (rk11_dma_state) ? rk11_adr : 18'o0 
                 |  (rk611_dma_state)? rk611_adr: 18'o0 ;
-						
+
+// Выходная шина данных, от мастера DMA к ведомому устройству
 assign wb_out =   (rk11_dma_state) ? rk11_dma_out: 16'o0
                 | (rk611_dma_state)? rk611_dma_out: 16'o0 
                 | (my_dma_state)   ? my_dma_out  : 16'o0
                 | (rh70_dma_state) ? rh70_dma_out  : 16'o0
                 | (~dma_ack) ? cpu_data_out: 16'o0;
-                                           
-assign wb_we =  (rk11_dma_state)  ? rk11_dma_we:
-                (rk611_dma_state) ? rk611_dma_we:
-                (my_dma_state)    ? my_dma_we:
-                (rh70_dma_state)  ? rh70_dma_we  : 
-                                    cpu_we;
-                                           
+
+// Сигнал напрвавления передачи - от устройства на шину (запись)					 
+assign wb_we =  rk11_dma_we | rk611_dma_we | my_dma_we | rh70_dma_we | cpu_we;
+
+// Выбор байтов для записи                                           
 assign wb_sel =   (dma_ack) ? 2'b11: cpu_bsel;
-                                          
+                          
+// Строб SDRAM								  
 assign sdram_stb = my_dma_stb | rh70_dma_stb | cpu_ram_stb;
 
+// Строб данных от DMA-мастера
 assign dma_stb = rk11_dma_stb | rk611_dma_stb;
   
 //*******************************************************************
