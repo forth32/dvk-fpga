@@ -14,24 +14,25 @@ module cpu_control_regs (
    input                  wb_stb_i,   // строб цикла шины
    input    [1:0]         wb_sel_i,   // выбор конкретных байтов для записи - старший, младший или оба
    output reg             wb_ack_o,   // подтверждение выбора устройства
-
-   output reg [15:0] psw_in, 
-   output  reg psw_in_we_even, 
-   output  reg psw_in_we_odd, 
-   input[15:0] psw_out, 
-   output[15:0] cpu_stack_limit, 
-   output[15:0] pir_in, 
-   input cpu_illegal_halt, 
-   input cpu_address_error, 
-   input cpu_nxm, 
-   input cpu_iobus_timeout, 
-   input cpu_ysv, 
-   input cpu_rsv 
+// PSW
+   output reg [15:0]      psw_in,     // вывод PSW для чтения
+   output reg         psw_in_we_even, // разрешение записи младшего байта PSW
+   output reg         psw_in_we_odd,  // разрешение записи старшего байта PSW
+   input      [15:0]  psw_out,        // ввод PSW для записи
+   output reg [15:0]  cpu_stack_limit,// регистр границы стека 
+   output     [15:0]  pir_in,         // регистр программных прерываний
+	
+// флаги ошибок
+   input          cpu_illegal_halt,   // команда HALT не в режиме kernel
+   input          cpu_address_error,  // словное обращение по нечетному адресу
+   input          cpu_nxm,            // таймаут шины при обращении к RAM
+   input          cpu_iobus_timeout,  // таймаут шины при обращении к странице ввода-вывода
+   input          cpu_ysv,            // желтая граница стека
+   input          cpu_rsv             // красная граница стека
 );
 
 wire we; 
 wire wo; 
-reg[15:0] stacklimit; 
 reg[15:0] pir; 
 wire[2:0] pia; 
 reg cer_illhlt; 
@@ -49,18 +50,14 @@ reg [15:0]dummyreg;
 wire bus_strobe = wb_cyc_i & wb_stb_i;         // строб цикла шины
 wire bus_read_req = bus_strobe & ~wb_we_i;     // запрос чтения
 wire bus_write_req = bus_strobe & wb_we_i;     // запрос записи
-
-
-assign we = bus_write_req & wb_sel_i[0]; // строб записи четных байтов
-assign wo = bus_write_req & wb_sel_i[1]; // строб записи нечетных байтов
+assign we = bus_write_req & wb_sel_i[0];       // строб записи четных байтов
+assign wo = bus_write_req & wb_sel_i[1];       // строб записи нечетных байтов
 
 // формирователь ответа на цикл шины   
 wire reply=wb_cyc_i & wb_stb_i & ~wb_ack_o;
 always @(posedge wb_clk_i or posedge wb_rst_i)
     if (wb_rst_i == 1) wb_ack_o <= 0;
     else wb_ack_o <= reply;
-
-assign cpu_stack_limit = stacklimit ;
 
 // формирователь номера программного прерывания
 assign pia = ((pir[15]) == 1'b1) ? 3'b111 : 
@@ -71,37 +68,29 @@ assign pia = ((pir[15]) == 1'b1) ? 3'b111 :
 				 ((pir[10]) == 1'b1) ? 3'b010 : 
 				 ((pir[9]) == 1'b1) ? 3'b001 : 
 											 3'b000 ;
-											 
-
 assign pir_in = pir ;
 
 always @(posedge wb_clk_i) begin
 	if (wb_rst_i == 1'b1)  begin
 	   // сброс
 		pir <= 16'o0;
-		// psw
 		psw_in <= 16'b0000000000000000 ; 
-		// stack limit
-		stacklimit <= 16'h0000; 
-		// cer
+		cpu_stack_limit <= 16'h0000; 
 		cer_illhlt <= 1'b0 ; 
 		cer_addrerr <= 1'b0 ; 
 		cer_nxm <= 1'b0 ; 
 		cer_iobto <= 1'b0 ; 
 		cer_ysv <= 1'b0 ; 
 		cer_rsv <= 1'b0 ; 
-		// ccr
-		ccr <= 6'o77; //{6{1'b0}} ; 
+		ccr <= 6'o77; //{6{1'b0}} ; // регистр управления кешем. 77 - кеш отключен.
 		dummyreg <= 16'o0;
 	end
 	
 	else  begin
-		
 		// ввод запроса программного прерывания
 		pir [7:5] <= pia;
 		pir [3:1] <= pia;
-
-		stacklimit[7:0] <= 8'b00000000 ; 
+		cpu_stack_limit[7:0] <= 8'b00000000 ; 
 		
 		// установка флагов ошибок в регистре CER
 		if (cpu_illegal_halt == 1'b1)  cer_illhlt <= 1'b1 ; 
@@ -138,8 +127,8 @@ always @(posedge wb_clk_i) begin
 				// 17 777 774 - граница стека (stack limit)
 				4'b1110 :
 							begin
-									if (bus_read_req == 1'b1) wb_dat_o <= stacklimit ; 
-									if (wo == 1'b1)           stacklimit[15:8] <= wb_dat_i[15:8] ; 
+									if (bus_read_req == 1'b1) wb_dat_o <= cpu_stack_limit ; 
+									if (wo == 1'b1)           cpu_stack_limit[15:8] <= wb_dat_i[15:8] ; 
 							end
 				// 17 777 772  PIRQ - программные прерывания
 				4'b1101 :
@@ -184,14 +173,13 @@ always @(posedge wb_clk_i) begin
 				// 17 777 762
 				4'b1001 :
 							begin
-									// system size, upper system size
 									if (bus_read_req == 1'b1)  wb_dat_o <= {16{1'b0}} ; 
 							end
 				// 17 777 760
 				4'b1000 :
 							begin
-									// system size, lower system size
-									//    077777 means 1024Kwords
+									// Размер установленной памяти
+									//    77777 соответствует 1024KW
 									if (bus_read_req == 1'b1)   wb_dat_o <= 16'o167777 ; //  1920 KW
 //									if (bus_read_req == 1'b1)   wb_dat_o <= 16'b0000001111111111 ; //  32kw
 							end
@@ -204,13 +192,11 @@ always @(posedge wb_clk_i) begin
 				// 17 777 752
 				4'b0101 :
 							begin
-									// hit/miss register, EK-KB11C-TM-001_1170procMan.pdf pg. VI-4-21
 									if (bus_read_req == 1'b1)   wb_dat_o <= {16{1'b0}} ; 
 							end
 				// 17 777 750
 				4'b0100 :
 							begin
-									// maintenance register, EK-KB11C-TM-001_1170procMan.pdf pg. VI-4-21
 									if (bus_read_req == 1'b1)  wb_dat_o <= dummyreg; 
 									 if (we) dummyreg[7:0] <= wb_dat_i[7:0];
 									 if (wo) dummyreg[15:8] <= wb_dat_i[15:8];
@@ -218,7 +204,7 @@ always @(posedge wb_clk_i) begin
 				// 17 777 746
 				4'b0011 :
 							begin
-									// cache control register, EK-KB11C-TM-001_1170procMan.pdf pg. VI-4-19
+									// регистр управления кешем
 									if (bus_read_req == 1'b1)  begin
 										wb_dat_o <= {{10{1'b0}}, ccr} ; 
 									end 
@@ -227,41 +213,20 @@ always @(posedge wb_clk_i) begin
 				// 17 777 744
 				4'b0010 :
 							begin
-									// memory system error register, EK-KB11C-TM-001_1170procMan.pdf pg. VI-4-19
 									if (bus_read_req == 1'b1)  wb_dat_o <= {16{1'b0}} ; 
 							end
 				// 17 777 742
 				4'b0001 :
 							begin
-									// high error address register, EK-KB11C-TM-001_1170procMan.pdf pg. VI-4-18
 									if (bus_read_req == 1'b1) wb_dat_o <= {16{1'b0}} ; 
 							end
 				// 17 777 740
 				4'b0000 :
 							begin
-									// low error address register, EK-KB11C-TM-001_1170procMan.pdf pg. VI-4-18
 									if (bus_read_req == 1'b1)  wb_dat_o <= {16{1'b0}} ; 
 							end
 			endcase 
 		end 
-/*		
-			if (wb_adr_i[17:3] == 15'o77752 & (bus_read_req == 1'b1 | bus_control_dato == 1'b1))  begin
-				case (wb_adr_i[2:1])
-					// 17 777 520; control/status register; EK-PDP94-MG-001_Sep90.pdf pg. 5-27
-					2'b00 :
-									if (bus_read_req == 1'b1)  wb_dat_o <= {16{1'b0}} ; 
-					// 17 777 522; page control register; EK-PDP94-MG-001_Sep90.pdf pg. 5-29
-					2'b01 :
-									if (bus_read_req == 1'b1)   wb_dat_o <= {16{1'b0}} ; 
-					// 17 777 524; configuration and display register; EK-PDP94-MG-001_Sep90.pdf pg. 5-30
-					2'b10 :
-									if (bus_read_req == 1'b1) wb_dat_o <= {16{1'b0}} ; 
-					// 17 777 526; additional status register; EK-PDP94-MG-001_Sep90.pdf pg. 5-31
-					2'b11 :
-									if (bus_read_req == 1'b1) wb_dat_o <= {16{1'b0}} ; 
-				endcase 
-			end 
-*/			
 		end 
 	end  
 endmodule

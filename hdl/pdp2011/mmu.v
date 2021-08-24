@@ -47,11 +47,10 @@ module mmu (
 	input DMA_stb_i,
 	
 	// индикаторы режима работы
-   output cons_map16,                      // режим 16-битного адреса
    output cons_map18,                      // режим 18-битного адреса 
    output cons_map22,                      // режим 22-битного адреса
    output cons_id,                         // режим разделения I/D
-	output cons_ubm,                        // режим Unibus Mapping
+   output cons_ubm,                        // режим Unibus Mapping
 	
    input reset,                            // общий сброс
    input clk                               // синхросигнал
@@ -149,16 +148,16 @@ reg[3:0] pdr_l_user[15:0];
 wire MMU_select;
 wire cpu_rd = cpu_stb & (~cpu_we);  // строб чтения
 wire cpu_wr = cpu_stb & cpu_we;     // строб записи
+wire MMU_reg_select;
 
 // выходной сигнал подтверждения обмена
 wire bus_ack = mmu_ack | wb_ack_i;
 
 // Индикаторы текущего режима адресации
-assign cons_map16 = ~mmu_enabled;             // 16-битный адрес, MMU отключен
 assign cons_map18 = mmu_enabled & (~a22_enabled);  // 18-битный адрес
 assign cons_map22 = mmu_enabled & a22_enabled;     // 22-битный адрес
-assign cons_id = id_current;             // разделение I/D
-assign cons_ubm=ubm_enabled;                  // Unibus Mapping, преобразование адресов 18-битной шины 
+assign cons_id = id_current;                       // разделение I/D
+assign cons_ubm=ubm_enabled;                       // Unibus Mapping, преобразование адресов 18-битной шины 
 
 // Определение используемого режима процессора
 //                                        текущий     предыдущий
@@ -325,7 +324,7 @@ wire MMR2_select = iopage_access & (addr_p[12:1] == 13'o17576>>1);
 wire MMR3_select = iopage_access & (addr_p[12:1] == 13'o12516>>1);
 
 // Строб доступа к регистрам PAR, PDR, MMR
-wire MMU_reg_select = APR_select | MMR0_select | MMR1_select| MMR2_select| MMR3_select;
+assign MMU_reg_select = APR_select | MMR0_select | MMR1_select| MMR2_select| MMR3_select;
 // Строб доступа ко всем внутренним регистрам модуля MMU
 assign MMU_select = MMU_reg_select | UBM_select;
 

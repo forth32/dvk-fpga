@@ -42,10 +42,7 @@ module rh70 (
    input                  sdclock,   
 
 // Адрес начала банка на карте
-   input [26:0]           start_offset,
-   
-// отладочные сигналы
-   output [3:0]           sdcard_debug
+   input [26:0]           start_offset
    ); 
 
    
@@ -77,7 +74,7 @@ assign cyl_limit = 16'd815 ;
 //
 //  17776704  RHBA - адрес буфера в памяти для DMA
 //
-//  17776706  RMDA - регистр головки и сектора                       
+//  17776706  rpda - регистр головки и сектора                       
 //              0-4  R/W   SA  сектор
 //              8-11 R/W   TA  головка   
 //
@@ -240,8 +237,8 @@ reg[15:0] rhwc;
 
 reg[15:0] rhba; 
 
-reg[7:0] rmda_hd; // головка
-reg[7:0] rmda_sa; // сектор
+reg[7:0] rpda_hd; // головка
+reg[7:0] rpda_sa; // сектор
 
 reg rhcs2_pe;   
 reg rhcs2_nem;  
@@ -387,8 +384,6 @@ sdspi sd1 (
       .sdcard_miso(sdcard_miso),
       .sdcard_sclk(sdcard_sclk),
       
-      .sdcard_debug(sdcard_debug),                // информационные индикаторы   
-   
       .sdcard_addr(sdcard_addr),                  // адрес блока на карте
       .sdcard_idle(sdcard_idle),                  // сигнал готовности модуля к обмену
       .sdcard_error(sdcard_error),                // флаг ошибки
@@ -427,8 +422,8 @@ assign wb_ack_o=reply & wb_stb_i;
 //***************************************************
 assign v_iae=~(					
               (rhdc < cyl_limit)  	     // цилиндр
-	         & (rmda_hd < track_per_cyl)  // головка
-	         & (rmda_sa < spt));          // сектор
+	         & (rpda_hd < track_per_cyl)  // головка
+	         & (rpda_sa < spt));          // сектор
 	 
 //**********************************************
 // обработка прерываний и шинных транзакций
@@ -454,8 +449,8 @@ always @(posedge wb_clk_i) begin
          rhwc <= {16{1'b0}} ; 
          update_rhwc <= 1'b1 ; 
          rhba <= {16{1'b0}} ; 
-         rmda_hd <= {8{1'b0}} ; 
-         rmda_sa <= {8{1'b0}} ; 
+         rpda_hd <= {8{1'b0}} ; 
+         rpda_sa <= {8{1'b0}} ; 
          rhcs2_pe <= 1'b0 ; 
          rhcs2_nem <= 1'b0 ; 
          rhcs2_pge <= 1'b0 ; 
@@ -547,9 +542,9 @@ always @(posedge wb_clk_i) begin
              endcase
 //========================================================================
 
-				
-         // Обработка транзакций общей шины
-         
+//***********************************				
+// Обработка транзакций общей шины
+//***********************************				
             // чтение регистров
             if (wb_stb_i & ~wb_we_i)  begin
                case (wb_adr_i[5:1])
@@ -559,8 +554,8 @@ always @(posedge wb_clk_i) begin
                   5'b00001 :  wb_dat_o <= (~wcp) + 1'b1 ; 
                   // rhba  17776704                                        
                   5'b00010 :  wb_dat_o <= rhba ; 
-                  // rmda  17776706
-                  5'b00011 :  wb_dat_o <= {3'b000, rmda_hd[4:0], 3'b000, rmda_sa[4:0]} ; 
+                  // rpda  17776706
+                  5'b00011 :  wb_dat_o <= {3'b000, rpda_hd[4:0], 3'b000, rpda_sa[4:0]} ; 
                   // rhcs2 17776710
                   5'b00100 :  wb_dat_o <= {1'b0, 1'b0, rhcs2_pe, 1'b0, rhcs2_nem, rhcs2_pge, rhcs2_mxf, 1'b0, rhcs2_or, rhcs2_ir, rhcs2_clr, rhcs2_pat, rhcs2_bai, unit} ; 
                   // rhds  17776712
@@ -571,12 +566,12 @@ always @(posedge wb_clk_i) begin
                   5'b00111 :  wb_dat_o <= {8'b00000000, rhds_ata[7], rhds_ata[6], rhds_ata[5], rhds_ata[4], rhds_ata[3], rhds_ata[2], rhds_ata[1], rhds_ata[0] } ; 
                   // rhla  17776720 
                   5'b01000 :  wb_dat_o <= {5'b00000, rhla_sc, 6'b000000} ; 
-						// RHDB 17776722
+						// RHDB 17776722 - эмуляция FIFO
 						5'b01001 :  begin
-						             wb_dat_o <= rhdb;
-										 rhdb <= 15'o0;
-										 rhcs2_or <= 1'b0;
-										 rhcs2_ir <= 1'b1;
+						             wb_dat_o <= rhdb;  // текущее содержимое регистра
+										 rhdb <= 15'o0;     // обнуляем его
+										 rhcs2_or <= 1'b0;  // снимаем готовность выходных данных
+										 rhcs2_ir <= 1'b1;  // поднимаем готовность входных данных
 										end 
                   // rhmr1  17776724
                   5'b01010 :  wb_dat_o <= rhmr1 ; 
@@ -621,24 +616,24 @@ always @(posedge wb_clk_i) begin
                         // rhcs1 1777670
                         5'b00000 :
                                  begin
-                                    rhcs1_rdyset <= wb_dat_i[7] ; 
-                                    rhcs1_ie <= wb_dat_i[6] ; 
-                                    rhcs1_fnc <= wb_dat_i[5:1] ; 
-                                    if (rhcs1_sc == 1'b0)  begin
-                                       rhcs1_go <= wb_dat_i[0] ; 
-                                       if (rhds_err == 1'b0) rhds_ata[unit] <= 1'b0 ; 
+                             //       rhcs1_rdyset <= wb_dat_i[7] ; 
+                                    rhcs1_ie <= wb_dat_i[6] ;        // разрешение прерываний
+                                    rhcs1_fnc <= wb_dat_i[5:1] ;     // код команды
+                                    if (rhcs1_sc == 1'b0)  begin     // запуск - только при отсутствии ошибок
+                                       rhcs1_go <= wb_dat_i[0] ;     // go - запуск команды
+                                       if (rhds_err == 1'b0) rhds_ata[unit] <= 1'b0 ; // если ошибок нет - снимаем сигнал внимание
                                     end 
                                  end
                         // rhwc  17776702
                         5'b00001 :
                                  begin
-                                    rhwc[7:0] <= wb_dat_i[7:0] ; 
-                                    update_rhwc <= 1'b1 ; 
+                                    rhwc[7:0] <= wb_dat_i[7:0] ;  // ~размер передаваемых данных
+                                    update_rhwc <= 1'b1 ;         // флаг обновления счетчика данных
                                  end
                         // rhba  17776704
                         5'b00010 :  rhba[7:0] <= {wb_dat_i[7:1],1'b0} ; 
-                        // rmda  17776706
-                        5'b00011 :  rmda_sa <= wb_dat_i[7:0] ; 
+                        // rpda  17776706
+                        5'b00011 :  rpda_sa <= wb_dat_i[7:0] ; 
                         // rhcs2 17776710
                         5'b00100 :
                                  begin
@@ -647,7 +642,7 @@ always @(posedge wb_clk_i) begin
                                     rhcs2_bai <= wb_dat_i[3] ; 
                                     unit <= wb_dat_i[2:0] ; 
                                  end
-                        // rher1 17776714
+                        // rher1 17776714 - принудительная установка признаков ошибки
                         5'b00110 :
                                  begin
                                     rher1_hce <= wb_dat_i[7] ; 
@@ -659,7 +654,7 @@ always @(posedge wb_clk_i) begin
                                     rher1_ilr <= wb_dat_i[1] ; 
                                     rher1_ilf <= wb_dat_i[0] ; 
                                  end
-                        // rhas  17776716
+                        // rhas  17776716 - установка сигналов внимание
                         5'b00111 :  
 								         begin
 								            if (wb_dat_i[0]) rhds_ata[0] <= 1'b0 ; 
@@ -671,23 +666,22 @@ always @(posedge wb_clk_i) begin
 								            if (wb_dat_i[6]) rhds_ata[6] <= 1'b0 ; 
 								            if (wb_dat_i[7]) rhds_ata[7] <= 1'b0 ; 
 									      end
- 						      // RHDB 17 776 722
+ 						      // RHDB 17 776 722 - эмуляция буфера FIFO
 						      5'b01001 :  begin
-						             rhdb <= wb_dat_i;
-										 rhcs2_or <= 1'b1;
-										 rhcs2_ir <= 1'b0;
+						             rhdb <= wb_dat_i;   // вводим данные в буфер
+										 rhcs2_or <= 1'b1;   // поднимаем готовность выдачи данных
+										 rhcs2_ir <= 1'b0;   // снимаем готовность приема данных
 										end 
 								
                         // rhmr1  17776724
                         5'b01010 :
                                  begin
-                                       // set rhds writelock
-                                    if ((wb_dat_i[3]) == 1'b1) rhds_wrl <= 1'b1 ; 
-                                    if ((wb_dat_i[0]) == 1'b1) rhds_vv[unit] <= 1'b0 ; 
-                                    rhmr1[0] <= wb_dat_i[0] ; // dmd 
-                                    if ((wb_dat_i[0]) == 1'b0)   rhmr1 <= {16{1'b0}} ; 
+                                    if ((wb_dat_i[3]) == 1'b1) rhds_wrl <= 1'b1 ;         // программная защита записи
+                                    if ((wb_dat_i[0]) == 1'b1) rhds_vv[unit] <= 1'b0 ;    // признак установки тома VV
+                                    rhmr1[0] <= wb_dat_i[0] ;                             // диагностический режим
+                                    if ((wb_dat_i[0]) == 1'b0)   rhmr1 <= {16{1'b0}} ;    // выход из режима диагностики
                                  end
-								// 176726 - только для коррекции странного поведения RSTS			
+								// 176726 - только для коррекции странного поведения RSTS, этого регистра реально не существует
 								5'b01011 :	;		
                         // rhof  17776732
                         5'b01101 :  rhof_ofd <= wb_dat_i[7] ; 
@@ -731,15 +725,15 @@ always @(posedge wb_clk_i) begin
                                  end
                         // rhba   17776704
                         5'b00010 :  rhba[15:8] <= wb_dat_i[15:8] ; 
-                        // rmda   17776706
-                        5'b00011 :  rmda_hd <= wb_dat_i[15:8] ; 
+                        // rpda   17776706
+                        5'b00011 :  rpda_hd <= wb_dat_i[15:8] ; 
                         // rhcs2 17776710
                         5'b00100 :
                                  begin
                                     rhcs2_pe <= wb_dat_i[13] ; 
                                     rhcs2_mxf <= wb_dat_i[9] ; 
                                  end
-                        // rher1 17776714
+                        // rher1 17776714 - принудительная установка флагов ошибок
                         5'b00110 :
                                  begin
                                     rher1_dck <= wb_dat_i[15] ; 
@@ -764,7 +758,7 @@ always @(posedge wb_clk_i) begin
                                     rhdc[15:8] <= wb_dat_i[15:8] ; 
                                     rhds_om <= 1'b0 ; 
                                  end
-                        // rher2 17776742
+                        // rher2 17776742 - принудительная установка флагов ошибок
                         5'b10001 :
                                  begin
                                     rher2_bse <= wb_dat_i[15] ; 
@@ -783,44 +777,57 @@ always @(posedge wb_clk_i) begin
                   end 
                end 
             end
-             
-            // импульсы последовательности секторов
-            rmclock <= rmclock + 1'b1 ; 
-            if (|rmclock == 1'b0)  rhla_sc <= rhla_sc + 5'b00001 ; 
+
+//******************************************				
+//* импульсы последовательности секторов
+//******************************************				
+            rmclock <= rmclock + 1'b1 ;   // счетчик-делитель частоты следования секторов
+            if (|rmclock == 1'b0)  rhla_sc <= rhla_sc + 5'b00001 ;  // счетчик секторов
             
             
+//******************************************				
+//*  Установка сигнала готовности RDY
+//******************************************				
             if (rhcs1_rdyset == 1'b1) begin
                rhcs1_rdy <= 1'b1 ; 
                rhcs1_rdyset <= 1'b0 ; 
             end 
 
+//******************************************				
+//*  Обновление счетчика передаваемых слов
+//******************************************				
             if (update_rhwc == 1'b1)  begin
                update_rhwc <= 1'b0 ; 
                wcp <= (~rhwc) + 1'b1 ; 
             end 
 
-            // генерация бита четности
+//******************************************				
+//* генерация бита четности
+//******************************************				
             if (rhcs2_pat & 
                (wb_dat_i[15] ^ wb_dat_i[14] ^ wb_dat_i[13] ^ wb_dat_i[12] ^ wb_dat_i[11] ^ 
                 wb_dat_i[10] ^ wb_dat_i[9] ^ wb_dat_i[8] ^ wb_dat_i[7] ^ wb_dat_i[6] ^ 
                 wb_dat_i[5] ^ wb_dat_i[4] ^ wb_dat_i[3] ^ wb_dat_i[2] ^ wb_dat_i[1] ^ 
                 wb_dat_i[0]))   rher1_par <= 1'b1 ; 
 
-            // запуск выполнения команды    
+//******************************************				
+//* запуск выполнения команды    
+//******************************************				
             if (rhcs1_go)  begin
+				   // сбрасываем текущие ошибки
                rhcs2_pe <= 1'b0 ; 
                rhcs2_nem <= 1'b0 ; 
                rhcs2_mxf <= 1'b0 ; 
                rhcs2_pge <= 1'b0 ; 
-               if ((rhds_vv[unit] == 1'b0 | rhds_dry == 1'b0) & (rhcs1_fnc != 5'b01000) & (rhcs1_fnc != 5'b01001)) begin
+               if ((rhds_vv[unit] == 1'b0 | rhds_dry == 1'b0) & (rhcs1_fnc != 5'o10) & (rhcs1_fnc != 5'o11)) begin
+					   // Для неустановленного тома допустимы только команды "валидация" и "подготовка к начальной загрузке"
+						// для остальных команд - ошибка IVC
                   rher2_ivc <= 1'b1 ; 
                   rhcs1_go <= 1'b0 ; 
                   rhds_ata[unit] <= 1'b1 ; 
                end
-               
-				   // проверка корректности CHS	
+                              
                else  begin
-
                   // разбор поля команды
                   case (rhcs1_fnc)
                      5'o0 :
@@ -832,27 +839,28 @@ always @(posedge wb_clk_i) begin
                      5'o2 :
                               begin
                                  // позиционирование
-                                 if (v_iae)  rher1_iae <= 1'b1 ; 
-                                 rhds_ata[unit] <= 1'b1 ; 
-                                 rhcs1_go <= 1'b0 ; 
-                                 rhds_dry <= 1'b1 ; 
+                                 if (v_iae)  rher1_iae <= 1'b1 ;   // некорректный CHS
+                                 rhds_ata[unit] <= 1'b1 ;          // поднимаем сигнал внимание
+                                 rhcs1_go <= 1'b0 ;                // завершаем команду
+                                 rhds_dry <= 1'b1 ;                // поднимаем флаг готовности
                                  rhcs1_rdyset <= 1'b1 ; 
                               end
                      5'o3 :
                               begin
                                  // рекалибровка
-                                 rmda_hd <= {8{1'b0}} ; 
-                                 rmda_sa <= {8{1'b0}} ; 
-                                 rhdc <= {16{1'b0}} ; // clear desired cylinder
-                                 rhds_vv[unit] <= 1'b1 ; // set volume valid
-                                 rhds_om <= 1'b0 ; 
-                                 rhof_ofd <= 1'b0 ; 
+											// переходим к CHS=0
+                                 rpda_hd <= {8{1'b0}} ;  
+                                 rpda_sa <= {8{1'b0}} ; 
+                                 rhdc <= {16{1'b0}} ; 
+                                 rhds_vv[unit] <= 1'b1 ;        // валидация тома
+                                 rhds_om <= 1'b0 ;              // снимаем режим смещения дорожки
+                                 rhof_ofd <= 1'b0 ;   
                                  rhof_hci <= 1'b0 ; 
                                  rhof_eci <= 1'b0 ; 
                                  rhof_fmt <= 1'b0 ; 
-                                 rhcs1_go <= 1'b0 ; 
-                                 rhds_dry <= 1'b1 ; 
-                                 rhds_ata[unit] <= 1'b1 ; 
+                                 rhcs1_go <= 1'b0 ;             // завершаем команду
+                                 rhds_dry <= 1'b1 ;             // поднимаем флаг готовности
+                                 rhds_ata[unit] <= 1'b1 ;       // поднимаем сигнал внимание
                               end
                      5'o4 :
                               begin
@@ -870,26 +878,29 @@ always @(posedge wb_clk_i) begin
                      5'o6 :
                               begin
                                  // установка режима смещения
-                                 rhds_om <= 1'b1 ; 
-                                 rhds_ata[unit] <= 1'b1 ; 
-                                 rhcs1_go <= 1'b0 ; 
-                                 rhds_dry <= 1'b1 ; 
+                                 rhds_om <= 1'b1 ;              // флаг режима смещения
+                                 rhcs1_go <= 1'b0 ;             // завершаем команду
+                                 rhds_dry <= 1'b1 ;             // поднимаем флаг готовности
+                                 rhds_ata[unit] <= 1'b1 ;       // поднимаем сигнал внимание
                               end
                      5'o7 :
                               begin
                                  // отключение режима смещения
-                                 rhds_om <= 1'b0 ; 
-                                 rhds_ata[unit] <= 1'b1 ; 
-                                 rhcs1_go <= 1'b0 ; 
-                                 rhds_dry <= 1'b1 ; 
+                                 rhds_om <= 1'b0 ;              // флаг режима смещения
+                                 rhcs1_go <= 1'b0 ;             // завершаем команду
+                                 rhds_dry <= 1'b1 ;             // поднимаем флаг готовности
+                                 rhds_ata[unit] <= 1'b1 ;       // поднимаем сигнал внимание
                               end
                      5'o10 :
                               begin
-                                 // read in pwb_reset (EK-RP056-MM-01_maint_Dec75.pdf)
-                                 rmda_hd <= {8{1'b0}} ; 
-                                 rmda_sa <= {8{1'b0}} ; 
+                                 // подготовка к начальной загрузке
+											
+											//   установка CHS=0
+                                 rpda_hd <= {8{1'b0}} ; 
+                                 rpda_sa <= {8{1'b0}} ; 
                                  rhdc <= {16{1'b0}} ; 
-                                 rhds_vv[unit] <= 1'b1 ; 
+											
+                                 rhds_vv[unit] <= 1'b1 ;   // валидация тома
                                  rhds_om <= 1'b0 ; 
                                  rhof_ofd <= 1'b0 ; 
                                  rhof_hci <= 1'b0 ; 
@@ -908,10 +919,10 @@ always @(posedge wb_clk_i) begin
                      5'o14 :
                               begin
                                  // поиск дорожки
-                                 if (v_iae)  rher1_iae <= 1'b1 ; 
-                                 rhds_ata[unit] <= 1'b1 ; 
-                                 rhcs1_go <= 1'b0 ; 
-                                 rhds_dry <= 1'b1 ; 
+                                 if (v_iae)  rher1_iae <= 1'b1 ; // при некорректном CHS - поднимаем ошибку IAE
+                                 rhcs1_go <= 1'b0 ;             // завершаем команду
+                                 rhds_dry <= 1'b1 ;             // поднимаем флаг готовности
+                                 rhds_ata[unit] <= 1'b1 ;       // поднимаем сигнал внимание
                               end
                      
                      5'o30, 5'o31 :
@@ -924,7 +935,8 @@ always @(posedge wb_clk_i) begin
 											
 											// доступ к карте предоставлен, запись еще не запущена
                                  if (sdack & sdcard_idle & (write_start == 1'b0)) begin
-                                    if (v_iae == 1'b1) begin // если CHS корректен
+                                    if (v_iae == 1'b1) begin 
+												   // если CHS корректен - ошибка IAE и завершаем команду
                                        rher1_iae <= 1'b1 ; 
                                        rhcs1_go <= 1'b0 ; 
                                        rhds_dry <= 1'b1 ; 
@@ -944,7 +956,7 @@ always @(posedge wb_clk_i) begin
                                     else begin 
 												   // проверка окончена - запускаем запись
                                        write_start <= 1'b1 ;    // запускаем DMA-контроллер на прием данных
-                                       if ((rhcs1_fnc[0] == 1'b1) & (wcp >= 16'o2)) wcp <= wcp - 2'd2 ; 
+                                       if ((rhcs1_fnc[0] == 1'b1) & (wcp >= 16'o2)) wcp <= wcp - 2'd2 ;  // режим записи заголовка - отрезаем 4 байта заголовка от счетчика
                                     end 
                                  end
                                  
@@ -954,22 +966,22 @@ always @(posedge wb_clk_i) begin
 												 
                                     if (nxm == 1'b0 & sdcard_error == 1'b0)  begin
 												   // ошибок не обнаружено
-                                       if (rmda_sa == spt - 1) begin
+                                       if (rpda_sa == spt - 1) begin
 													   // переход на новую головку
-                                          rmda_sa <= {8{1'b0}} ; 
-                                          if (rmda_hd == track_per_cyl - 1)  begin
+                                          rpda_sa <= {8{1'b0}} ; 
+                                          if (rpda_hd == track_per_cyl - 1)  begin
 														   // переход на новый цилиндр
-                                             rmda_hd <= {8{1'b0}} ; 
+                                             rpda_hd <= {8{1'b0}} ; 
                                              if (rhdc == cyl_limit)   rher1_aoe <= 1'b1 ; // ошибка - выход за границу диска
                                              else  begin
                                                 rhdc <= rhdc + 1'b1 ;  // цилиндр ++
                                                 if (rhdc == cyl_limit - 1)   rhds_lst <= 1'b1 ; // признак последнего цилиндра
                                              end 
                                           end
-                                          else  rmda_hd <= rmda_hd + 1'b1 ;  // головка++
+                                          else  rpda_hd <= rpda_hd + 1'b1 ;  // головка++
                                        end
 
-                                       else  rmda_sa <= rmda_sa + 1'b1 ;  // сектор++
+                                       else  rpda_sa <= rpda_sa + 1'b1 ;  // сектор++
 													
                                        // установка регистров текущего адреса в памяти rhba
                                        rhbae <= ram_phys_addr[21:16] ;         
@@ -1012,7 +1024,7 @@ always @(posedge wb_clk_i) begin
                                  if (sdack & sdcard_idle & ~read_start & ~iocomplete)  begin
 											   // доступ к карте получен, SDSPI готов к обмену
                                     if (v_iae == 1'b1)  begin
-  											      // блокировка чтения сектора 0 головки 0 цилиндра 0
+  											      // некорректный CHS - ошибка IAE
                                        rher1_iae <= 1'b1 ; 
                                        rhcs1_go <= 1'b0 ; 
                                        rhds_dry <= 1'b1 ; 
@@ -1021,8 +1033,9 @@ always @(posedge wb_clk_i) begin
                                        sdreq <= 1'b0;
                                     end
                                     else  begin
+												   // проверка окончена - запускаем DMA-контроллер на передачу данных
                                        read_start <= 1'b1 ; 
-                                       if ((rhcs1_fnc[0]) == 1'b1 & (wcp) >= (16'b0000000000000010)) wcp <= wcp - 2'd2 ; 
+                                       if ((rhcs1_fnc[0]) == 1'b1 & (wcp) >= (16'b0000000000000010)) wcp <= wcp - 2'd2 ;  // режим чтения заголовка - отрезаем 4 байта заголовка от счетчика
                                     end 
                                  end
                                  // чтение окончено
@@ -1030,22 +1043,22 @@ always @(posedge wb_clk_i) begin
                                     read_start <= 1'b0;
                                     if (nxm == 1'b0 & sdcard_error == 1'b0)   begin
 												   // ошибок не было
-                                       if (rmda_sa == spt - 1)  begin
+                                       if (rpda_sa == spt - 1)  begin
 													   // переход на новую головку
-                                          rmda_sa <= {8{1'b0}} ; 
-                                          if (rmda_hd == track_per_cyl - 1)  begin
+                                          rpda_sa <= {8{1'b0}} ; 
+                                          if (rpda_hd == track_per_cyl - 1)  begin
 														   // переход на новый цилиндр
-                                             rmda_hd <= {8{1'b0}} ; 
+                                             rpda_hd <= {8{1'b0}} ; 
                                              if (rhdc == cyl_limit) rher1_aoe <= 1'b1 ;  // признак выхода за границу диска
                                              else begin
                                                 rhdc <= rhdc + 1'b1 ;    // цилиндр++
                                                 if (rhdc == cyl_limit - 1)  rhds_lst <= 1'b1 ;  // признак последнего цилиндра
                                              end 
                                           end
-                                          else   rmda_hd <= rmda_hd + 1'b1 ;   // головка++
+                                          else   rpda_hd <= rpda_hd + 1'b1 ;   // головка++
                                        end
 
-                                       else    rmda_sa <= rmda_sa + 1'b1 ;  // сектор++
+                                       else    rpda_sa <= rpda_sa + 1'b1 ;  // сектор++
                                        // передача текущего адреса физической памяти в регистр rhba
                                        rhbae <= ram_phys_addr[21:16] ; 
                                        rhba <= {ram_phys_addr[15:1], 1'b0} ; 
@@ -1091,7 +1104,9 @@ always @(posedge wb_clk_i) begin
                end 
             end 
 
-
+//*********************************************
+//*    Сброс ошибок
+//*********************************************
             if (error_reset == 1'b1)  begin
                error_reset <= 1'b0 ; 
                rher1_dck <= 1'b0 ; 
@@ -1187,7 +1202,7 @@ always @(posedge wb_clk_i)    begin
                dma_readh :
                         begin
                            dma_adr_o <= {ram_phys_addr, 1'b0} ; 
-                           dma_dat_o <= {3'b110, rhof_fmt, rhdc[11:0]} ; 
+                           dma_dat_o <= {3'b110, rhof_fmt, rhdc[11:0]} ;  // сборка слова 1 заголовка
                            dma_stb_o <= 1'b1 ;
                            dma_we_o <= 1'b1;
                            ram_phys_addr <= ram_phys_addr + 1'b1 ; 
@@ -1201,7 +1216,7 @@ always @(posedge wb_clk_i)    begin
                dma_readh2 :
                         begin
                            dma_adr_o <= {ram_phys_addr, 1'b0} ; 
-                           dma_dat_o <= {rmda_hd, rmda_sa} ; 
+                           dma_dat_o <= {rpda_hd, rpda_sa} ;   // сборка слова 2 заголовка
                            dma_stb_o <= 1'b1 ; 
                            ram_phys_addr <= ram_phys_addr + 1'b1 ; 
                            if (dma_ack_i == 1'b1) begin
@@ -1386,9 +1401,9 @@ assign sdaddr =
 	  udn_offset +
 	  dn_offset + 
 	  ca_offset + 
-	  ({14'b00000000000000, rmda_hd[4:0], 4'b0000}) + 
-	  ({16'b0000000000000000, rmda_hd[4:0], 2'b00}) + 
-	  ({17'b00000000000000000, rmda_hd[4:0], 1'b0}) + 
-	  ({18'b000000000000000000, rmda_sa[4:0]});
+	  ({14'b00000000000000, rpda_hd[4:0], 4'b0000}) + 
+	  ({16'b0000000000000000, rpda_hd[4:0], 2'b00}) + 
+	  ({17'b00000000000000000, rpda_hd[4:0], 1'b0}) + 
+	  ({18'b000000000000000000, rpda_sa[4:0]});
 
 endmodule

@@ -101,6 +101,27 @@ assign led_idle=~iwait;
 // сброс системы
 assign      sys_init = bus_reset;
 
+// интерфейс cpu<->mmu
+wire cpu_cp;
+wire cpu_id;
+wire mmutrap;
+wire ack_mmutrap;
+wire mmuabort;
+wire sr0_ic;
+wire [15:0] sr1;
+wire [15:0] sr2;
+wire cons_map16;
+wire cons_map18;
+wire cons_map22;
+wire cons_id;
+wire cons_ubm;
+wire ifetch;
+wire dstfreference;
+wire dw8;
+wire [15:0] cpu_adr;
+wire ack_mmuabort;
+wire mmuoddabort;
+
 // таймер
 reg timer_ie;    // разрешение прерывания
 reg timer_rdy;   // готовность таймера
@@ -232,25 +253,6 @@ cpu_control_regs ccr(
 //*******************************************
 //*  Дспетчер памяти
 //*******************************************
-wire cpu_cp;
-wire cpu_id;
-wire mmutrap;
-wire ack_mmutrap;
-wire mmuabort;
-wire sr0_ic;
-wire [15:0] sr1;
-wire [15:0] sr2;
-wire cons_map16;
-wire cons_map18;
-wire cons_map22;
-wire cons_id;
-wire cons_ubm;
-wire ifetch;
-wire dstfreference;
-wire dw8;
-wire [15:0] cpu_adr;
-wire ack_mmuabort;
-wire mmuoddabort;
 
 mmu mmu1(
 

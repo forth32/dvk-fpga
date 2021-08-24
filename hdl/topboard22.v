@@ -86,7 +86,6 @@ module topboard22 (
    output         lp_init_n,  // строб сброса
    input          lp_busy,    // сигнал занятости принтера
    input          lp_err_n    // сигнал ошибки
-   
 );
 
 wire [2:0] vspeed;   // индекс скорости порта
