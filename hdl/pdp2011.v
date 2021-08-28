@@ -321,8 +321,8 @@ boot_rom bootrom(
 
 // сигнал ответа
 always @ (posedge clk_p) begin
-   bootrom_ack_reg[0] <= bootrom_stb & ~wb_we_o;
-   bootrom_ack_reg[1] <= bootrom_stb & ~wb_we_o & bootrom_ack_reg[0];
+   bootrom_ack_reg[0] <= bootrom_stb;// & ~wb_we_o;
+   bootrom_ack_reg[1] <= bootrom_stb /*& ~wb_we_o */& bootrom_ack_reg[0];
 end
 assign bootrom_ack = bus_stb & bootrom_ack_reg[1];
 

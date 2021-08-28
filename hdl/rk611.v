@@ -808,6 +808,8 @@ always @(posedge wb_clk_i)  begin
         // сброс
         DMA_state <= DMA_idle ; 
         dma_req <= 1'b0 ; 
+        dma_we_o <= 1'b0 ; 
+        dma_stb_o <= 1'b0 ; 
         sdspi_write_mode <= 1'b0 ; 
         sdspi_start <= 1'b0;
         nxm <= 1'b0 ; 
