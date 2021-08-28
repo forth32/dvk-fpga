@@ -293,7 +293,7 @@ always @(posedge wb_clk_i)   begin
         err_sec <= 1'b0;
         interrupt_trigger <= 1'b0;
         cmdstate <= CMD_START;
-		  extadr <= 6'o0;
+        extadr <= 6'o0;
     end
       
    // рабочие состояния
@@ -337,7 +337,7 @@ always @(posedge wb_clk_i)   begin
                                     alltrk_mode <= 1'b0;         // сброс режима полной дорожки
                                 end         
                                 ie <= wb_dat_i[6];               // флаг разрешения прерывания - доступен для записи всегда
-										  extadr <= wb_dat_i[13:8];        // расширение адреса
+                                extadr <= wb_dat_i[13:8];        // расширение адреса
                             end
                     // 177172 - MYDR
                      1'b1 :    
@@ -503,6 +503,9 @@ always @(posedge wb_clk_i)
    // Сброс контроллера
    dma_state <= DMA_IDLE;
    dma_req <= 1'b0;
+   dma_we_o <= 1'b0;
+   dma_stb_o <= 1'b0;
+   dma_adr_o <= 21'o0;
    io_complete <= 1'b0;
    sdbuf_we <= 1'b0;
    sdspi_start <= 1'b0;
@@ -519,6 +522,8 @@ always @(posedge wb_clk_i)
       io_complete <= 1'b0;
       dma_stb_o <= 1'b0;
       dma_req <= 1'b0;
+      dma_we_o <= 1'b0;
+      dma_adr_o <= 22'o0;
       // команда загрузки параметров 
       if (start_loadparm == 1'b1) begin
         nxp <= 1'b0;
@@ -550,22 +555,22 @@ always @(posedge wb_clk_i)
     DMA_LOADPARM1: begin
       dmanextstate <= DMA_LOADPARM2;
       dma_state <= DMA_LOADWORD;
-      dma_adr_o <= {parm_addr, 1'b0};  // выставляем адрес блока параметров на шину адреса
+      dma_adr_o <= {extadr,parm_addr, 1'b0};  // выставляем адрес блока параметров на шину адреса
       end
     // загрузка блока параметров - слово 1   
     DMA_LOADPARM2: begin
       drv <= pdata[1:0];      // номер привода
       hd <= pdata[2];         // головка
       dmanextstate <= DMA_LOADPARM3;  
-      dma_adr_o <= {parm_addr+1'b1, 1'b0}; // адрес следующего слова парамтеров
+      dma_adr_o <= {extadr,parm_addr+1'b1, 1'b0}; // адрес следующего слова парамтеров
       dma_state <= DMA_LOADWORD;  // переходим к загрузке данных
       end
     // загрузка блока параметров - слово 2   
     DMA_LOADPARM3: begin
       ioadr[15:0] <= pdata;     // адрес буфера в памяти хоста - младшая часть
-		ioadr[21:16] <= extadr;   // старшая часть адреса
+      ioadr[21:16] <= extadr;   // старшая часть адреса
       dmanextstate <= DMA_LOADPARM4;
-      dma_adr_o <= {parm_addr+2'd2, 1'b0};
+      dma_adr_o <= {extadr,parm_addr+2'd2, 1'b0};
       dma_state <= DMA_LOADWORD;
       end
     // загрузка блока параметров - слово 3   
@@ -573,7 +578,7 @@ always @(posedge wb_clk_i)
       cyl <= pdata[14:8];   // цилиндр
       sec <= pdata[3:0]-1'b1; // сектор, сразу уменьшаем его на 1 (сектора 0 нет, допустимы номера 1-10)
       dmanextstate <= DMA_LOADPARM5;
-      dma_adr_o <= {parm_addr+2'd3, 1'b0};
+      dma_adr_o <= {extadr,parm_addr+2'd3, 1'b0};
       dma_state <= DMA_LOADWORD;
       end
    
@@ -680,6 +685,7 @@ always @(posedge wb_clk_i)
                end   
             end
             ioadr <= ioadr + 22'o1000;  // сдвигаем адрес хост-буфера
+            dma_we_o <= 1'b0; // снимаем флаг записи
             dma_req <= 1'b0;  // освобождаем шину
             dma_state <= DMA_STARTREAD; // и продолжаем чтение секторов
          end   
@@ -693,6 +699,7 @@ always @(posedge wb_clk_i)
       // завершение процедуры чтения данных
       DMA_SD2HOST_COMPLETE: begin
          dma_req <= 1'b0;  // освобождаем шину
+         dma_we_o <= 1'b0; // снимаем флаг записи
          sdreq <= 1'b0;  // освобождаем SD-карту
          io_complete <= 1'b1;  // поднимае флаг завершения команды
          if (start_rd == 1'b0) dma_state <= DMA_IDLE;
@@ -814,8 +821,7 @@ always @(posedge wb_clk_i)
 //  2 головы
 //  80 цилиндров
 //
-// полный абсолютный адрес    
-// cyl*20+hd*10+sec   cyl*16+cyl*4 + hd*10 + sec
+// полный абсолютный адрес = cyl*20+hd*10+sec   
 //
 // Смещение головки
 wire [3:0] hd_offset = (hd == 1'b0)? 4'd0:4'd10; 

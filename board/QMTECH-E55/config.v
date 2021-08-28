@@ -170,7 +170,7 @@
 // Определение типа модуля соединительной платы-корзины
 `ifdef adr22
    `define TOPBOARD topboard22 // 22-битный
-`else	
+`else   
    `define TOPBOARD topboard16 // 16-битный
 `endif
 

@@ -195,7 +195,7 @@ always @(posedge wb_clk_i)
       if (reset == 1'b1 || rstreq == 1'b1) begin
        // сброс системы
          interrupt_state <= i_idle ; 
-		   interrupt_trigger <= 1'b0;
+         interrupt_trigger <= 1'b0;
          irq <= 1'b0 ;    // снимаем запрос на прерывания
          start <= 1'b0 ; 
          rqa <= 1'b1;
@@ -236,7 +236,7 @@ always @(posedge wb_clk_i)
                            else if (iack == 1'b1) begin
                               // если получено подтверждение прерывания от процессора
                               irq <= 1'b0 ;               // снимаем запрос
-										interrupt_trigger <= 1'b0;
+                              interrupt_trigger <= 1'b0;
                               interrupt_state <= i_wait ; // переходим к ожиданию окончания обработки
                            end 
                // Ожидание окончания обработки прерывания         
@@ -264,7 +264,7 @@ always @(posedge wb_clk_i)
                                  if (~sdbuf_write) begin
                                        if (&sdbuf_addr == 1'b1) begin
                                           rqa <= 1'b1;
-														interrupt_trigger <= 1'b1;
+                                          interrupt_trigger <= 1'b1;
                                           drq <= 1'b0;
                                        end   
                                        else sdbuf_addr <= sdbuf_addr + 1'b1;
@@ -298,7 +298,7 @@ always @(posedge wb_clk_i)
                     // 174010 - DWBUF
                      4'b0100 :  begin   
                                  sdbuf_datain<= wb_dat_i;           // запись слова в буфер SDSPI
-											sdbuf_addr <= sdbuf_addr + 1'b1;   // продвигаем адрес буфера
+                                 sdbuf_addr <= sdbuf_addr + 1'b1;   // продвигаем адрес буфера
                                 end
                     // 174012 - DWCYL
                      4'b0101 :  begin
@@ -314,7 +314,7 @@ always @(posedge wb_clk_i)
                                     cmderr <= 1'b0;
                                     start <= 1'b1;
                                     rqa <= 1'b0;
-												interrupt_trigger <= 1'b0;
+                                    interrupt_trigger <= 1'b0;
                                 end
                     // 174020 - DWSTRS
                      4'b1000 :  begin  
@@ -335,7 +335,7 @@ always @(posedge wb_clk_i)
                   8'o20:    begin
                               start <= 1'b0;
                               rqa <= 1'b1;
-										interrupt_trigger <= 1'b1;
+                              interrupt_trigger <= 1'b1;
                            end   
                         
                 
@@ -359,7 +359,7 @@ always @(posedge wb_clk_i)
                                       // чтение окончилось без ошибок
                                          sdbuf_addr <= 8'b00000000;   // инициализируем адрес секторного буфера
                                          drq <= 1'b1;
-													  interrupt_trigger <= 1'b1;
+                                         interrupt_trigger <= 1'b1;
                                       end     
                                       // ошибка чтения
                                       else  cmderr <= 1'b1;
@@ -372,7 +372,7 @@ always @(posedge wb_clk_i)
                                  // подготовка к приему секторного буфера
                                  w_prepare: begin
                                           drq <= 1'b1;                 // запрос данных
-														interrupt_trigger <= 1'b1;
+                                          interrupt_trigger <= 1'b1;
                                           sdbuf_write <= 1'b1;         // буфер sdspi - в режим записи
                                           sdbuf_addr <= 8'b11111111;   // инициализируем адрес секторного буфера
                                           wstate <= w_skip;
@@ -380,14 +380,14 @@ always @(posedge wb_clk_i)
                                  // пропуск первого цикла записи по адресу 0       
                                  w_skip: begin  
                                        if (|sdbuf_addr == 1'b0) wstate <=w_waitdata;
-													end
+                                       end
                                  // ожидание заполнения секторного буфера 
                                  w_waitdata:
                                        if (&sdbuf_addr == 1'b1) begin // ждем до адреса 255
                                           // буфер заполнен
                                           sdbuf_write <= 1'b0;  // снимаем разрешение записи буфера
                                           drq <= 1'b0;          // снимаем запрос данных
-														interrupt_trigger <= 1'b0;
+                                          interrupt_trigger <= 1'b0;
                                           wstate <= w_start;
                                        end
                                           
@@ -411,7 +411,7 @@ always @(posedge wb_clk_i)
                                  // запись подтверждена - освобождаем sdspi
                                  w_done: begin
                                     sdspi_start <= 1'b0 ;              // снимаем строб записи
-												interrupt_trigger <= 1'b1;
+                                    interrupt_trigger <= 1'b1;
                                     rqa <= 1'b1;                       // флаг завершения команды
                                     start <= 1'b0;                     // заканчиваем обработку команды
                                     busy <= 1'b0;

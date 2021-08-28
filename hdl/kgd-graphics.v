@@ -72,14 +72,14 @@ reg reply0;
 
 always @(posedge wb_clk_i or posedge wb_rst_i) 
     if (wb_rst_i == 1) begin 
-	   reply <= 1'b0;
-		reply0 <= 1'b0;
-	 end	
+      reply <= 1'b0;
+      reply0 <= 1'b0;
+    end   
     else begin 
-	   if (wb_stb_i) reply <= 1'b1;
+      if (wb_stb_i) reply <= 1'b1;
       else reply <= 1'b0;
-		reply0 <= reply;
-	 end	
+      reply0 <= reply;
+    end   
 
 assign wb_ack_o = reply0 & wb_stb_i;    
 
@@ -129,7 +129,7 @@ always @(posedge wb_clk_i)
                     if (wb_sel_i[1] == 1'b1) areg[13:8] <= wb_dat_i[13:8];
              end     
          endcase
-		  else vbuf_write <= 1'b0;	
+        else vbuf_write <= 1'b0;   
    end
    
 //******************************************************

@@ -247,7 +247,7 @@ assign vgar = vgared;
    .idle_led(idle_led),           // признак ожидания прерывания по WAIT
    .mmu_led(mmu_led),             // признак включения MMU 
    .run_led(run_led),             // признак ативности секвенсера
-`endif	
+`endif   
    
    // Интерфейс SDRAM
    .sdram_reset(sdram_reset),     // сброс

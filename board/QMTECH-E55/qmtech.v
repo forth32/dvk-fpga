@@ -97,7 +97,7 @@ pll pll1 (
    .c0(clk_p),     // основная тактовая частота, прямая фаза
    .c1(clk_n),     // основная тактовая частота, инверсная фаза
    .c2(sdclock),   // тактовый сигнал SD-карты
-	.c3(sdram_clk), // тактовый сигнал SDRAM
+   .c3(sdram_clk), // тактовый сигнал SDRAM
    .locked(clkrdy) // флаг готовности PLL
 );
 
@@ -192,13 +192,13 @@ sdram_top sdram(
     .sdram_data(DRAM_DQ),
     .sdram_init_done(sdram_ready)     // выход готовности SDRAM
 );
-         
+
 // формирователь сигнала подверждения транзакции
 reg reply;
 always @ (posedge clk_p)  begin
    if (sdram_reset) reply <= 1'b0;
    else if(sdram_stb & ((sdram_we)? sdr_wr_ack : sdr_rd_ack)) reply <= 1'b1;
-	else if (~sdram_stb) reply <= 1'b0;
+   else if (~sdram_stb) reply <= 1'b0;
 end
 assign sdram_ack = sdram_stb & reply;
 
@@ -241,10 +241,10 @@ assign vgar = (vgared == 1'b1)   ? 5'b11110  : 5'b00000 ;
    .timer_led(timer_led),         // индикация включения таймера
 `ifdef adr22
    .db_led(db_led),               // запрос обмена диска DB
-	.idle_led(idle_led),           // признак ожидания прерывания по WAIT
-	.mmu_led(mmu_led),             // признак включения MMU 
-	.run_led(run_led),             // признак ативности секвенсера
-`endif	
+   .idle_led(idle_led),           // признак ожидания прерывания по WAIT
+   .mmu_led(mmu_led),             // признак включения MMU 
+   .run_led(run_led),             // признак ативности секвенсера
+`endif   
    
    // Интерфейс SDRAM
    .sdram_reset(sdram_reset),     // сброс

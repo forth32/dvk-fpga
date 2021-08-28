@@ -76,31 +76,31 @@ module pll (
             .vcounderrange ());
    defparam
       altpll_component.bandwidth_type = "AUTO",
-		
-	   // CLK+ - тактовая частота процессора
+      
+      // CLK+ - тактовая частота процессора
       altpll_component.clk0_divide_by = `PLL_DIV,
       altpll_component.clk0_duty_cycle = 50,
       altpll_component.clk0_multiply_by = `PLL_MUL,
       altpll_component.clk0_phase_shift = "0",
-		
-	   // CLK- = ~CLK+ - инверсная тактовая частота
+      
+      // CLK- = ~CLK+ - инверсная тактовая частота
       altpll_component.clk1_divide_by = `PLL_DIV,
       altpll_component.clk1_duty_cycle = 50,
       altpll_component.clk1_multiply_by = `PLL_MUL,
       altpll_component.clk1_phase_shift = "5000",
-		
-		// SD CLK = CLK+/4 - частота тактирования SD-карты
+      
+      // SD CLK = CLK+/4 - частота тактирования SD-карты
       altpll_component.clk2_divide_by = `PLL_DIV*4,
       altpll_component.clk2_duty_cycle = 50,
       altpll_component.clk2_multiply_by = `PLL_MUL,
       altpll_component.clk2_phase_shift = "0",
-		
-		// SDRAM CLK = 2*CLK+ - частота тактирования RAM
+      
+      // SDRAM CLK = 2*CLK+ - частота тактирования RAM
       altpll_component.clk3_divide_by = `PLL_DIV,
       altpll_component.clk3_duty_cycle = 50,
       altpll_component.clk3_multiply_by = 2*`PLL_MUL,
       altpll_component.clk3_phase_shift = "0",
-		
+      
       altpll_component.compensate_clock = "CLK0",
       altpll_component.inclk0_input_frequency = 20000,
       altpll_component.intended_device_family = "Cyclone IV E",

@@ -102,7 +102,7 @@ wire [1:0]  wb_sel;                  // выбор байтов из слова
 wire        wb_stb;                  // строб обмена по шине  
 wire        global_ack;              // подтверждение обмена от устройств на шине      
 wire [17:0] dma_adr18;               // 18-битный unibus-адрес от устройств, использующих DMA в режиме UBM
-wire        dma_stb;                 // строб обмена от устройств, работающих с шиной через DMA
+wire        dma_stb_ubm;             // строб обмена от устройств, работающих с DMA через механизм UBM
 
 // Основная шина процессора
 wire        cpu_access_req;          // разрешение доступа к шине
@@ -297,27 +297,27 @@ assign sdram_out=wb_out;               // выходная шина данных
    .ram_stb(cpu_ram_stb),         // строб обращения к основной памяти
    .bus_stb(bus_stb),             // строб обращения к общей шине
    
-// DMA	
+// DMA   
    .dma_req(dma_req),             // запрс DMA 
-	.dma_ack(dma_ack),             // подтверждение DMA - процессор освободил шину
+   .dma_ack(dma_ack),             // подтверждение DMA - процессор освободил шину
    .dma_adr18(dma_adr18),         // ввод 18-битного адреса для устройств, работающих через Unibsus Mapping 
-   .dma_stb(dma_stb),             // строб данных для устройств, работающих через Unibsus Mapping 
+   .dma_stb(dma_stb_ubm),         // строб данных для устройств, работающих через Unibsus Mapping 
 
 // Сбросы и прерывания
    .bus_reset(sys_init),           // Выход сброса для периферии
    .dclo(vm_dclo_in),              // Вход сброса процессора
    .aclo(vm_aclo_in),              // Сигнал аварии питания
-	
-// Ручное управление	
+   
+// Ручное управление   
    .resume(bt_halt),               // Запуск после HALT
-	.csw(16'o0),                    // регистр консольных переключателей
-	
-// Индикаторы	
-	.led_idle(idle_led),            // индикация бездействия (WAIT)
-	.led_run(run_led),              // индикация работы процессора (~HALT)
-	.led_mmu(mmu_led),              // индикация включения MMU
+   .csw(16'o0),                    // регистр консольных переключателей
+   
+// Индикаторы   
+   .led_idle(idle_led),            // индикация бездействия (WAIT)
+   .led_run(run_led),              // индикация работы процессора (~HALT)
+   .led_mmu(mmu_led),              // индикация включения MMU
    .led_timer(timer_led),          // индикация включения таймера
-	
+   
 // Шины обработки прерываний                                       
    .irq_i({br5_irq, br4_irq}),     // Запрос на векторное прерывание 
    .istb_o(istb),                  // Строб от процессора, разрешающий выдачу вектора 
@@ -815,7 +815,7 @@ fdd_my mydisk (
    .dma_req(my_dma_req),    // запрос DMA
    .dma_gnt(my_dma_state),    // подтверждение DMA
    .dma_adr_o(my_dma_adr),      // выходной адрес при DMA-обмене
-   .dma_dat_i(wb_mux),      // входная шина данных DMA
+   .dma_dat_i(sdram_dat), //wb_mux),      // входная шина данных DMA
    .dma_dat_o(my_dma_out),  // выходная шина данных DMA
    .dma_stb_o(my_dma_stb),  // строб цикла шины DMA
    .dma_we_o(my_dma_we),    // направление передачи DMA (0 - память->диск, 1 - диск->память) 
@@ -1015,7 +1015,7 @@ wbc_vic #(.N(4)) vic4
    .wb_dat_o(irq4_ivec),
    .wb_stb_i(istb[4]),
    .wb_ack_o(br4_iack),
-//         UART1-Tx       UART1-Rx        UART2-Tx      UART2-Rx    	
+//         UART1-Tx       UART1-Rx        UART2-Tx      UART2-Rx       
    .ivec({16'o000064,    16'o000060  ,  16'o000334,   16'o000330}),
    .ireq({uart1_tx_irq,  uart1_rx_irq,  uart2_tx_irq, uart2_rx_irq}),
    .iack({uart1_tx_iack, uart1_rx_iack, uart2_tx_iack,uart2_rx_iack})
@@ -1030,7 +1030,7 @@ wbc_vic #(.N(6)) vic5
    .wb_dat_o(irq5_ivec),
    .wb_stb_i(istb[5]),
    .wb_ack_o(br5_iack),
-//      RX-11            DW          RK11        RH70 	      RK611         MY
+//      RX-11            DW          RK11        RH70          RK611         MY
    .ivec({16'o000264, 16'o000300, 16'o000220, 16'o000254,   16'o000210, 16'o000170}),
    .ireq({rx_irq,      dw_irq,     rk11_irq,    rh70_irq,   rk611_irq,   my_irq}),
    .iack({rx_iack,     dw_iack,    rk11_iack,   rh70_iack,  rk611_iack,  my_iack})
@@ -1057,28 +1057,28 @@ assign dma_req = rk11_dma_req | rk611_dma_req | my_dma_req | rh70_dma_req;
 // арбитр DMA
 always @(posedge wb_clk) begin
    if (sys_init) begin
-	   // сброс арбитра
+      // сброс арбитра
       rk11_dma_state <= 1'b0;
       rh70_dma_state <= 1'b0;
       rk611_dma_state <= 1'b0;
       my_dma_state <= 1'b0;
    end   
-	// поиск активного запроса DMA
-	else if (dma_ack) begin
-	      // Нет активного DMA-устройства - выбор устройства, которому предоставляется доступ к шине
-			if (~(rk11_dma_state | my_dma_state | rk611_dma_state | rh70_dma_state)) begin
+   // поиск активного запроса DMA
+   else if (dma_ack) begin
+         // Нет активного DMA-устройства - выбор устройства, которому предоставляется доступ к шине
+         if (~(rk11_dma_state | my_dma_state | rk611_dma_state | rh70_dma_state)) begin
            if (rk11_dma_req == 1'b1)  rk11_dma_state <= 1'b1;  // запрос от RK11
            else if (my_dma_req == 1'b1)  my_dma_state <= 1'b1; // запрос от MY
            else if (rk611_dma_req == 1'b1)  rk611_dma_state <= 1'b1; // запрос от DM
            else if (rh70_dma_req == 1'b1)  rh70_dma_state <= 1'b1; // запрос от DB
-			end  
+         end  
          else begin
          // Имеется активное DMA-устройство - ожидание освобождения шины
            if (rk11_dma_req == 1'b0) rk11_dma_state <= 1'b0;       
            if (my_dma_req == 1'b0) my_dma_state <= 1'b0;       
            if (rk611_dma_req == 1'b0) rk611_dma_state <= 1'b0;       
            if (rh70_dma_req == 1'b0) rh70_dma_state <= 1'b0;       
-			end  
+         end  
    end
 end
 
@@ -1092,7 +1092,7 @@ end
 // адреса остальных контроллеров идут через MMU
 assign wb_adr =   (rh70_dma_state) ? rh70_dma_adr : 
                   (my_dma_state)   ? my_dma_adr :
-						cpu_adr;
+                  cpu_adr;
 
 // Адресная шина UNIBUS - DMA-запрсы идут через MMU подсистему Unibus Mapping
 assign dma_adr18 = (rk11_dma_state) ? rk11_adr : 18'o0 
@@ -1105,17 +1105,17 @@ assign wb_out =   (rk11_dma_state) ? rk11_dma_out: 16'o0
                 | (rh70_dma_state) ? rh70_dma_out  : 16'o0
                 | (~dma_ack) ? cpu_data_out: 16'o0;
 
-// Сигнал напрвавления передачи - от устройства на шину (запись)					 
+// Сигнал напрвавления передачи - 1 = от устройства в память, 0 = из памяти в устройство
 assign wb_we =  rk11_dma_we | rk611_dma_we | my_dma_we | rh70_dma_we | cpu_we;
 
 // Выбор байтов для записи                                           
 assign wb_sel =   (dma_ack) ? 2'b11: cpu_bsel;
                           
-// Строб SDRAM								  
+// Строб SDRAM                          
 assign sdram_stb = my_dma_stb | rh70_dma_stb | cpu_ram_stb;
 
-// Строб данных от DMA-мастера
-assign dma_stb = rk11_dma_stb | rk611_dma_stb;
+// Строб данных от DMA-мастера, разотающего через Unibus Mapping
+assign dma_stb_ubm = rk11_dma_stb | rk611_dma_stb;
   
 //*******************************************************************
 //*  Сигналы управления шины wishbone

@@ -136,7 +136,7 @@ reg write_start;         // запуск записи
 reg read_start;          // запуск чтения
 reg iocomplete;          // признак завершения работы DMA-контроллера
 reg [5:0] reply_count;   // таймер ожидания ответа при DMA-обмене
-	
+   
 // регистры контроллера DMA
 reg nxm;                    // признак таймаута шины
 reg[8:0] sector_data_index; // указатель текущего слова в секторном буфере
@@ -587,7 +587,7 @@ always @(posedge wb_clk_i)  begin
                                        rkcs_rdy <= 1'b1 ;                   // выходим в готовность
                                        if (nxm == 1'b1)  rker_nxm <= 1'b1 ; // ошибка NXM - запись в несуществующую память
                                        if (sdcard_error == 1'b1) rker_dre <= 1'b1 ;   // ошибка SD-карты
-													rkwc <= 16'o0;
+                                       rkwc <= 16'o0;
                                        start <= 1'b0;  // завершаем обработку команды
                                     end 
                                  end 
@@ -688,7 +688,7 @@ always @(posedge wb_clk_i)  begin
                                        rkcs_rdy <= 1'b1 ; 
                                        if (nxm == 1'b1)  rker_nxm <= 1'b1 ; 
                                        if (sdcard_error == 1'b1)  rker_dre <= 1'b1 ; 
-													rkwc <= 16'o0;
+                                       rkwc <= 16'o0;
                                        start <= 1'b0;
                                     end 
                                  end 
@@ -891,6 +891,7 @@ end
                dma_idle :
                         begin
                            nxm <= 1'b0 ; //  снимаем флаг ошибки nxm
+                           dma_we_o <= 1'b0;
                            
                            // старт процедуры записи
                            if (write_start == 1'b1) begin
@@ -915,8 +916,8 @@ end
                                     dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                                     ram_phys_addr <= {rkcs_mex, rkba[15:1]};  // полный физический адрес буфера в ОЗУ
                                     if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
-												   dma_state <= dma_readh ; // переходим к чтению заголовков
-												end	
+                                       dma_state <= dma_readh ; // переходим к чтению заголовков
+                                    end   
                                  end 
                                  else  dma_state <= dma_readsector;                 // переходим к чтению данных
                                  // коррекция счетчика читаемых слов
@@ -956,9 +957,9 @@ end
                             dma_req <= 1'b1 ;                        // поднимаем запрос DMA
                             ram_phys_addr <= {rkcs_mex, rkba[15:1]};  // полный физический адрес буфера в ОЗУ
                             if (dma_gnt == 1'b1)  begin              // ждем подтверждения DMA
-									   dma_state <= dma_preparebus; // sdspi закончил работу
-									 end	
-									end 
+                              dma_state <= dma_preparebus; // sdspi закончил работу
+                            end   
+                           end 
                         end   
                         
                         // чтение данных - подготовка шины к DMA
@@ -970,7 +971,7 @@ end
                            dma_stb_o <= 1'b0 ;                        // снимаем строб данных 
                            dma_we_o <= 1'b0 ;                         // снимаем строб записи
                            reply_count <= 6'b111111;                  // взводим таймер ожидания шины
-							      dma_state <= dma_read ; // переходим к чтению заголовков
+                           dma_state <= dma_read ; // переходим к чтению заголовков
                         end
                         // чтение данных - обмен по шине
                dma_read :
@@ -1044,7 +1045,7 @@ end
                                  dma_we_o <= 1'b0 ; 
                                  dma_stb_o <= 1'b0 ; 
                               if (sector_data_index == 9'o0) begin
-										  // конец данных - освобождаем шину
+                                // конец данных - освобождаем шину
                                 if (sdbuf_addr == 255) dma_state <= dma_write_wait ; 
                                 else                         dma_state <= dma_write_fill; 
                                 dma_req <= 1'b0 ;   
@@ -1088,7 +1089,7 @@ end
             endcase 
       end  
    end 
-	
+   
 //**********************************************
 // Вычисление адреса блока на SD-карте
 //**********************************************
@@ -1108,5 +1109,5 @@ assign ca_offset = {5'b00000, rkda_cy, 4'b0000} + {6'b000000, (rkda_cy), 3'b000}
 assign dn_offset = {2'b00, rkda_dr, 12'b000000000000} + {3'b000, rkda_dr, 11'b00000000000} ;
 // полный абсолютный адрес 
 assign sdaddr = {6'b000000, dn_offset} + hs_offset + ca_offset + rkda_sc + start_offset ;
-	
+   
 endmodule

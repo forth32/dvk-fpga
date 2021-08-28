@@ -424,7 +424,7 @@ always @(posedge wb_clk_i)  begin
                         
                         else begin                           
                           // если прерывания запрещены
-								   irq <= 1'b0;
+                           irq <= 1'b0;
                            interrupt_state <= i_idle ; 
                         end 
                      end
@@ -821,6 +821,7 @@ always @(posedge wb_clk_i)  begin
             DMA_idle :
                         begin
                         nxm <= 1'b0 ; //  снимаем флаг ошибки nxm
+                        dma_we_o <= 1'b0;
                         // старт процедуры записи
                         if (write_start == 1'b1) begin
                             sdcard_addr <= sdaddr;                   // получаем адрес SD-сектора                

@@ -257,10 +257,10 @@ always @(posedge wb_clk_i)   begin
                               // чтение буфера                                
                               3'b001: begin  
                                 wb_dat_o <= {8'b00000000, sdbuf_dataout[7:0]}; // очередное слово из буфера
-										  // последовательное чтение - только при наличии активного запроса DRQ
+                                // последовательное чтение - только при наличии активного запроса DRQ
                                 if (drq) begin 
                                   sdbuf_addr <= sdbuf_addr + 1'b1;  // адрес++
-											 // конец буфера
+                                  // конец буфера
                                   if (sdbuf_addr == 8'b01111111) begin
                                     drq <= 1'b0;    // снимаем запрос данных
                                     done <= 1'b1;   // флаг завершения обработки команды
@@ -320,9 +320,9 @@ always @(posedge wb_clk_i)   begin
                                   sdbuf_datain<= {8'b00000000, wb_dat_i[7:0]};  // передаем байт на вход sdspi
                                   sdbuf_write <= 1'b1;                          // включаем режим записи
                                   sdbuf_addr <= sdbuf_addr + 1'b1;              // адрес++
-											 // конец буфера
+                                  // конец буфера
                                   if (sdbuf_addr == 8'b01111111) begin
-											      sdbuf_write <= 1'b0;  // отключаем режим записи
+                                       sdbuf_write <= 1'b0;  // отключаем режим записи
                                        drq <= 1'b0;         
                                        done <= 1'b1;
                                        interrupt_trigger <= 1'b1;

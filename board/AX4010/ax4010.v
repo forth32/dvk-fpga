@@ -92,7 +92,7 @@ pll pll1 (
    .c0(clk_p),     // основная тактовая частота, прямая фаза
    .c1(clk_n),     // основная тактовая частота, инверсная фаза
    .c2(sdclock),   // тактовый сигнал SD-карты
-	.c3(sdram_clk), // тактовый сигнал SDRAM
+   .c3(sdram_clk), // тактовый сигнал SDRAM
    .locked(clkrdy) // флаг готовности PLL
 );
 
@@ -194,7 +194,7 @@ reg reply;
 always @ (posedge clk_p)  begin
    if (sdram_reset) reply <= 1'b0;
    else if(sdram_stb & ((sdram_we)? sdr_wr_ack : sdr_rd_ack)) reply <= 1'b1;
-	else if (~sdram_stb) reply <= 1'b0;
+   else if (~sdram_stb) reply <= 1'b0;
 end
 assign sdram_ack = sdram_stb & reply;
 
