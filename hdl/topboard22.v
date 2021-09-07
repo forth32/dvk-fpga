@@ -1007,7 +1007,7 @@ assign sdcard_sclk =
 
 
 // приоритет 4
-wbc_vic #(.N(4)) vic4
+wbc_vic #(.N(5)) vic4
 (
    .wb_clk_i(wb_clk),
    .wb_rst_i(sys_init),
@@ -1015,10 +1015,10 @@ wbc_vic #(.N(4)) vic4
    .wb_dat_o(irq4_ivec),
    .wb_stb_i(istb[4]),
    .wb_ack_o(br4_iack),
-//         UART1-Tx       UART1-Rx        UART2-Tx      UART2-Rx       
-   .ivec({16'o000064,    16'o000060  ,  16'o000334,   16'o000330}),
-   .ireq({uart1_tx_irq,  uart1_rx_irq,  uart2_tx_irq, uart2_rx_irq}),
-   .iack({uart1_tx_iack, uart1_rx_iack, uart2_tx_iack,uart2_rx_iack})
+//         UART1-Tx       UART1-Rx        UART2-Tx      UART2-Rx        ИРПР -LP  
+   .ivec({16'o000064,    16'o000060  ,  16'o000334,   16'o000330,    16'o0000200}),
+   .ireq({uart1_tx_irq,  uart1_rx_irq,  uart2_tx_irq, uart2_rx_irq,  lpt_irq}),
+   .iack({uart1_tx_iack, uart1_rx_iack, uart2_tx_iack,uart2_rx_iack, lpt_iack})
 );
 
 // приоритет 5

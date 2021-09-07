@@ -11,7 +11,7 @@ module irpr
    input                wb_cyc_i,   
    input                wb_we_i,    
    input                wb_stb_i,   
-   output reg           wb_ack_o,   
+   output               wb_ack_o,   
    
    output reg           irq,        // Запрос прерывания
    input                iack,       // Подтверждение прерывания
@@ -52,10 +52,10 @@ module irpr
 
 
 reg [15:0] dat;
-wire [15:0] csr;
 reg drq;
 reg done;
 reg [7:0] reset_delay;
+wire rstb;
 wire csr_wstb;
 wire dat_wstb;
 
@@ -78,19 +78,27 @@ reg[1:0] interrupt_state;
 // сигнал сброса принтера -INIT
 assign lp_init_n=(|reset_delay)? 1'b0:1'b1;
 
-// Формирователь данных при чтении CSR
-assign csr = {~err_n, 7'o0, drq, ie, done, 5'o0};
-
-// Стробы записи в регистры
-assign csr_wstb = wb_cyc_i & wb_stb_i &  wb_we_i &  wb_ack_o & (wb_adr_i[1] == 1'b0);
-assign dat_wstb = wb_cyc_i & wb_stb_i &  wb_we_i &  wb_ack_o & (wb_adr_i[1] == 1'b1);
+// Стробы чтения и записи в регистры
+assign rstb = wb_stb_i &  ~wb_we_i &  ~wb_ack_o;
+assign csr_wstb = wb_stb_i &  wb_we_i &  ~wb_ack_o & (wb_adr_i[1] == 1'b0);
+assign dat_wstb = wb_stb_i &  wb_we_i &  ~wb_ack_o & (wb_adr_i[1] == 1'b1) & drq & (~busy) & err_n;
 
 
-// Сигнал REPLY
-always @(posedge wb_clk_i)
-   wb_ack_o <= wb_cyc_i & wb_stb_i & ~wb_ack_o;
+//**************************************
+//*  Сигнал ответа 
+//**************************************
+reg reply;
 
-// Фильтрация входных сигналов
+always @(posedge wb_clk_i or posedge wb_rst_i)
+    if (wb_rst_i == 1) reply <= 1'b0;
+    else if (wb_stb_i) reply <= 1'b1;
+    else reply <= 1'b0;
+
+assign wb_ack_o=reply & wb_stb_i;
+
+//**************************************
+//* Фильтрация входных сигналов
+//**************************************
 always @(posedge wb_clk_i or posedge wb_rst_i) 
    if (wb_rst_i)    begin
      busy <= 1'b0;
@@ -108,10 +116,13 @@ always @(posedge wb_clk_i or posedge wb_rst_i)
 
    
    
+//**************************************
+//* Основной процесс
+//**************************************
 always @(posedge wb_clk_i or posedge wb_rst_i) 
    if (wb_rst_i)    begin
    // сброс 
-      ie    <= 1'b0;
+      ie  <= 1'b0;
       irq <= 1'b0;
       reset_delay <= 8'hff;
       drq <= 1'b0;             // начальное значение сигнала DRQ - 0
@@ -129,7 +140,7 @@ always @(posedge wb_clk_i or posedge wb_rst_i)
               i_idle :
                         begin
                      //  Если поднят флаг A или B - поднимаем триггер прерывания
-                           if ((ie == 1'b1) & (interrupt_trigger == 1'b1))  begin
+                           if (ie & interrupt_trigger)  begin
                               interrupt_state <= i_req ; 
                               irq <= 1'b1 ;    // запрос на прерывание
                            end 
@@ -148,28 +159,28 @@ always @(posedge wb_clk_i or posedge wb_rst_i)
       endcase
    
 //**************************************************
-// логика работы с шиной и принтером
+//* логика работы с шиной и принтером
 //**************************************************
 
        // таймер сброса принтера
      if (|reset_delay) reset_delay <= reset_delay - 1'b1;
 
      // Чтение регистров
-     if (wb_cyc_i & wb_stb_i & ~wb_ack_o & ~wb_adr_i[1]) begin 
-        // 177514 - CSR
-        wb_dat_o <= csr;  
-        done <= 1'b0; // снимаем признак done
-     end     
-     else wb_dat_o <= 16'o000000; // нет чтения или чтение регистра данных
-   
+     if (rstb) begin
+        wb_dat_o <=  ~wb_adr_i[1]?          
+		      {~err_n, 7'o0, drq, ie, done, 5'o0}  :   // 177514 - CSR
+              16'o000000;                            // попытка чтения регистра данных
+     end
+	  
      // запись регистра CSR   
-     if (csr_wstb)  begin
+     else if (csr_wstb)  begin
          ie  <= wb_dat_i[6];  // разрешение прерывания
+			if (wb_dat_i[5]) interrupt_trigger <= 1'b1;
          reset_delay <= (wb_dat_i[14]? 8'hff:8'h00);  // сброс принтера
      end  
 
      // Запись регистра данных
-     if ((drq == 1'b1) & (dat_wstb == 1'b1) & (busy == 1'b0) & (err_n == 1'b1)) begin // если контроллер и принтер готовы к приему данных
+     else if (dat_wstb) begin // если контроллер и принтер готовы к приему данных
          drq <= 1'b0;        // снимаем DRQ
          lp_data <= wb_dat_i[7:0];  // выставляем данные 
          done <= 1'b0;       // снимаем признак done   
