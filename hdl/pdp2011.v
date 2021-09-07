@@ -209,7 +209,7 @@ cpu2011 cpu (
    
    // конфигурация
    .fpu_enable(`fpu_present),     // Признак наличия FPU в схеме процессора
-   .startup_adr(16'o164020),      // Адрес старта по сбросу
+   .startup_adr(16'o165020),      // Адрес старта по сбросу
    .startup_psw(16'o340),         // Стартовое PSW
 
    .clk(clk_p),              // тактовый синхросигнал
@@ -308,11 +308,11 @@ mmu mmu1(
 //*******************************************
 //* ПЗУ монитора-загрузчика
 //*******************************************
+/*
 wire bootrom_stb;
 wire bootrom_ack;
 wire [15:0] bootrom_dat;
 reg [1:0]bootrom_ack_reg;
-
 // эмулятор пульта и набор загрузчиков - ПЗУ  164000-165777
 boot_rom bootrom(
    .address(wb_adr_o[9:1]),
@@ -322,11 +322,39 @@ boot_rom bootrom(
 // сигнал ответа
 always @ (posedge clk_p) begin
    bootrom_ack_reg[0] <= bootrom_stb;// & ~wb_we_o;
-   bootrom_ack_reg[1] <= bootrom_stb /*& ~wb_we_o */& bootrom_ack_reg[0];
+   bootrom_ack_reg[1] <= bootrom_stb & bootrom_ack_reg[0];//  & ~wb_we_o;
 end
 assign bootrom_ack = bus_stb & bootrom_ack_reg[1];
 
+assign bootrom_stb   = bus_stb & (wb_adr_o[15:10] == 6'o72);           // ROM 164000-165776  
+*/
 
+// эмулятор пульта и набор загрузчиков - ПЗУ  164000-165777
+// консоль, 165000-165777
+// загрузчики, 173000-173777
+
+wire bootrom0_sel;
+wire bootrom1_sel;
+wire bootrom_stb;
+wire bootrom_ack;
+wire [15:0] bootrom_dat;
+reg [1:0]bootrom_ack_reg;
+
+boot_rom bootrom(
+   .address({bootrom1_sel, wb_adr_o[8:1]}),
+   .clock(clk_p),
+   .q(bootrom_dat));
+
+// сигнал ответа
+always @ (posedge clk_p) begin
+   bootrom_ack_reg[0] <= bootrom_stb & ~wb_we_o;
+   bootrom_ack_reg[1] <= bootrom_stb & bootrom_ack_reg[0] & ~wb_we_o;
+end
+assign bootrom_ack = bus_stb & bootrom_ack_reg[1];
+
+assign bootrom1_sel =  (wb_adr_o[15:9] == 7'o173);                // загрузчики, 173000-173776
+assign bootrom0_sel =  (wb_adr_o[15:9] == 7'o165);                // консоль, 165000-165776
+assign bootrom_stb  = bus_stb & (bootrom0_sel | bootrom1_sel);
 
 //******************************************************
 //* Регистр консольных переключателей/индикации 177570
@@ -418,7 +446,6 @@ always @(posedge clk_p)
 assign swr_stb    = bus_stb & (wb_adr_o[15:1] == (16'o177570 >> 1));   // SWR - 177570
 assign kw11l_stb  = bus_stb & (wb_adr_o[15:1] == (16'o177546 >> 1));   // KW11-L - 177546
 assign ccr_stb = bus_stb & (wb_adr_o[15:5] == 11'b11111111111);        // 177740 - 177777 (на полной шине - 777740-777777) - внутренние регистры процессора
-assign bootrom_stb   = bus_stb & (wb_adr_o[15:10] == 6'o72);           // ROM 164000-165776  
 
 // сигнал ответа
 assign wb_ack     = global_ack | ccr_ack | swr_ack | kw11l_ack | bootrom_ack;

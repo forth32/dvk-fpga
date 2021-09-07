@@ -616,7 +616,7 @@ always @(posedge wb_clk_i) begin
                         // rhcs1 1777670
                         5'b00000 :
                                  begin
-                             //       rhcs1_rdyset <= wb_dat_i[7] ; 
+                                    rhcs1_rdyset <= wb_dat_i[7] ; 
                                     rhcs1_ie <= wb_dat_i[6] ;        // разрешение прерываний
                                     rhcs1_fnc <= wb_dat_i[5:1] ;     // код команды
                                     if (rhcs1_sc == 1'b0)  begin     // запуск - только при отсутствии ошибок

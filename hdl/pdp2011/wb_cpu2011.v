@@ -10,7 +10,7 @@
 module cpu2011 (
 
    // общая шина
-   output reg [15:0] wbm_adr_o,   // шина адреса
+   output reg [15:0] wbm_adr_o,   // шина виртуального адреса
    input      [15:0] wbm_dat_i,   // входная шина данных (bus -> cpu)
    output reg [15:0] wbm_dat_o,   // выходная шина данных (cpu -> bus)
    output reg        wbm_we_o,    // признак цикла записи на шину
