@@ -175,7 +175,6 @@ always @(posedge wb_clk_i or posedge wb_rst_i)
      // запись регистра CSR   
      else if (csr_wstb)  begin
          ie  <= wb_dat_i[6];  // разрешение прерывания
-			if (wb_dat_i[5]) interrupt_trigger <= 1'b1;
          reset_delay <= (wb_dat_i[14]? 8'hff:8'h00);  // сброс принтера
      end  
 

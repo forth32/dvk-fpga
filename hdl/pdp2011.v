@@ -308,30 +308,11 @@ mmu mmu1(
 //*******************************************
 //* ПЗУ монитора-загрузчика
 //*******************************************
-/*
-wire bootrom_stb;
-wire bootrom_ack;
-wire [15:0] bootrom_dat;
-reg [1:0]bootrom_ack_reg;
-// эмулятор пульта и набор загрузчиков - ПЗУ  164000-165777
-boot_rom bootrom(
-   .address(wb_adr_o[9:1]),
-   .clock(clk_p),
-   .q(bootrom_dat));
 
-// сигнал ответа
-always @ (posedge clk_p) begin
-   bootrom_ack_reg[0] <= bootrom_stb;// & ~wb_we_o;
-   bootrom_ack_reg[1] <= bootrom_stb & bootrom_ack_reg[0];//  & ~wb_we_o;
-end
-assign bootrom_ack = bus_stb & bootrom_ack_reg[1];
-
-assign bootrom_stb   = bus_stb & (wb_adr_o[15:10] == 6'o72);           // ROM 164000-165776  
-*/
-
-// эмулятор пульта и набор загрузчиков - ПЗУ  164000-165777
-// консоль, 165000-165777
-// загрузчики, 173000-173777
+// эмулятор пульта и набор загрузчиков m9312, состоит из 2 частей:
+// - консоль, 165000-165777
+// - загрузчики, 173000-173777
+// Обе части лежат в одном блоке ПЗУ, консоль в младшей части, загрузчики в старшей.
 
 wire bootrom0_sel;
 wire bootrom1_sel;
@@ -351,7 +332,7 @@ always @ (posedge clk_p) begin
    bootrom_ack_reg[1] <= bootrom_stb & bootrom_ack_reg[0] & ~wb_we_o;
 end
 assign bootrom_ack = bus_stb & bootrom_ack_reg[1];
-
+// сигналы выбора частей ПЗУ
 assign bootrom1_sel =  (wb_adr_o[15:9] == 7'o173);                // загрузчики, 173000-173776
 assign bootrom0_sel =  (wb_adr_o[15:9] == 7'o165);                // консоль, 165000-165776
 assign bootrom_stb  = bus_stb & (bootrom0_sel | bootrom1_sel);
