@@ -45,7 +45,7 @@ module cpu2011 (
    
    // Сигналы ручного управления
    input  sw_cont,               // кнопка выхода из состояния HALT
-   input cpuslow,                 // Включение замедленного режима процессора
+   input cpuslow,                // Включение замедленного режима процессора
    
    // DMA
    input npr,                    // запрос DMA
@@ -488,17 +488,17 @@ assign yellow_stack_immediate_states = (state == sq_dst4)     // -(R)
 //  Состояния, в которых производится проверка желтой и красной границы через регистр SL
 assign stack_check_states =             (state == sq_dst1)     // (R)
                                       | (state == sq_dst2)     // (R)+
-                                        | (state == sq_dst4)     // -(R)
+                                      | (state == sq_dst4)     // -(R)
                                       | (state == sq_jsra)     //  JSR - запись SP в стек
                                       | (state == sq_trapc)    // прерывание, запись PSW в стек
                                       | (state == sq_trapd) ;  // прерывание, запись PC в стек
 
 // Детектор желтой границы стека                                                                  
 assign yellow_stack_event_trigger = 
-            (rbus_ix == 3'b110)                          // адресация через SP 
-            & (psw[15:14] == 2'b00)                      // режим KERNEL
+            (rbus_ix == 3'b110)                    // адресация через SP 
+            & (psw[15:14] == 2'b00)                // режим KERNEL
             & (yellow_trap_inhibit == 1'b0)        // предотвращение повторного прерывания
-            & (red_stack_trap == 1'b0)                   // красная граница не достигнута
+            & (red_stack_trap == 1'b0)             // красная граница не достигнута
             & (red_stack_trap_trigger == 1'b0) 
             &(
             // Стек попадает в область 0-377
@@ -543,11 +543,11 @@ assign rs_mt = ((ir_mtpi == 1'b1 | ir_mtpd == 1'b1)
                & finalreference == 1'b1 
                & state != sq_store_alu_w)    // не в состоянии store_alu_w
                ? 1'b1 : 1'b0 ;
-assign rs_jj = ((ir_jmp == 1'b1 | ir_jsr == 1'b1) 
+assign rs_jj = ((ir_jmp == 1'b1 | ir_jsr == 1'b1) // подавление в командах переходов
                & finalreference == 1'b1) 
                ? 1'b1 : 1'b0 ;
                
-wire rd_inhibit = (rs_mt | rs_jj      // подавление RD сигналами rs
+wire rd_inhibit = (rs_mt | rs_jj // подавление RD сигналами rs
                    | iwait);     // также в состоянии wait чтение не производится
 
 // Формирования флагов - индикаторов использования R7 в качестве операнда

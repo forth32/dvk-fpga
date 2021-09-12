@@ -34,7 +34,7 @@ module pdp2011 (
    
 // сигналы ручного управления   
    input resume,                 // Сигнал запуска процессора после HALT
-   input [15:0] csw,               // регистр консольных переключателей процессора     
+   input [15:0] csw,             // регистр консольных переключателей процессора     
 
 // Информационные индикаторы   
    output led_idle,              // индикация бездействия (WAIT)
@@ -203,7 +203,7 @@ cpu2011 cpu (
 
    // управление и индикация
    .sw_cont(resume),              // сигнал продолжения работы
-   .cpuslow(cpuslow),               // Включение замедленного режима процессора
+   .cpuslow(cpuslow),             // Включение замедленного режима процессора
    .iwait(iwait),                 // признак приостановки: 1 - процессор стоит на команде wait и ждет прерывания
    .run(run),                     // признак работы секвенсора
    
@@ -298,8 +298,8 @@ mmu mmu1(
    // индикаторы режима работы
    .cons_map18(cons_map18),  // режим 18-битного адреса 
    .cons_map22(cons_map22),  // режим 22-битного адреса
-//   .cons_id(cons_id),                         // режим разделения I/D
-//     .cons_ubm(cons_ubm),                        // режим Unibus Mapping
+// .cons_id(cons_id),         // режим разделения I/D
+// .cons_ubm(cons_ubm),       // режим Unibus Mapping
    
    .reset(sys_init),         // общий сброс
    .clk(clk_p)               // синхросигнал
@@ -332,10 +332,11 @@ always @ (posedge clk_p) begin
    bootrom_ack_reg[1] <= bootrom_stb & bootrom_ack_reg[0] & ~wb_we_o;
 end
 assign bootrom_ack = bus_stb & bootrom_ack_reg[1];
+
 // сигналы выбора частей ПЗУ
 assign bootrom1_sel =  (wb_adr_o[15:9] == 7'o173);                // загрузчики, 173000-173776
 assign bootrom0_sel =  (wb_adr_o[15:9] == 7'o165);                // консоль, 165000-165776
-assign bootrom_stb  = bus_stb & (bootrom0_sel | bootrom1_sel);
+assign bootrom_stb  = bus_stb & (bootrom0_sel | bootrom1_sel);    // строб выбора ПЗУ
 
 //******************************************************
 //* Регистр консольных переключателей/индикации 177570

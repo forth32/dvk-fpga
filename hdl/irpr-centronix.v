@@ -168,10 +168,10 @@ always @(posedge wb_clk_i or posedge wb_rst_i)
      // Чтение регистров
      if (rstb) begin
         wb_dat_o <=  ~wb_adr_i[1]?          
-		      {~err_n, 7'o0, drq, ie, done, 5'o0}  :   // 177514 - CSR
+            {~err_n, 7'o0, drq, ie, done, 5'o0}  :   // 177514 - CSR
               16'o000000;                            // попытка чтения регистра данных
      end
-	  
+     
      // запись регистра CSR   
      else if (csr_wstb)  begin
          ie  <= wb_dat_i[6];  // разрешение прерывания

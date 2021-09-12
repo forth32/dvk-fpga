@@ -104,8 +104,8 @@ parameter[1:0] i_idle = 0;
 parameter[1:0] i_req = 1; 
 parameter[1:0] i_wait = 2; 
 reg[1:0] interrupt_state; 
-reg rqa;    // ЗОА
-reg ide;    // разрешение прерываний
+reg rqa;   // ЗОА
+reg ie;    // разрешение прерываний
 reg drq;    // запрос данных (ЗОВ)
 
 // CHS
@@ -199,7 +199,7 @@ always @(posedge wb_clk_i)
          irq <= 1'b0 ;    // снимаем запрос на прерывания
          start <= 1'b0 ; 
          rqa <= 1'b1;
-         ide <= 1'b0;
+         ie <= 1'b0;
          cmderr <= 1'b0;
          drq <= 1'b0;
          rstreq <= 1'b0;
@@ -225,14 +225,14 @@ always @(posedge wb_clk_i)
               i_idle :
                         begin
                      //  Если поднят флаг A или B - поднимаем триггер прерывания
-                           if ((ide ==1'b1) & interrupt_trigger)  begin
+                           if ((ie ==1'b1) & interrupt_trigger)  begin
                               interrupt_state <= i_req ; 
                               irq <= 1'b1 ;    // запрос на прерывание
                            end 
                            else   irq <= 1'b0 ;    // снимаем запрос на прерывания
                         end
                // Формирование запроса на прерывание         
-               i_req :     if (ide == 1'b0) interrupt_state <= i_idle ;    
+               i_req :     if (ie == 1'b0) interrupt_state <= i_idle ;    
                            else if (iack == 1'b1) begin
                               // если получено подтверждение прерывания от процессора
                               irq <= 1'b0 ;               // снимаем запрос
@@ -277,7 +277,7 @@ always @(posedge wb_clk_i)
                                  rqa <= 1'b0;
                               end
                   4'b1000 :   begin
-                                 wb_dat_o <= {busy|(~sdcard_idle), 7'b0000000, 1'b1/*готовность буфера к обмену*/, ide, 5'b00000, rqa}; // 174020 -  DWSTRS
+                                 wb_dat_o <= {busy|(~sdcard_idle), 7'b0000000, 1'b1/*готовность буфера к обмену*/, ie, 5'b00000, rqa}; // 174020 -  DWSTRS
                               end   
                   4'b1001 :   begin
                                  wb_dat_o <= sdbuf_addr; // 174022 - текущий адрес в буфере SDSPI, для отладки, этого регистра в настоящем контроллере нет
@@ -318,7 +318,7 @@ always @(posedge wb_clk_i)
                                 end
                     // 174020 - DWSTRS
                      4'b1000 :  begin  
-                                    ide <= wb_dat_i[6] ; 
+                                    ie <= wb_dat_i[6] ; 
                                     rstreq <= wb_dat_i[3];
                                 end
                   endcase 

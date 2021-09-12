@@ -2,7 +2,7 @@
 <Project>
     <Project_Created_Time>2021-03-10 07:42:39</Project_Created_Time>
     <TD_Version>4.6.18154</TD_Version>
-    <UCode>11001110</UCode>
+    <UCode>10011010</UCode>
     <Name>top</Name>
     <HardWare>
         <Family>EG4</Family>
@@ -89,8 +89,8 @@
         <RtlProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-08-28 10:28:41</Step_Last_Change>
-        <Current_Step>0</Current_Step>
+        <Step_Last_Change>2021-09-12 14:23:15</Step_Last_Change>
+        <Current_Step>60</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>

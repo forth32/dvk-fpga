@@ -6,5 +6,5 @@
 ./rt11obj2bin-t m9312-console.obj>m9312-console.map
 
 cat m9312-console.obj.bin m9312-bootloaders.obj.bin > bootrom.bin
-srec_cat bootrom.bin -binary --byte-swap 2 -o bootrom.mif -Memory_Initialization_File 16 -obs=2
-srec_cat bootrom.bin -binary -fill 0x00 0x0000 0x8000 -byte-swap 2 -o bootrom.mem --VMem 16
+srec_cat bootrom.bin -binary --byte-swap 2 -fill 0x00 0x0000 0x400 -o bootrom.mif -Memory_Initialization_File 16 -obs=2
+srec_cat bootrom.bin -binary -fill 0x00 0x0000 0x400 -byte-swap 2 -o bootrom.mem --VMem 16

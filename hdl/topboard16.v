@@ -240,7 +240,7 @@ assign vgablue  = ((genable == 1)? vgavideo_g: 1'b0) | ((tdisable == 1'b0)? vgab
 //********************************************
 assign rk_led = ~rk_sdreq;   // запрос обмена диска RK
 assign dw_led = ~dw_sdreq;   // запрос обмена диска DW
-assign dm_led = ~dm_sdreq;   // запрос обмена диска DW
+assign dm_led = ~dm_sdreq;   // запрос обмена диска DM
 assign my_led = ~my_sdreq;   // запрос обмена диска MY
 assign dx_led = ~dx_sdreq;   // запрос обмена диска DX
 assign timer_led = ~timer_on;   // индикация включения таймера
