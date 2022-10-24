@@ -21,10 +21,6 @@ reg [55:0] rom [0:1023];
 reg [55:0] q;
 integer i;
 
-initial
-begin
-end
-
 
 initial
 begin
