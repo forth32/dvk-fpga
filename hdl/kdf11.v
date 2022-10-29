@@ -1,6 +1,6 @@
 //
-// 
-// 
+// Процессорная плата KDF11, основана на чипсете DEC  F-11.
+// Использовалась в ЭВМ PDP-11/23
 // 
 // ======================================================================================
 
@@ -22,20 +22,20 @@ module kdf11 (
    input  global_ack,            // подтверждение обмена от памяти и устройств страницы ввода-вывода
 
 // DMA   
-   input   dma_req,              // запрос DMA
-   output  dma_ack,              // подтверждение DMA
-   input   [17:0] dma_adr18,     // 18-битный UNIBUS-адрес для устройств, работающих через UBM
-   input   dma_stb,              // строб данных для устройств, работающих через UBM
+   input  dma_req,               // запрос DMA
+   output reg dma_ack,           // подтверждение DMA
+   input  [17:0] dma_adr18,      // 18-битный UNIBUS-адрес для устройств, работающих через UBM
+   input  dma_stb,               // строб данных для устройств, работающих через UBM
    
 // Сбросы и прерывания
    output bus_reset,             // Выход сброса для периферии
    input dclo,                   // Вход сброса процессора
    input aclo,                   // Сигнал аварии питания
    
-// сигналы ручного управления   
-   input resume,                 // Сигнал запуска процессора после HALT
-   input [15:0] csw,             // регистр консольных переключателей процессора     
-
+// Ручное управление
+   input [15:0] csw,
+   input resume,	
+	
 // Информационные индикаторы   
    output led_idle,              // индикация бездействия (WAIT)
    output led_run,               // индикация работы процессора (~HALT)
@@ -53,74 +53,30 @@ module kdf11 (
 //==========================================================================================
 
 
+assign led_idle=1'b1;
+assign led_mmu=1'b1;
+assign led_run=1'b1;
+
 wire sys_init;              
                                       
 wire [15:0] wb_mux;    // сборная шина данных от периферии к процессору                
 wire        cpu_stb;   // строб данных от процессор на шину            
 wire        wb_ack;    // подтверждения обмена от шины к процессору            
+wire ioaccess;   // признак доступа процессора к периферийной шине
+wire fdin_stb;
+wire [15:0] fdin_data={7'h173,1'b1,8'h00};
 
-// шины данных внутренней периферии
-wire [15:0] ccr_dat;   // блок управляющих регистров          
-wire [15:0] kw11l_dat; // таймер
-wire [15:0] mmu_dat;   // MMU
+wire [15:0] kw11l_dat; // шина данных таймера
 
 // сигналы подтверждения обмена
-wire ccr_ack;             
-reg swr_ack;             
 reg kw11l_ack;       
 wire cpu_ack;      
 
 // стробы выбора периферии
-wire swr_stb;             
 wire kw11l_stb;             
-wire ccr_stb;
-
-// PSW
-wire [15:0] cpu_psw_in;   // Ввод PSW , записываемого под адресу 177776
-wire cpu_psw_we_even;     // Разрешение записи младшего байта PSW
-wire cpu_psw_we_odd;      // Разрешение записи старшего байта PSW
-wire [15:0] cpu_psw_out;  // Вывод PSW , читаемого под адресу 177776
-
-// флаги ошибок
-wire oddabort;
-wire cpu_ysv;            // желтая граница стека
-wire cpu_rsv;            // красная граница стека
-wire cpu_illegal_halt;   // HALT не в режиме kernel
-wire bus_timeout;        // таймаут обмена по шине
-
-// регистр границы стека
-wire [15:0] cpu_stack_limit;
-
-// индикация состояния
-wire iwait;
-wire run;
-assign led_mmu= ~(cons_map18 | cons_map22);
-assign led_run=~run;
-assign led_idle=~iwait;
 
 // сброс системы
 assign      sys_init = bus_reset;
-
-// интерфейс cpu<->mmu
-wire cpu_cp;
-wire cpu_id;
-wire mmutrap;
-wire ack_mmutrap;
-wire mmuabort;
-wire sr0_ic;
-wire [15:0] sr1;
-wire [15:0] sr2;
-wire cons_map16;
-wire cons_map18;
-wire cons_map22;
-wire cons_id;
-wire cons_ubm;
-wire ifetch;
-wire dstfreference;
-wire dw8;
-wire [15:0] cpu_adr;
-wire ack_mmuabort;
-wire mmuoddabort;
 
 // таймер
 reg timer_ie;    // разрешение прерывания
@@ -132,12 +88,17 @@ wire timer_iack=timer_istb;
 // Прерывания 
 wire [7:4] vstb;          // строб приема вектора
 wire [7:4] virq;          // запрос прерывания
-wire [15:0] cpu_pir_in;   // регистр программных прерываний
+wire cpu_istb;
+wire [15:0]cpu_int_vector;
+
+assign cpu_int_vector=fdin_stb? fdin_data: {8'h00, vector};
+
 // линии запроса прерывания
 assign virq[7]=1'b0;      // уровень 7 - нет
 assign virq[6]=timer_irq; // уровень 6 - таймер
 assign virq[5]=irq_i[5];  // уровень 5 - быстрая (блочная) периферия
 assign virq[4]=irq_i[4];  // уровень 4 - медленная (байтовая) периферия
+
 // запрос на прием вектора
 assign timer_istb=vstb[6];
 assign istb_o[5]=vstb[5];
@@ -147,7 +108,89 @@ wire [8:0] vector = (vstb[6])? 9'o100:             // таймер
                     ivec;                          // входной вектор от контроллеров прерывания  
 
                     
+//*************************************
+// счетчик замедления процессора
+//*************************************
+reg [4:0] cpudelay;
+reg cpu_clk_enable;
 
+always @ (posedge clk_p) begin
+    if (cpudelay != 5'd21) begin
+        cpudelay <= cpudelay + 1'b1;  // считаем от 0 до 22
+        cpu_clk_enable <= 1'b0;
+    end     
+    else begin
+        cpudelay <= 5'd0;
+        cpu_clk_enable <= 1'b1;
+    end     
+end                     
+                    
+//*************************************
+//*  Процессор F-11
+//*************************************
+f11_wb cpu (
+//
+// F11_CORE_MMU enables code MMU generation in the dc304 module
+// F11_CORE_FPP enables code of FPP MiCROM in the dc303 module
+//
+//    F11_CORE_MMU = 1,
+//    F11_CORE_FPP = 1
+
+   .vm_clk_p(clk_p),     
+   .vm_clk_n(clk_n),     
+   .vm_clk_ena(cpu_clk_enable), 
+   .vm_clk_slow(1'b0), 
+                           
+   .vm_init(bus_reset),          // peripheral reset output
+   .vm_dclo(dclo),       // processor reset
+   .vm_aclo(aclo),       // power fail notificaton
+   .vm_halt(1'b0),       // halt mode interrupt
+   .vm_evnt(1'b0),       // timer interrupt requests
+   .vm_virq({1'b0,timer_irq,irq_i}),   // vectored interrupt request
+   
+   .wbm_gnt_i(dma_ack),       // master wishbone granted
+   .wbm_ios_o(ioaccess),         // master wishbone bank I/O select
+   .wbm_adr_o(wb_adr_o),         // master wishbone address
+   .wbm_dat_o(wb_dat_o),         // master wishbone data output
+   .wbm_dat_i(wb_mux),        // master wishbone data input
+//   output         wbm_cyc_o,     // master wishbone cycle
+   .wbm_we_o(wb_we_o),       // master wishbone direction
+   .wbm_sel_o(wb_sel_o),     // master wishbone byte select
+   .wbm_stb_o(cpu_stb),     // master wishbone strobe
+   .wbm_ack_i(wb_ack),     // master wishbone acknowledgement
+
+   .wbi_dat_i(cpu_int_vector),     // interrupt vector input
+   .wbi_ack_i(iack_i|fdin_ack),     // interrupt vector acknowledgement
+   .wbi_stb_o(cpu_istb),     // interrupt vector strobe
+   .wbi_una_o(fdin_stb),     // unaddressed fast input read
+                  
+   .vm_bsel(2'b10)        // boot mode selector
+);
+
+
+//*****************************************************
+//* Преобразования управляющих сигналов процессора
+//*****************************************************
+
+assign ram_stb= cpu_stb & ~ioaccess;
+assign bus_stb= cpu_stb & ioaccess;
+assign cpu_istb = virq[6] & vstb[6] | 
+                  virq[5] & vstb[5] |
+                  virq[4] & vstb[4];
+
+// формирователь сигналов DMA
+always @(posedge clk_p)
+   if (dclo) dma_ack <= 1'b0;
+   else if (dma_req & ~cpu_stb) dma_ack <= 1'b1;
+   else dma_ack <= 1'b0;
+
+// Формирователь сигнала подтверждения безадресного чтения
+reg fdin_ack;
+always @(posedge clk_p or posedge dclo)
+  if (dclo) fdin_ack <=1'b0;
+  else fdin_ack <= fdin_stb;
+
+	
 //*******************************************
 //* ПЗУ монитора-загрузчика
 //*******************************************
@@ -254,18 +297,14 @@ always @(posedge clk_p)
 //*******************************************************************
 
 // стробы выбора периферии
-assign swr_stb    = bus_stb & (wb_adr_o[15:1] == (16'o177570 >> 1));   // SWR - 177570
 assign kw11l_stb  = bus_stb & (wb_adr_o[15:1] == (16'o177546 >> 1));   // KW11-L - 177546
-assign ccr_stb = bus_stb & (wb_adr_o[15:5] == 11'b11111111111);        // 177740 - 177777 (на полной шине - 777740-777777) - внутренние регистры процессора
 
 // сигнал ответа
-assign wb_ack     = global_ack | ccr_ack | swr_ack | kw11l_ack | bootrom_ack;
+assign wb_ack     = global_ack | kw11l_ack | bootrom_ack;
 
 // сборная шина входных данных к процессору
-assign wb_mux     = mmu_dat | wb_dat_i
-                  | (ccr_stb ? ccr_dat : 16'o000000)
+assign wb_mux     = wb_dat_i
                   | (kw11l_stb ? kw11l_dat : 16'o000000)
-                  | (swr_stb ? swr_dat : 16'o000000)
                   | (bootrom_stb ? bootrom_dat : 16'o000000);
 
 endmodule

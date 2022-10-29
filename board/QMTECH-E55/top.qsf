@@ -337,6 +337,7 @@ set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 
 set_location_assignment PIN_A6 -to led[4]
 
+set_global_assignment -name SAVE_DISK_SPACE OFF
 set_global_assignment -name VERILOG_FILE qmtech.v
 set_global_assignment -name VERILOG_FILE config.v
 set_global_assignment -name VERILOG_FILE ../../hdl/topboard16.v
@@ -345,6 +346,7 @@ set_global_assignment -name VERILOG_FILE "../../hdl/mc1201-02.v"
 set_global_assignment -name VERILOG_FILE "../../hdl/mc1201-01.v"
 set_global_assignment -name VERILOG_FILE ../../hdl/mc1260.v
 set_global_assignment -name VERILOG_FILE ../../hdl/mc1280.v
+set_global_assignment -name VERILOG_FILE ../../hdl/kdf11.v
 set_global_assignment -name VERILOG_FILE ../../hdl/pdp2011.v
 set_global_assignment -name VERILOG_FILE "../../hdl/kgd-graphics.v"
 set_global_assignment -name VERILOG_FILE ../../hdl/ksm/vtreset.v
@@ -370,6 +372,17 @@ set_global_assignment -name VERILOG_FILE ../../hdl/pdp2011/mmu.v
 set_global_assignment -name VERILOG_FILE ../../hdl/pdp2011/fpuregs.v
 set_global_assignment -name VERILOG_FILE ../../hdl/pdp2011/cpuregs.v
 set_global_assignment -name VERILOG_FILE ../../hdl/pdp2011/cpu_control_regs.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/f11_wb.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_rom.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_pla_2.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_pla_1.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_pla_0.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_pla.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_mmu.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_fpp.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_304.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_303.v
+set_global_assignment -name VERILOG_FILE ../../hdl/f11/dc_302.v
 set_global_assignment -name VERILOG_FILE ../../hdl/m2/lsi_wb.v
 set_global_assignment -name VERILOG_FILE ../../hdl/m2/mcp_plm.v
 set_global_assignment -name VERILOG_FILE ../../hdl/m2/mcp1631.v
@@ -402,6 +415,161 @@ set_global_assignment -name QIP_FILE "ip-components/kgdvram.qip"
 set_global_assignment -name QIP_FILE "ip-components/sectorbuf.qip"
 set_global_assignment -name SDC_FILE ../../hdl/altera.sdc
 set_global_assignment -name SIGNALTAP_FILE top.stp
-set_global_assignment -name SAVE_DISK_SPACE OFF
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id f11
+set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_clk -to "topboard22:kernel|clk_p" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "topboard22:kernel|kdf11:cpu|bus_stb" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[1] -to "topboard22:kernel|kdf11:cpu|clk_p" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[2] -to "topboard22:kernel|kdf11:cpu|dclo" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[3] -to "topboard22:kernel|kdf11:cpu|dma_ack" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[0] -to "topboard22:kernel|kdf11:cpu|bus_stb" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[1] -to "topboard22:kernel|kdf11:cpu|clk_p" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[2] -to "topboard22:kernel|kdf11:cpu|dclo" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[3] -to "topboard22:kernel|kdf11:cpu|dma_ack" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_BLOCK_TYPE=AUTO" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_NODE_INFO=805334528" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_POWER_UP_TRIGGER=0" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_INVERSION_MASK_LENGTH=0" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ATTRIBUTE_MEM_MODE=OFF" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_FLOW_USE_GENERATED=0" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_BITS=11" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_BUFFER_FULL_STOP=1" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_CURRENT_RESOURCE_WIDTH=1" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INCREMENTAL_ROUTING=1" -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[0] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[1] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[7] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[8] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[21] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[25] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to f11|vcc -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL=1" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_IN_ENABLED=0" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_PIPELINE=0" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_PIPELINE=0" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_COUNTER_PIPELINE=0" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ADVANCED_TRIGGER_ENTITY=basic,1," -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL_PIPELINE=1" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ENABLE_ADVANCED_TRIGGER=0" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SEGMENT_SIZE=8192" -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[9] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[10] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[12] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[14] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[16] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[20] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to f11|vcc -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=8192" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[4] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|fdin_oe" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[5] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_idone" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[6] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_rdone" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[7] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wbi_ack_i" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[8] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wbi_stb_o" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[9] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wbi_una_o" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[10] -to "topboard22:kernel|kdf11:cpu|ram_stb" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[11] -to "topboard22:kernel|kdf11:cpu|wb_ack" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[12] -to "topboard22:kernel|kdf11:cpu|wb_we_o" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[4] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[0]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[5] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[10]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[6] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[11]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[7] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[12]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[8] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[13]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[9] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[14]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[10] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[15]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[11] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[1]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[12] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[2]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[13] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[3]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[14] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[4]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[15] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[5]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[16] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[6]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[17] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[7]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[18] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[8]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|ad[9]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|fdin_oe" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[0]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[22] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[10]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[23] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[11]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[24] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[12]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[25] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[13]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[26] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[14]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[27] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[15]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[28] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[1]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[29] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[2]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[30] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[3]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[31] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[4]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[32] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[5]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[33] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[6]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[34] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[7]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[35] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[8]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[36] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_dat[9]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[37] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_idone" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[38] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wb_rdone" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[39] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wbi_ack_i" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[40] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wbi_stb_o" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[41] -to "topboard22:kernel|kdf11:cpu|f11_wb:cpu|wbi_una_o" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[42] -to "topboard22:kernel|kdf11:cpu|ram_stb" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[43] -to "topboard22:kernel|kdf11:cpu|wb_ack" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[44] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[0]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[45] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[10]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[46] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[11]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[47] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[12]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[48] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[13]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[49] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[14]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[50] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[15]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[51] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[16]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[52] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[17]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[53] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[18]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[54] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[19]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[55] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[1]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[56] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[20]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[57] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[21]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[58] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[2]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[59] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[3]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[60] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[4]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[61] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[5]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[62] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[6]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[63] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[7]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[64] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[8]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[65] -to "topboard22:kernel|kdf11:cpu|wb_adr_o[9]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[66] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[0]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[67] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[10]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[68] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[11]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[69] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[12]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[70] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[13]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[71] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[14]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[72] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[15]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[73] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[1]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[74] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[2]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[75] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[3]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[76] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[4]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[77] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[5]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[78] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[6]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[79] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[7]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[80] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[8]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[81] -to "topboard22:kernel|kdf11:cpu|wb_dat_i[9]" -section_id f11
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[82] -to "topboard22:kernel|kdf11:cpu|wb_we_o" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=83" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_BITS=13" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=83" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=000000000000000000000000000000000000000000000000000000000000000000" -section_id f11
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=66" -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[2] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[4] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[18] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[19] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -to f11|vcc -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to f11|gnd -section_id f11
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to f11|gnd -section_id f11
 set_global_assignment -name SLD_FILE db/top_auto_stripped.stp
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
