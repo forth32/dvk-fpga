@@ -64,9 +64,10 @@ wire        cpu_stb;   // строб данных от процессор на �
 wire        wb_ack;    // подтверждения обмена от шины к процессору            
 wire ioaccess;   // признак доступа процессора к периферийной шине
 wire fdin_stb;
-wire [15:0] fdin_data={7'h173,1'b1,8'h00};
-
 wire [15:0] kw11l_dat; // шина данных таймера
+
+// Слово конфигурации начального пуска - помещается в регистр быстрого ввода
+wire [15:0] fdin_data= 16'o173400; //{7'o173,1'b1,8'h00};
 
 // сигналы подтверждения обмена
 reg kw11l_ack;       
@@ -91,7 +92,7 @@ wire [7:4] virq;          // запрос прерывания
 wire cpu_istb;
 wire [15:0]cpu_int_vector;
 
-assign cpu_int_vector=fdin_stb? fdin_data: {8'h00, vector};
+assign cpu_int_vector=fdin_ack? fdin_data: {8'h00, vector};
 
 // линии запроса прерывания
 assign virq[7]=1'b0;      // уровень 7 - нет
@@ -104,7 +105,7 @@ assign timer_istb=vstb[6];
 assign istb_o[5]=vstb[5];
 assign istb_o[4]=vstb[4];
 // шина ввода вектора прерывания в процессор
-wire [8:0] vector = (vstb[6])? 9'o100:             // таймер
+wire [8:0] vector = (vstb[6])? 8'o100:             // таймер
                     ivec;                          // входной вектор от контроллеров прерывания  
 
                     
@@ -144,11 +145,11 @@ f11_wb cpu (
    .vm_init(bus_reset),          // peripheral reset output
    .vm_dclo(dclo),       // processor reset
    .vm_aclo(aclo),       // power fail notificaton
-   .vm_halt(1'b0),       // halt mode interrupt
+   .vm_halt(resume),       // halt mode interrupt
    .vm_evnt(1'b0),       // timer interrupt requests
    .vm_virq({1'b0,timer_irq,irq_i}),   // vectored interrupt request
    
-   .wbm_gnt_i(dma_ack),       // master wishbone granted
+   .wbm_gnt_i(1'b1/*dma_ack*/),       // master wishbone granted
    .wbm_ios_o(ioaccess),         // master wishbone bank I/O select
    .wbm_adr_o(wb_adr_o),         // master wishbone address
    .wbm_dat_o(wb_dat_o),         // master wishbone data output
