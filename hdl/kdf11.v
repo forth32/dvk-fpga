@@ -67,7 +67,7 @@ wire fdin_stb;
 wire [15:0] kw11l_dat; // шина данных таймера
 
 // Слово конфигурации начального пуска - помещается в регистр быстрого ввода
-wire [15:0] fdin_data= 16'o173400; //{7'o173,1'b1,8'h00};
+wire [15:0] fdin_data= 16'o165000;
 
 // сигналы подтверждения обмена
 reg kw11l_ack;       
@@ -165,7 +165,7 @@ f11_wb cpu (
    .wbi_stb_o(cpu_istb),     // interrupt vector strobe
    .wbi_una_o(fdin_stb),     // unaddressed fast input read
                   
-   .vm_bsel(2'b10)        // boot mode selector
+   .vm_bsel(2'b01)        // boot mode selector
 );
 
 

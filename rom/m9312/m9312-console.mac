@@ -48,8 +48,9 @@ L        =bit0                ; lowerbyte multiplier
 
          base     =.
 
-data0:   .word data0          ; test data structures
-         .word data0          ;
+;data0:   .word data0          ; test data structures
+;         .word data0          ;
+         JMP    NODIAG
 data1:   .byte 000            ;
          .byte 200            ;
 data2:   .word 177777         ;
