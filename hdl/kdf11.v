@@ -147,7 +147,7 @@ f11_wb cpu (
    .vm_aclo(aclo),       // power fail notificaton
    .vm_halt(resume),       // halt mode interrupt
    .vm_evnt(1'b0),       // timer interrupt requests
-   .vm_virq({1'b0,timer_irq,irq_i}),   // vectored interrupt request
+   .vm_virq(irq_i),   // vectored interrupt request
    
    .wbm_gnt_i(1'b1/*dma_ack*/),       // master wishbone granted
    .wbm_ios_o(ioaccess),         // master wishbone bank I/O select
@@ -175,10 +175,12 @@ f11_wb cpu (
 
 assign ram_stb= cpu_stb & ~ioaccess;
 assign bus_stb= cpu_stb & ioaccess;
-assign cpu_istb = virq[6] & vstb[6] | 
-                  virq[5] & vstb[5] |
-                  virq[4] & vstb[4];
 
+// приоритетный выбор линии подтверждения прерывания						
+assign vstb[6] = cpu_istb & virq[6];
+assign vstb[5] = cpu_istb & virq[5] & ~vstb[6];
+assign vstb[4] = cpu_istb & virq[4] & ~vstb[5] & ~vstb[6];
+						
 // формирователь сигналов DMA
 always @(posedge clk_p)
    if (dclo) dma_ack <= 1'b0;
