@@ -1113,7 +1113,11 @@ assign wb_we =  rk11_dma_we | rk611_dma_we | my_dma_we | rh70_dma_we | cpu_we;
 assign wb_sel =   (dma_ack) ? 2'b11: cpu_bsel;
                           
 // Строб SDRAM                          
+`ifdef RAM256
+assign sdram_stb = my_dma_stb | rh70_dma_stb | (cpu_ram_stb && (wb_adr[21:18] == 4'b0000));
+`else
 assign sdram_stb = my_dma_stb | rh70_dma_stb | cpu_ram_stb;
+`endif
 
 // Строб данных от DMA-мастера, работающего через Unibus Mapping
 assign dma_stb_ubm = rk11_dma_stb | rk611_dma_stb;

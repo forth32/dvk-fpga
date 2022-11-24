@@ -86,6 +86,10 @@ reg timer_irq;   // запрос прерывания
 wire timer_istb; // строб запроса вектора
 wire timer_iack=timer_istb;
 
+// шина адреса
+wire [21:0] cpu_adr;
+assign wb_adr_o= dma_ack? {4'b0000, dma_adr18} : cpu_adr; // для операций DMA-18 на шину выставляется входной DMA-адрес
+
 // Прерывания 
 wire [7:4] vstb;          // строб приема вектора
 wire [7:4] virq;          // запрос прерывания
@@ -149,9 +153,9 @@ f11_wb cpu (
    .vm_evnt(1'b0),       // timer interrupt requests
    .vm_virq(irq_i),   // vectored interrupt request
    
-   .wbm_gnt_i(1'b1/*dma_ack*/),       // master wishbone granted
+   .wbm_gnt_i(~dma_ack),       // master wishbone granted
    .wbm_ios_o(ioaccess),         // master wishbone bank I/O select
-   .wbm_adr_o(wb_adr_o),         // master wishbone address
+   .wbm_adr_o(cpu_adr),         // master wishbone address
    .wbm_dat_o(wb_dat_o),         // master wishbone data output
    .wbm_dat_i(wb_mux),        // master wishbone data input
 //   output         wbm_cyc_o,     // master wishbone cycle
@@ -173,8 +177,8 @@ f11_wb cpu (
 //* Преобразования управляющих сигналов процессора
 //*****************************************************
 
-assign ram_stb= cpu_stb & ~ioaccess;
-assign bus_stb= cpu_stb & ioaccess;
+assign ram_stb= (cpu_stb & ~ioaccess) | (dma_ack & dma_stb);
+assign bus_stb= cpu_stb & ioaccess; 
 
 // приоритетный выбор линии подтверждения прерывания						
 assign vstb[6] = cpu_istb & virq[6];
@@ -185,7 +189,7 @@ assign vstb[4] = cpu_istb & virq[4] & ~vstb[5] & ~vstb[6];
 always @(posedge clk_p)
    if (dclo) dma_ack <= 1'b0;
    else if (dma_req & ~cpu_stb) dma_ack <= 1'b1;
-   else dma_ack <= 1'b0;
+   else if (~dma_req) dma_ack <= 1'b0;
 
 // Формирователь сигнала подтверждения безадресного чтения
 reg fdin_ack;
