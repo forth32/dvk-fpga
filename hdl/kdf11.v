@@ -100,7 +100,7 @@ assign cpu_int_vector=fdin_ack? fdin_data: {8'h00, vector};
 
 // линии запроса прерывания
 assign virq[7]=1'b0;      // уровень 7 - нет
-assign virq[6]=timer_irq; // уровень 6 - таймер
+assign virq[6]=1'b0; //timer_irq; // уровень 6 - таймер
 assign virq[5]=irq_i[5];  // уровень 5 - быстрая (блочная) периферия
 assign virq[4]=irq_i[4];  // уровень 4 - медленная (байтовая) периферия
 
@@ -134,13 +134,6 @@ end
 //*  Процессор F-11
 //*************************************
 f11_wb cpu (
-//
-// F11_CORE_MMU enables code MMU generation in the dc304 module
-// F11_CORE_FPP enables code of FPP MiCROM in the dc303 module
-//
-//    F11_CORE_MMU = 1,
-//    F11_CORE_FPP = 1
-
    .vm_clk_p(clk_p),     
    .vm_clk_n(clk_n),     
    .vm_clk_ena(cpu_clk_enable), 
@@ -150,7 +143,8 @@ f11_wb cpu (
    .vm_dclo(dclo),       // processor reset
    .vm_aclo(aclo),       // power fail notificaton
    .vm_halt(resume),       // halt mode interrupt
-   .vm_evnt(1'b0),       // timer interrupt requests
+//   .vm_evnt(1'b0),       // timer interrupt requests
+   .vm_evnt(timer_50),       // timer interrupt requests
    .vm_virq(irq_i),   // vectored interrupt request
    
    .wbm_gnt_i(~dma_ack),       // master wishbone granted
