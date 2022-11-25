@@ -61,7 +61,6 @@ wire sys_init;
                                       
 wire [15:0] wb_mux;    // сборная шина данных от периферии к процессору                
 wire        cpu_stb;   // строб данных от процессор на шину            
-wire        wb_ack;    // подтверждения обмена от шины к процессору            
 wire ioaccess;   // признак доступа процессора к периферийной шине
 wire fdin_stb;
 wire [15:0] kw11l_dat; // шина данных таймера
@@ -70,8 +69,9 @@ wire [15:0] kw11l_dat; // шина данных таймера
 wire [15:0] fdin_data= 16'o165000;
 
 // сигналы подтверждения обмена
-reg kw11l_ack;       
-wire cpu_ack;      
+wire wb_ack;    // подтверждения обмена от шины 
+reg  kw11l_ack;       
+wire cpu_ack;          // подтверждение обмена для транзакций шины, генерируемых процессором
 
 // стробы выбора периферии
 wire kw11l_stb;             
@@ -158,11 +158,11 @@ f11_wb cpu (
    .wbm_adr_o(cpu_adr),         // master wishbone address
    .wbm_dat_o(wb_dat_o),         // master wishbone data output
    .wbm_dat_i(wb_mux),        // master wishbone data input
-//   output         wbm_cyc_o,     // master wishbone cycle
+//   .wbm_cyc_o(cpu_cyc),     // master wishbone cycle
    .wbm_we_o(wb_we_o),       // master wishbone direction
    .wbm_sel_o(wb_sel_o),     // master wishbone byte select
    .wbm_stb_o(cpu_stb),     // master wishbone strobe
-   .wbm_ack_i(wb_ack),     // master wishbone acknowledgement
+   .wbm_ack_i(cpu_ack),     // master wishbone acknowledgement
 
    .wbi_dat_i(cpu_int_vector),     // interrupt vector input
    .wbi_ack_i(iack_i|fdin_ack),     // interrupt vector acknowledgement
@@ -177,8 +177,9 @@ f11_wb cpu (
 //* Преобразования управляющих сигналов процессора
 //*****************************************************
 
-assign ram_stb= (cpu_stb & ~ioaccess) | (dma_ack & dma_stb);
-assign bus_stb= cpu_stb & ioaccess; 
+assign ram_stb = dma_ack? dma_stb : /*cpu_cyc &*/ cpu_stb & ~ioaccess;
+assign bus_stb = /*cpu_cyc &*/ cpu_stb & ioaccess & ~dma_ack; 
+assign cpu_ack = wb_ack & ~dma_ack;
 
 // приоритетный выбор линии подтверждения прерывания						
 assign vstb[6] = cpu_istb & virq[6];
