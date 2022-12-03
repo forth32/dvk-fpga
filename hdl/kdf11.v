@@ -64,18 +64,18 @@ wire        cpu_stb;   // строб данных от процессор на �
 wire        cpu_cyc;   // не уверен что он нужен
 wire ioaccess;   // признак доступа процессора к периферийной шине
 wire fdin_stb;
-wire [15:0] kw11l_dat; // шина данных таймера
+wire [15:0] lks_dat; // шина данных таймера
 
 // Слово конфигурации начального пуска - помещается в регистр быстрого ввода
 wire [15:0] fdin_data= 16'o165000;
 
 // сигналы подтверждения обмена
 wire wb_ack;    // подтверждения обмена от шины 
-reg  kw11l_ack;       
+reg  lks_ack;       
 wire cpu_ack;          // подтверждение обмена для транзакций шины, генерируемых процессором
 
 // стробы выбора периферии
-wire kw11l_stb;             
+wire lks_stb;             
 
 // сброс системы
 assign      sys_init = bus_reset;
@@ -96,7 +96,7 @@ wire [7:4] vstb;          // строб приема вектора
 wire [7:4] virq;          // запрос прерывания
 wire cpu_istb;
 wire [15:0]cpu_int_vector;
-
+wire bevent;
 
 
                     
@@ -131,7 +131,7 @@ f11_wb cpu (
    .vm_aclo(aclo),       // power fail notificaton
    .vm_halt(resume),       // halt mode interrupt
 //   .vm_evnt(1'b0),       // timer interrupt requests
-   .vm_evnt(timer_50),       // timer interrupt requests
+   .vm_evnt(bevent /*timer_50*/),       // timer interrupt requests
    .vm_virq(irq_i),   // vectored interrupt request
    
    .wbm_gnt_i(~dma_ack),       // master wishbone granted
@@ -253,47 +253,34 @@ always @ (posedge clk_p) begin
 end
 
 //************************************************
-//* Сетевой таймер KW11-L 177546
+//* Регистр управления прерываниями таймера - LKS
 //************************************************
-reg tirq_prev_state;  // состояние таймера в предыдущем такте
 
 // чтение регистра таймера
 //                           7           6
-assign kw11l_dat = {8'o0, timer_rdy, timer_ie, 6'o0};
+assign lks_dat = {9'o0, timer_ie, 6'o0};
 assign led_timer=~timer_ie;
 
 always @ (posedge clk_p) 
   // сброс системы
   if (sys_init == 1'b1) begin 
      timer_ie <= 1'b0;
-     timer_rdy <= 1'b1;
-     timer_irq <= 1'b0;
   end     
   else begin     
     // обмен с общей шиной
-    if ((kw11l_stb == 1'b1) && (wb_we_o == 1'b1)) begin
+    if ((lks_stb == 1'b1) && (wb_we_o == 1'b1)) begin
         // запись
         timer_ie  <= wb_dat_o[6];
-        timer_rdy <= wb_dat_o[7];
     end
-    tirq_prev_state <= timer_50;   // сохранение предыдущего состояния сигнала
-    // детектор перепадов сигнала таймера - только  0->1
-    if ((tirq_prev_state != timer_50) && (timer_50 == 1'b1)) begin
-        timer_rdy <= 1'b1;  // взводим сигнал готовности таймера
-        // формирователь сигнала прерывания
-        if (timer_ie) timer_irq <= 1'b1;
-    end
-     // формирователь вектора
-     if (timer_irq == 1'b1) begin 
-       if (~timer_ie | timer_istb) timer_irq <= 1'b0;
-     end
-  end     
-  
+  end	 
+// сигнал прерывания от таймера   
+assign bevent = timer_50 & timer_ie;
+	 
 // формирователь ответа       
-wire kw11l_reply= kw11l_stb & ~kw11l_ack;
+wire lks_reply= lks_stb & ~lks_ack;
 always @(posedge clk_p)
-    if (sys_init == 1'b1) kw11l_ack <= 1'b0;
-    else kw11l_ack <= kw11l_reply;
+    if (sys_init == 1'b1) lks_ack <= 1'b0;
+    else lks_ack <= lks_reply;
 
 
     
@@ -302,14 +289,14 @@ always @(posedge clk_p)
 //*******************************************************************
 
 // стробы выбора периферии
-assign kw11l_stb  = bus_stb & (wb_adr_o[15:1] == (16'o177546 >> 1));   // KW11-L - 177546
+assign lks_stb  = bus_stb & (wb_adr_o[15:1] == (16'o177546 >> 1));   // LKS - 177546
 
 // сигнал ответа
-assign wb_ack     = global_ack | kw11l_ack | bootrom_ack;
+assign wb_ack     = global_ack | lks_ack | bootrom_ack;
 
 // сборная шина входных данных к процессору
 assign wb_mux     = wb_dat_i
-                  | (kw11l_stb ? kw11l_dat : 16'o000000)
+                  | (lks_stb ? lks_dat : 16'o000000)
                   | (bootrom_stb ? bootrom_dat : 16'o000000);
 
 endmodule
