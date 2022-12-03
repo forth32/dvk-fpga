@@ -1106,8 +1106,8 @@ assign wb_out =   (rk11_dma_state) ? rk11_dma_out: 16'o0
                 | (rh70_dma_state) ? rh70_dma_out  : 16'o0
                 | (~dma_ack) ? cpu_data_out: 16'o0;
 
-// Сигнал напрвавления передачи - 1 = от устройства в память, 0 = из памяти в устройство
-assign wb_we =  rk11_dma_we | rk611_dma_we | my_dma_we | rh70_dma_we | cpu_we;
+// Сигнал направления передачи - 1 = от устройства в память, 0 = из памяти в устройство
+assign wb_we =  rk11_dma_we | rk611_dma_we | my_dma_we | rh70_dma_we | (~dma_ack & cpu_we);
 
 // Выбор байтов для записи                                           
 assign wb_sel =   (dma_ack) ? 2'b11: cpu_bsel;

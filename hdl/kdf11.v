@@ -61,6 +61,7 @@ wire sys_init;
                                       
 wire [15:0] wb_mux;    // сборная шина данных от периферии к процессору                
 wire        cpu_stb;   // строб данных от процессор на шину            
+wire        cpu_cyc;   // не уверен что он нужен
 wire ioaccess;   // признак доступа процессора к периферийной шине
 wire fdin_stb;
 wire [15:0] kw11l_dat; // шина данных таймера
@@ -96,21 +97,7 @@ wire [7:4] virq;          // запрос прерывания
 wire cpu_istb;
 wire [15:0]cpu_int_vector;
 
-assign cpu_int_vector=fdin_ack? fdin_data: {8'h00, vector};
 
-// линии запроса прерывания
-assign virq[7]=1'b0;      // уровень 7 - нет
-assign virq[6]=1'b0; //timer_irq; // уровень 6 - таймер
-assign virq[5]=irq_i[5];  // уровень 5 - быстрая (блочная) периферия
-assign virq[4]=irq_i[4];  // уровень 4 - медленная (байтовая) периферия
-
-// запрос на прием вектора
-assign timer_istb=vstb[6];
-assign istb_o[5]=vstb[5];
-assign istb_o[4]=vstb[4];
-// шина ввода вектора прерывания в процессор
-wire [8:0] vector = (vstb[6])? 8'o100:             // таймер
-                    ivec;                          // входной вектор от контроллеров прерывания  
 
                     
 //*************************************
@@ -152,7 +139,7 @@ f11_wb cpu (
    .wbm_adr_o(cpu_adr),         // master wishbone address
    .wbm_dat_o(wb_dat_o),         // master wishbone data output
    .wbm_dat_i(wb_mux),        // master wishbone data input
-//   .wbm_cyc_o(cpu_cyc),     // master wishbone cycle
+   .wbm_cyc_o(cpu_cyc),     // master wishbone cycle
    .wbm_we_o(wb_we_o),       // master wishbone direction
    .wbm_sel_o(wb_sel_o),     // master wishbone byte select
    .wbm_stb_o(cpu_stb),     // master wishbone strobe
@@ -171,14 +158,30 @@ f11_wb cpu (
 //* Преобразования управляющих сигналов процессора
 //*****************************************************
 
-assign ram_stb = dma_ack? dma_stb : /*cpu_cyc &*/ cpu_stb & ~ioaccess;
-assign bus_stb = /*cpu_cyc &*/ cpu_stb & ioaccess & ~dma_ack; 
+assign ram_stb = dma_ack? dma_stb : cpu_cyc & cpu_stb & ~ioaccess;
+assign bus_stb = cpu_cyc & cpu_stb & ioaccess & ~dma_ack; 
 assign cpu_ack = wb_ack & ~dma_ack;
 
-// приоритетный выбор линии подтверждения прерывания						
+// приоритетный выбор линии подтверждения прерывания	
 assign vstb[6] = cpu_istb & virq[6];
 assign vstb[5] = cpu_istb & virq[5] & ~vstb[6];
 assign vstb[4] = cpu_istb & virq[4] & ~vstb[5] & ~vstb[6];
+
+// линии запроса прерывания
+assign virq[7]=1'b0;      // уровень 7 - нет
+assign virq[6]=1'b0; //timer_irq; // уровень 6 - таймер
+assign virq[5]=irq_i[5];  // уровень 5 - быстрая (блочная) периферия
+assign virq[4]=irq_i[4];  // уровень 4 - медленная (байтовая) периферия
+
+// запрос на прием вектора
+assign timer_istb=vstb[6];
+assign istb_o[5]=vstb[5];
+assign istb_o[4]=vstb[4];
+// шина ввода вектора прерывания в процессор
+wire [8:0] vector = (vstb[6])? 8'o100:             // таймер
+                    ivec;                          // входной вектор от контроллеров прерывания  
+assign cpu_int_vector=fdin_ack? fdin_data: {8'h00, vector};
+
 						
 // формирователь сигналов DMA
 always @(posedge clk_p)
