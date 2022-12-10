@@ -207,7 +207,7 @@ always @(posedge clk_p or posedge dclo)
 //* Подсистема Bootrom/Diagnostic
 //*******************************************
 
-wire[5:0] current_pcr;  // выбранная часть регистра PCR
+wire[3:0] current_pcr;  // выбранная часть регистра PCR
 
 // ПЗУ загрузки и диагностики, отображается в окно 173000-173777
 //   ----- протокол выбора адреса ПЗУ ------------
@@ -239,8 +239,8 @@ assign current_pcr=cpu_adr[8] ? pcr_h : pcr_l;
 // 177522 (R/W) - реигстр обслуживания, пока непонятно для чего он нужен
 // 177524 (R)   - CDR[7:0] чтение переключателей конфигурации
 // 177524 (W)   - CDR[3:0] управление индикаторными светодиодами
-reg [5:0] pcr_h;
-reg [5:0] pcr_l;
+reg [3:0] pcr_h;
+reg [3:0] pcr_l;
 reg [15:0] bd_maint;
 reg [3:0] cdr_o;  // вывод в регистр CDR
 
@@ -250,8 +250,8 @@ reg [15:0] bdr_dat;
 always @ (posedge clk_p) 
   // сброс системы
   if (dclo) begin 
-     pcr_h <= 6'o0;
-     pcr_l <= 6'o0;
+     pcr_h <= 4'o0;
+     pcr_l <= 4'o0;
 	  bd_maint <= 16'o0;
 	  cdr_o <= 3'o0;
   end     
@@ -260,9 +260,9 @@ always @ (posedge clk_p)
     if (bdr_stb && (~wb_we_o)) begin
         // чтение
 		  case (cpu_adr[2:1])
-         2'b00:  bdr_dat <= {2'b00, pcr_h, 2'b00, pcr_l};
+         2'b00:  bdr_dat <= {4'b0000, pcr_h, 4'b0000, pcr_l};
          2'b01:  bdr_dat <= bd_maint;
-         2'b10:  bdr_dat <= 8'b00001011; //csw[7:0];  // набор из 8 переключателей на плате
+         2'b10:  bdr_dat <= 8'b00001000; //csw[7:0];  // набор из 8 переключателей на плате
 			default: bdr_dat <= 15'o0;
 		  endcase	
     end
@@ -270,8 +270,8 @@ always @ (posedge clk_p)
 	     // запись
 		  case (cpu_adr[2:1])
          2'b00:  begin
-			          if (wb_sel_o[0]) pcr_l <= wb_dat_o[5:0];
-						 if (wb_sel_o[1]) pcr_h <= wb_dat_o[13:8];
+			          if (wb_sel_o[0]) pcr_l <= wb_dat_o[3:0];
+						 if (wb_sel_o[1]) pcr_h <= wb_dat_o[11:8];
 					  end	 
          2'b01:  begin
 			          if (wb_sel_o[0]) bd_maint[7:0] <= wb_dat_o[7:0];
