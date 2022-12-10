@@ -249,20 +249,20 @@ reg [15:0] bdr_dat;
 
 always @ (posedge clk_p) 
   // сброс системы
-  if (bus_reset == 1'b1) begin 
+  if (dclo) begin 
      pcr_h <= 6'o0;
      pcr_l <= 6'o0;
 	  bd_maint <= 16'o0;
 	  cdr_o <= 3'o0;
   end     
   else begin     
-    // обмен с общей шиной
+    //  обмен с общей шиной
     if (bdr_stb && (~wb_we_o)) begin
         // чтение
 		  case (cpu_adr[2:1])
          2'b00:  bdr_dat <= {2'b00, pcr_h, 2'b00, pcr_l};
          2'b01:  bdr_dat <= bd_maint;
-         2'b10:  bdr_dat <= 8'b00001010; //csw[7:0];  // набор из 8 переключателей на плате
+         2'b10:  bdr_dat <= 8'b00001011; //csw[7:0];  // набор из 8 переключателей на плате
 			default: bdr_dat <= 15'o0;
 		  endcase	
     end
