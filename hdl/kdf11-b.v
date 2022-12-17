@@ -53,21 +53,22 @@ module kdf11 (
 //==========================================================================================
 
 
-//assign led_idle=1'b1;
-//assign led_mmu=1'b1;
-//assign led_run=1'b1;
+assign led_idle=1'b1;
+assign led_mmu=1'b1;
+assign led_run=1'b1;
 
-assign led_run=cdr_o[0];
-assign led_idle=cdr_o[1];
-assign led_mmu=cdr_o[2];
-assign led_timer=cdr_o[3];
+//assign led_run=cdr_o[0];
+//assign led_idle=cdr_o[1];
+//assign led_mmu=cdr_o[2];
+//assign led_timer=cdr_o[3];
 
 wire [15:0] wb_mux;    // сборная шина данных от периферии к процессору                
+wire [15:0] lks_dat;   // шина данных таймера
 wire        cpu_stb;   // строб данных от процессор на шину            
 wire        cpu_cyc;   // не уверен что он нужен
-wire 			ioaccess;   // признак доступа процессора к периферийной шине
-wire 			fdin_stb;
-wire [15:0] lks_dat; // шина данных таймера
+wire 			ioaccess;  // признак доступа процессора к периферийной шине
+wire 			fdin_stb;  // строб безадресного чтения 
+wire			ubm_enable;// признак включения режима UNIBUS MAPPING
 
 // Слово конфигурации начального пуска - помещается в регистр безадресного ввода
 wire [15:0] fdin_data= 16'o173002;  // стартовый адрес - 173000, 
@@ -81,12 +82,13 @@ wire  rom_ack;  // оконо доступа к ROM
 reg  bdr_ack;   // Boot/diagnostic regs
 wire cpu_ack;   // подтверждение обмена для транзакций шины, генерируемых процессором
 reg fdin_ack;   // подтверждение доступа к регистру безадресного чтения
-
+reg UBM_ack;    // подтверждение доступа к массиву регистров UBM
 
 // стробы выбора периферии
 wire lks_stb;             
 wire rom_stb;             
 wire bdr_stb;             
+wire UBM_stb;
 
 // таймер
 reg timer_ie;    // разрешение прерывания
@@ -96,13 +98,25 @@ wire bevent;     // сигнал запроса прерывания
 // шина адреса
 wire [21:0] cpu_adr;
 // коммутатор шины адреса для режимов CPU/DMA
-assign wb_adr_o= dma_ack? {4'b0000, dma_adr18} : cpu_adr; // для операций DMA-18 на шину выставляется входной DMA-адрес
+assign wb_adr_o= dma_ack? ubm_paddr : cpu_adr; // для операций DMA-18 на шину выставляется входной DMA-адрес
 
 // Прерывания 
 wire [7:4] vstb;          // строб приема вектора
 wire [7:4] virq;          // запрос прерывания
 wire cpu_istb;
 wire [15:0]cpu_int_vector;
+
+// подсистема отображения пространства 18-битного DMA-адреса на физический адрес (unibus mapping)
+wire[4:0] UBM_reg;  // текущий используемый UBM-регистр в режиме DMA
+wire[21:0] ubm_offset;            
+wire[21:0] ubm_paddr; 
+reg[15:0] UBM_dat;  // шина данных
+
+// адресные регистры UBM, 32 регистра
+reg[7:1] UBM_l[31:0];   // младший байт
+reg[7:0] UBM_m[31:0];   // средний байт
+reg[5:0] UBM_h[31:0];   // старший байт
+
 
 //*************************************
 // счетчик замедления процессора
@@ -150,6 +164,7 @@ f11_wb cpu (
    .wbm_sel_o(wb_sel_o),    // выбор байтов для записи
    .wbm_stb_o(cpu_stb),     // строб операции на шине
    .wbm_ack_i(cpu_ack),     // вход подтверждения ввода-вывода (REPLY)
+	.vm_umap(ubm_enable),
 
    // шина обработки прерываний
    .wbi_dat_i(cpu_int_vector),    // ввод вектора прерывания от устройства
@@ -203,6 +218,63 @@ always @(posedge clk_p or posedge dclo)
   else fdin_ack <= fdin_stb;
 
 	
+//*****************************************************************
+//*  Подсистема отображения адресов Unibus Mappingв режиме DMA
+//*****************************************************************
+
+// Выбор номера регистра отображения UNIBUS из 18-битного unibus-адреса
+assign UBM_reg = dma_adr18[17:13];    // идет DMA - адрес беретсяс шины
+                                                                               // нет DMA - адрес берется из MMU
+    
+// Смещение адреса unibus, получаемое из текущего выбранного адресного регистра UBM         
+assign ubm_offset={UBM_h[UBM_reg], UBM_m[UBM_reg], UBM_l[UBM_reg], 1'b0};
+
+// Признак доступа к странице ввода-вывода  -760000 - 777777
+assign dma_iopage_mapped = (dma_adr18[17:13] == 5'b11111);
+
+// Полный физический адрес после отображения UNIBUS 
+assign ubm_paddr = (dma_iopage_mapped)?  {9'b111111111, dma_adr18[12:0]} :    // доступ к странице ввода-вывода
+                   (ubm_enable)?         ubm_offset+dma_adr18[12:0] :    // доступ к пространству ОЗУ в режиме UBM
+                                         {4'b0000, dma_adr18[17:0]};          // доступ к пространству ОЗУ без UBM
+
+													  
+// Обработка шинных транзакций
+//    17770200-17770366 - регистры отображения Unibus DMA адресов													  
+
+// Строб выбора регистров отображения Unibus Mapping 1770200-1770377                        
+assign UBM_stb = bus_stb /*& (wb_adr_o[21:13] == 9'b111111111) */& (wb_adr_o[12:7] == 6'b100001);     
+
+always @ (posedge clk_p) 
+	 // чтение
+    if (UBM_stb && (~wb_we_o))
+        if (wb_adr_o[1] == 1'b0) begin
+              // чтение младшего слова
+              UBM_dat[0] <= 1'b0 ; 
+              UBM_dat[7:1] <= UBM_l[wb_adr_o[6:2]] ; 
+              UBM_dat[15:8] <= UBM_m[wb_adr_o[6:2]] ; 
+        end   
+        // чтение старшего слова 
+        else   UBM_dat <= { 10'o0, UBM_h[wb_adr_o[6:2]] }; 
+
+     // запись
+     else if (UBM_stb && wb_we_o)
+        if (wb_adr_o[1] == 1'b0)  begin
+              // Младший байт
+              if (wb_sel_o[0]) UBM_l[wb_adr_o[6:2]] <= wb_dat_o[7:1] ; 
+              // Средний байт
+              if (wb_sel_o[1]) UBM_m[wb_adr_o[6:2]] <= wb_dat_o[15:8] ; 
+         end 
+            // старший байт
+         else  if (wb_sel_o[0]) UBM_h[wb_adr_o[6:2]] <= wb_dat_o[5:0] ; 
+
+// сигнал ответа
+wire UBM_reply= UBM_stb & ~UBM_ack;
+// формирователь ответа       
+always @(posedge clk_p)
+    if (bus_reset == 1'b1) UBM_ack <= 1'b0;
+    else UBM_ack <= UBM_reply;
+
+			
 //*******************************************
 //* Подсистема Bootrom/Diagnostic
 //*******************************************
@@ -284,8 +356,8 @@ always @ (posedge clk_p)
   end
 
 // сигнал ответа
-// формирователь ответа       
 wire bdr_reply= bdr_stb & ~bdr_ack;
+// формирователь ответа       
 always @(posedge clk_p)
     if (bus_reset == 1'b1) bdr_ack <= 1'b0;
     else bdr_ack <= bdr_reply;
@@ -355,12 +427,13 @@ assign rom_stb  = bus_stb & (wb_adr_o[15:9] == (16'o173000 >> 9));   // ROM - 17
 assign bdr_stb  = bus_stb & (wb_adr_o[15:3] == (16'o177520 >> 3));   // Boot/Diagnostic reg- 177520-177524
 
 // сигнал ответа
-assign wb_ack     = global_ack | lks_ack | rom_ack | bdr_ack;
+assign wb_ack     = global_ack | lks_ack | rom_ack | bdr_ack | UBM_ack;
 
 // сборная шина входных данных к процессору
 assign wb_mux     = wb_dat_i
                   | (lks_stb ? lks_dat : 16'o000000)
                   | (bdr_stb ? bdr_dat : 16'o000000)
+                  | (UBM_stb ? UBM_dat : 16'o000000)
                   | (rom_stb ? rom_dat : 16'o000000);
 
 endmodule
