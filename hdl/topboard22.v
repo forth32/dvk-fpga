@@ -1091,13 +1091,18 @@ end
 // Основная адресная шина
 // адрес переключается только для контроллеров DB/RH70 и MY
 // адреса остальных контроллеров идут через  Unibus Mapping
-assign wb_adr =  /* (rh70_dma_state) ? rh70_dma_adr : */
+assign wb_adr = 
+`ifdef massnus
+                  (rh70_dma_state) ? rh70_dma_adr : 
+`endif
                   (my_dma_state)   ? my_dma_adr :
                   cpu_adr;
 
 // Адресная шина UNIBUS - DMA-запрсы идут через MMU подсистему Unibus Mapping
 assign dma_adr18 = (rk11_dma_state) ? rk11_adr : 18'o0 
+`ifndef massnus
                 |  (rh70_dma_state)? rh70_dma_adr[17:0]: 18'o0 
+`endif					 
                 |  (rk611_dma_state)? rk611_adr: 18'o0 ;
 
 // Выходная шина данных, от мастера DMA к ведомому устройству
@@ -1135,9 +1140,12 @@ assign rk611_stb  = bus_stb & (wb_adr[15:5] == (16'o177440 >> 5));   // DM - 177
 assign dw_stb     = bus_stb & (wb_adr[15:5] == (16'o174000 >> 5));   // DW - 174000-174026
 assign rx_stb     = bus_stb & (wb_adr[15:2] == (16'o177170 >> 2));   // DX - 177170-177172
 assign my_stb     = bus_stb & (wb_adr[15:2] == (16'o172140 >> 2));   // MY - 172140-172142 
-//assign rh70_stb   = bus_stb & (wb_adr[15:6] == (16'o176700 >> 6));   // DB - 176700-176776
-assign rh70_stb   = bus_stb & (wb_adr[15:6] == 10'o1767) & ((wb_adr[5] == 1'b0) || (wb_adr[5:3] == 3'b100)); // DB - 176700-176746
 assign kgd_stb    = bus_stb & (wb_adr[15:3] == (16'o176640 >> 3));   // КГД - 176640-176646
+`ifdef massbus
+ assign rh70_stb   = bus_stb & (wb_adr[15:6] == (16'o176700 >> 6));   // DB - 176700-176776 для massbud-конфигураций
+`else 
+assign rh70_stb   = bus_stb & (wb_adr[15:6] == 10'o1767) & ((wb_adr[5] == 1'b0) || (wb_adr[5:3] == 3'b100)); // DB - 176700-176746 для обычных qbus/unibus
+`endif
 
 // Сигналы подтверждения - собираются через OR со всех устройств
 assign global_ack  = sdram_ack | uart1_ack | uart2_ack | rk11_ack | rk611_ack | lpt_ack | dw_ack | rx_ack | my_ack | kgd_ack | rh70_ack;

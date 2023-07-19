@@ -364,8 +364,8 @@ assign rhds_err = rher1_dck | rher1_uns | rher1_opi | rher1_dte | rher1_wle | rh
 //*  Контроллер SD-карты
 //***********************************************
 // интерфейс к SDSPI
-wire [26:0] sdaddr;       // адрес сектора карты
-reg  [26:0] sdcard_addr;       // адрес сектора карты
+wire [26:0] sdaddr;            // полный SD-адрес, вычисляемый из цилиндра, головки, сектора
+reg  [26:0] sdcard_addr;       // буфер адреса сектора карты
 wire sdcard_error;             // флаг ошибки
 wire [15:0] sdbuf_dataout;     // слово; читаемое из буфера чтения
 wire sdcard_idle;              // признак готовности контроллера
