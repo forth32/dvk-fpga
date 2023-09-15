@@ -182,8 +182,8 @@ f11_wb cpu (
 //* Преобразования управляющих сигналов процессора
 //*****************************************************
 
-assign ram_stb = dma_ack? dma_stb : cpu_cyc & cpu_stb & ~ioaccess; // строб доступа к памяти
-assign bus_stb = cpu_cyc & cpu_stb & ioaccess & ~dma_ack;          // строб доступа к странице ввода-вывода
+assign ram_stb = dma_ack? dma_stb : cpu_stb & ~ioaccess; // строб доступа к памяти
+assign bus_stb = ~dma_ack &         cpu_stb & ioaccess;   // строб доступа к странице ввода-вывода
 assign cpu_ack = wb_ack & ~dma_ack;  // сигнал подтверждения обмена, в режиме DMA неактивен
 
 // приоритетный выбор линии подтверждения прерывания	
@@ -229,7 +229,7 @@ assign um_reg = dma_adr18[17:13];
 assign um_offset={um_h[um_reg], um_m[um_reg], um_l[um_reg], 1'b0};
 
 // Признак доступа к странице ввода-вывода  -760000 - 777777
-assign dma_iopage_mapped = (dma_adr18[17:13] == 5'b11111);
+assign dma_iopage_mapped = 1'b0; //(dma_adr18[17:13] == 5'b11111);
 
 // Полный физический адрес после отображения UNIBUS 
 assign um_adr = (dma_iopage_mapped)?  {9'b111111111, dma_adr18[12:0]} :    // доступ к странице ввода-вывода

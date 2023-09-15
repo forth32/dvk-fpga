@@ -84,6 +84,7 @@ if (buf == 0) {
 
 cardoffset=bank*banksize+doffset+unit*usize;
 printf("* Стартовый блок: %xh\n",cardoffset);
+printf("* Размер образа : %xh\n",usize);
 // вычитываем образ диска с карты
 fseek(card,(cardoffset)*512,SEEK_SET);
 fread(buf,512,usize,card);
@@ -106,7 +107,6 @@ if (strncmp(DD,"DX",2) == 0) {
 free(buf);
 buf=outbuf; // заменяем исходный буфер на преобразованный
 }
-printf("* Размер образа : %xh\n",usize);
 
 // записываем образ диска в выходной файл
 fwrite(buf,512,realsize,out);
