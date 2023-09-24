@@ -44,7 +44,7 @@ module topboard22 (
    output         timer_led,            // индикация включения таймера
    output         idle_led,             // признак ожидания прерывания по WAIT
    output         mmu_led,              // признак включения MMU 
-   output         run_led,              // признак активности секвенсера
+   output         run_led,              // признак активности секвенсера команд
    
    // Интерфейс SDRAM
    output         sdram_reset,       // сброс/переинициализация SDRAM
@@ -1017,7 +1017,7 @@ wbc_vic #(.N(5)) vic4
    .wb_stb_i(istb[4]),
    .wb_ack_o(br4_iack),
 //         UART1-Tx       UART1-Rx        UART2-Tx      UART2-Rx        ИРПР -LP  
-   .ivec({16'o000064,    16'o000060  ,  16'o000334,   16'o000330,    16'o0000200}),
+   .ivec({16'o000064,    16'o000060  ,   `irps2_ti,   `irps2_ri,    16'o0000200}),
    .ireq({uart1_tx_irq,  uart1_rx_irq,  uart2_tx_irq, uart2_rx_irq,  lpt_irq}),
    .iack({uart1_tx_iack, uart1_rx_iack, uart2_tx_iack,uart2_rx_iack, lpt_iack})
 );
