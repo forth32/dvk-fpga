@@ -25,7 +25,8 @@ module dc304
    output         pin_me,     // mapping enabled
    output         pin_ra,     // register access reply
    output         pin_de,     // invalid memory access
-   input  [2:0]   pin_pga     // early page address
+   input  [2:0]   pin_pga,    // early page address
+	output         mmu_en      // MMU enable
 );
 
 //______________________________________________________________________________
@@ -72,7 +73,7 @@ wire [5:0] fa;                // FPP register index
                               //
 wire en_um;                   // UMAP translate
 wire en_as;                   // AS, 22-bit address
-wire mmu_en;                  // MMU enable
+//wire mmu_en;                  // MMU enable
 wire bso, bs;                 //
 reg  bsi;                     //
                               //

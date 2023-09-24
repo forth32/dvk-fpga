@@ -54,10 +54,6 @@ module kdf11 (
 
 
 
-// на неспользуемые сигналы run, idle, mmu дублируем 3 младших бита cdr
-assign led_run=cdr_o[0];
-assign led_idle=cdr_o[1];
-assign led_mmu=cdr_o[2];
 
 wire [15:0] wb_mux;    // сборная шина данных от периферии к процессору                
 wire [15:0] lks_dat;   // шина данных таймера
@@ -66,6 +62,12 @@ wire        cpu_cyc;   // не уверен что он нужен
 wire 			ioaccess;  // признак доступа процессора к периферийной шине
 wire 			fdin_stb;  // строб безадресного чтения 
 wire			um_enable; // признак включения режима UNIBUS MAPPING
+wire        mmu_en;    // признак включения режима трансляции адресов
+
+// индикация
+assign led_run=cdr_o[0];
+assign led_idle=cdr_o[1];
+assign led_mmu=~mmu_en;
 
 // Слово конфигурации начального пуска - помещается в регистр безадресного ввода
 wire [15:0] fdin_data= 16'o173002;  // стартовый адрес - 173000, 
@@ -170,7 +172,9 @@ f11_wb  #(.F11_CORE_FPP(`fpu_present)) cpu (
 
    // управление/индикация	
    .vm_halt(resume),       // запрос перехода в пультовый ODT
-   .vm_bsel(2'b01)         // режим пуска процессора
+   .vm_bsel(2'b01),        // режим пуска процессора
+	.mmu_en(mmu_en)         // признак включения MMU
+
 );
 
 
