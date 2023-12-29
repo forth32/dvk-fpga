@@ -19,8 +19,8 @@
 //`define mc1201_02_board
 //`define mc1260_board
 //`define mc1280_board
-`define kdf11_board
-//`define pdp2011_board
+//`define kdf11_board
+`define pdp2011_board
  
 //======================================================================================================
 //
