@@ -1102,7 +1102,7 @@ assign wb_adr =
 assign dma_adr18 = (rk11_dma_state) ? rk11_adr : 18'o0 
 `ifndef massbus
                 |  (rh70_dma_state)? rh70_dma_adr[17:0]: 18'o0 
-`endif					 
+`endif                
                 |  (rk611_dma_state)? rk611_adr: 18'o0 ;
 
 // Выходная шина данных, от мастера DMA к ведомому устройству

@@ -26,7 +26,7 @@ module dc304
    output         pin_ra,     // register access reply
    output         pin_de,     // invalid memory access
    input  [2:0]   pin_pga,    // early page address
-	output         mmu_en      // MMU enable
+   output         mmu_en      // MMU enable
 );
 
 //______________________________________________________________________________

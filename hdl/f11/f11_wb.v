@@ -54,7 +54,7 @@ module f11_wb
                                  //
    output         vm_umap,       // enable dma address translation
    input [1:0]    vm_bsel,       // boot mode selector
-	output         mmu_en
+   output         mmu_en
 );
 
 //______________________________________________________________________________
@@ -369,7 +369,7 @@ dc304 mmu
    .pin_bsi(bsio),
    .pin_bso(bs_mmu),
    .pin_pga(pga),
-	.mmu_en(mmu_en)
+   .mmu_en(mmu_en)
 );
 
 always @(posedge vm_clk_p) if (mce_p) mc <= mo;
