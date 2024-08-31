@@ -169,7 +169,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(1)) cpu (
    .wbm_sel_o(wb_sel_o),    // выбор байтов для записи
    .wbm_stb_o(local_stb),     // строб операции на шине
    .wbm_ack_i(cpu_ack),     // вход подтверждения ввода-вывода (REPLY)
-   .vm_umap(um_enable),
+   .vm_umap(um_enable),     // признак включения режима Unibus Mapping
 
    // шина обработки прерываний
    .wbi_dat_i(cpu_int_vector),    // ввод вектора прерывания от устройства
@@ -177,9 +177,9 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(1)) cpu (
    .wbi_stb_o(cpu_istb),          // строб запроса вектора прцессором
 
    // управление/индикация   
-   .vm_halt(resume),       // запрос перехода в пультовый ODT
-   .vm_bsel(1'b1),        // режим пуска процессора
-   .vm_hltm(halt_flag),    // признак адресации пультового режима
+   .vm_halt(resume),       // запрос перехода в пультовый режим
+   .vm_bsel(1'b0),         // выбор способа пуска процессора
+   .vm_hltm(halt_flag),    // признак включения пультового режима
 //   .mmu_en(mmu_en)         // признак включения MMU
 
 );
