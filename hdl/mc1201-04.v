@@ -277,6 +277,7 @@ always @(posedge clk_p)
 //*******************************************
 wire [15:0] rom_dat;
 reg rom_ack0;
+assign rom_stb  = halt_stb & (wb_adr_o[12:11] != 2'b11);   // теневой ROM
 
 rom134 hrom(
    .address(cpu_adr[12:1]),
@@ -295,12 +296,22 @@ end
 //*******************************************
 reg[15:0] hram_dat;
 reg hram_ack0;
+wire [7:0] hram_adr;
+assign hram_stb = halt_stb & (wb_adr_o[12:11] == 4'b11);   // теневой RAM
+assign hram_adr=cpu_adr[8:1];
 
-reg [15:0] hram[0:255];
+// старший и младший байты теневого ОЗУ
+reg [7:0] hram_l[0:255];
+reg [7:0] hram_h[0:255];
+
 always @ (posedge clk_p) begin
    if (hram_stb)
-     if (wb_we_o) hram[cpu_adr[8:1]] <= wb_dat_o;
-     else hram_dat <= hram[cpu_adr[8:1]];
+     if (wb_we_o) begin
+			if (wb_sel_o[0]) hram_l[hram_adr] <= wb_dat_o[7:0];
+			if (wb_sel_o[1]) hram_h[hram_adr] <= wb_dat_o[15:8];
+	  end	
+     else hram_dat <= {hram_h[hram_adr],hram_l[hram_adr]};
+
 end
 
 // формирователь cигнала подверждения транзакции с задержкой на 1 такт
@@ -377,8 +388,6 @@ assign bevent = timer_50 & timer_ie;
 
 // стробы выбора периферии
 assign lks_stb  = bus_stb & (wb_adr_o[15:1] == (16'o177546 >> 1));   // LKS (таймер)- 177546
-assign rom_stb  = bus_stb & haltmode & (wb_adr_o[12:11] != 2'b11);   // теневой ROM
-assign hram_stb = bus_stb & haltmode & (wb_adr_o[12:11] == 4'b11);   // теневой RAM
 
 // сигнал ответа
 assign wb_ack     = global_ack | lks_ack | rom_ack | um_ack | rom_ack | hram_ack;
