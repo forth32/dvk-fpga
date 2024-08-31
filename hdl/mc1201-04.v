@@ -70,7 +70,8 @@ wire         um_enable; // признак включения режима UNIBUS
 wire        mmu_en;    // признак включения режима трансляции адресов
 
 // индикация
-assign led_run=1'b0;
+wire halt_flag;
+assign led_run=halt_flag;
 assign led_idle=1'b0;
 assign led_mmu=~1'b0;
 assign led_timer=~timer_ie;
@@ -160,7 +161,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(1)) cpu (
    // основная шина Wishbone
    .wbm_gnt_i(~dma_ack),    // запрос на приостановку работы процессора
    .wbm_ios_o(ioaccess),    // флаг доступа к странице ввода-вывода
-   .wbm_adr_o(cpu_adr),     // полный физический адрес, сформированный процессором
+   .wbm_adr_o({cpu_sel, cpu_adr}),     // полный физический адрес, сформированный процессором
    .wbm_dat_o(wb_dat_o),    // выход шины данных
    .wbm_dat_i(wb_mux),      // вход шины данных
    .wbm_cyc_o(cpu_cyc),     
@@ -178,7 +179,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(1)) cpu (
    // управление/индикация   
    .vm_halt(resume),       // запрос перехода в пультовый ODT
    .vm_bsel(1'b1),        // режим пуска процессора
-   .vm_hltm(cpu_sel),    // признак адресации пультового режима
+   .vm_hltm(halt_flag),    // признак адресации пультового режима
 //   .mmu_en(mmu_en)         // признак включения MMU
 
 );
