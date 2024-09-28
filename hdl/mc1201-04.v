@@ -79,8 +79,8 @@ assign led_timer=~timer_ie;
 // сигналы подтверждения обмена
 wire wb_ack;    // подтверждения обмена от шины 
 reg  lks_ack;   // таймер       
-reg  rom_ack;  // оконо доступа к ROM
-reg  hram_ack;  // оконо доступа к ROM
+reg  rom_ack;   // окно доступа к теневому ПзУ
+reg  hram_ack;  // окно доступа к теневому ОЗУ
 wire cpu_ack;   // подтверждение обмена для транзакций шины, генерируемых процессором
 reg um_ack;     // подтверждение доступа к массиву регистров UMR
 
@@ -178,7 +178,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(1)) cpu (
 
    // управление/индикация   
    .vm_halt(resume),       // запрос перехода в пультовый режим
-   .vm_bsel(1'b0),         // выбор способа пуска процессора
+   .vm_bsel(1'b1),         // выбор способа пуска процессора
    .vm_hltm(halt_flag),    // признак включения пультового режима
 //   .mmu_en(mmu_en)         // признак включения MMU
 
@@ -270,8 +270,6 @@ wire um_reply= um_stb & ~um_ack;
 always @(posedge clk_p)
     if (bus_reset == 1'b1) um_ack <= 1'b0;
     else um_ack <= um_reply;
-
-// Далее идет периферия дополнительно платы М8189 - сетевые часы и модуль загрузки/диагностики
     
 //*******************************************
 //* Теневое ПЗУ 134
@@ -289,7 +287,7 @@ rom134 hrom(
 // формирователь cигнала подверждения транзакции с задержкой на 1 такт
 always @ (posedge clk_p) begin
    rom_ack0 <= rom_stb;         
-   rom_ack  <= cpu_stb & rom_ack0;
+   rom_ack  <= rom_stb & rom_ack0;
 end
 
 //*******************************************
@@ -298,7 +296,7 @@ end
 reg[15:0] hram_dat;
 reg hram_ack0;
 wire [7:0] hram_adr;
-assign hram_stb = halt_stb & (wb_adr_o[12:11] == 4'b11);   // теневой RAM
+assign hram_stb = halt_stb & (wb_adr_o[12:11] == 4'b11);   
 assign hram_adr=cpu_adr[8:1];
 
 // старший и младший байты теневого ОЗУ
@@ -317,8 +315,8 @@ end
 
 // формирователь cигнала подверждения транзакции с задержкой на 1 такт
 always @ (posedge clk_p) begin
-   hram_ack0 <= rom_stb;         
-   hram_ack  <= cpu_stb & hram_ack0;
+   hram_ack0 <= hram_stb;         
+   hram_ack  <= hram_stb & hram_ack0;
 end
 
 //*************************************************************************
