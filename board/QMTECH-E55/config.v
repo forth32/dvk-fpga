@@ -34,12 +34,12 @@
 //`define KGD_module        // графический контроллер КГД
 //`define IRPS2_module      // второй последовательный порт ИРПС
 //`define IRPR_module       // параллельный порт ИРПР
-//`define RK_module         // диск RK-11/RK05
-//`define DM_module         // диск RK611/RK07
+`define RK_module         // диск RK-11/RK05
+`define DM_module         // диск RK611/RK07
 //`define DB_module         // диск RH70/RP06
 `define DX_module         // гибкий диск RX01
-//`define DW_module         // жесткий диск DW
-//`define MY_module         // гибкий диск двойной плотности MY
+`define DW_module         // жесткий диск DW
+`define MY_module         // гибкий диск двойной плотности MY
 //`define bootrom_module    // монитор-загрузчик M9312. Для PDP11/70 включается в конфигурацию всегда.
 
 //======================================================================================================
