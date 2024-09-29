@@ -1125,6 +1125,8 @@ assign sdram_stb = my_dma_stb
 `endif
 `ifdef RAM256
    | (cpu_ram_stb && (wb_adr[21:18] == 4'b0000)); // обрезка памяти до 256К
+`elsif RAM1M	
+   | (cpu_ram_stb && (wb_adr[21:20] == 2'b00)); // обрезка памяти до 1M
 `else
    | cpu_ram_stb;   // полные 4М памяти
 `endif
