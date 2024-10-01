@@ -36,7 +36,7 @@
 //`define IRPR_module       // параллельный порт ИРПР
 `define RK_module         // диск RK-11/RK05
 `define DM_module         // диск RK611/RK07
-//`define DB_module         // диск RH70/RP06
+`define DB_module         // диск RH70/RP06
 `define DX_module         // гибкий диск RX01
 `define DW_module         // жесткий диск DW
 `define MY_module         // гибкий диск двойной плотности MY
@@ -158,8 +158,8 @@
  `define PLL_MUL 1           // умножитель PLL
  `define PLL_DIV 1           // делитель PLL
  `define CPUSLOW 125         // число тактов, пропускаемых процессором в режиме замедления
-// `define RAM256              // ограничение объема памяти до 256К (18-битный адрес)
- `define RAM1M               // ограничение объема памяти до 256К (20-битный адрес)  
+ `define RAM256              // ограничение объема памяти до 256К (18-битный адрес)
+// `define RAM1M               // ограничение объема памяти до 1M (20-битный адрес)  
  
 //--------------------------------------------------
 `elsif kdf11_board

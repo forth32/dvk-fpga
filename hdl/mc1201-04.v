@@ -65,9 +65,10 @@ wire [15:0] lks_dat;   // шина данных таймера
 wire        local_stb; // строб данных от процессора
 wire        cpu_stb;   // строб данных на общую шину            
 wire        cpu_cyc;   // не уверен что он нужен
-wire          ioaccess;  // признак доступа процессора к периферийной шине
-wire         um_enable; // признак включения режима UNIBUS MAPPING
+wire        ioaccess;  // признак доступа процессора к периферийной шине
+wire        um_enable; // признак включения режима UNIBUS MAPPING
 wire        mmu_en;    // признак включения режима трансляции адресов
+wire        cpu_sel;   // признак включения процессором теневой адресации пультового режима - сигнал SEL
 
 // индикация
 wire halt_flag;
@@ -79,8 +80,8 @@ assign led_timer=~timer_ie;
 // сигналы подтверждения обмена
 wire wb_ack;    // подтверждения обмена от шины 
 reg  lks_ack;   // таймер       
-reg  rom_ack;   // окно доступа к теневому ПзУ
-reg  hram_ack;  // окно доступа к теневому ОЗУ
+wire rom_ack;   // окно доступа к теневому ПзУ
+wire hram_ack;  // окно доступа к теневому ОЗУ
 wire cpu_ack;   // подтверждение обмена для транзакций шины, генерируемых процессором
 reg um_ack;     // подтверждение доступа к массиву регистров UMR
 
@@ -99,12 +100,10 @@ wire bevent;     // сигнал запроса прерывания
 wire [21:0] cpu_adr;
 // коммутатор шины адреса для режимов CPU/DMA
 assign wb_adr_o= dma_ack? um_adr : cpu_adr; // для операций DMA-18 на шину выставляется входной DMA-адрес
-wire cpu_sel;   // признак включения процессором теневой адресации пультового режима - сигнал SEL
 
 // Выбор строба теневого режима
-wire haltmode = cpu_sel & (cpu_adr[21:15] == 7'b00000000);    // признак включения теневой адресации пультового режима
-assign cpu_stb = ~haltmode & local_stb;
-assign halt_stb = haltmode & local_stb;
+assign cpu_stb = ~cpu_sel & local_stb;
+assign halt_stb = cpu_sel & local_stb;
 
 // Прерывания 
 wire [7:4] vstb;          // строб приема вектора
@@ -173,7 +172,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(1)) cpu (
 
    // шина обработки прерываний
    .wbi_dat_i(cpu_int_vector),    // ввод вектора прерывания от устройства
-   .wbi_ack_i(iack_i|fdin_ack),   // подтверждение передачи вектора или данных безадресного ввода
+   .wbi_ack_i(iack_i),   // подтверждение передачи вектора или данных безадресного ввода
    .wbi_stb_o(cpu_istb),          // строб запроса вектора прцессором
 
    // управление/индикация   
@@ -275,7 +274,8 @@ always @(posedge clk_p)
 //* Теневое ПЗУ 134
 //*******************************************
 wire [15:0] rom_dat;
-reg rom_ack0;
+reg rom_ack0, rom_ack1;
+// Строб выбора ПЗУ
 assign rom_stb  = halt_stb & (wb_adr_o[12:11] != 2'b11);   // теневой ROM
 
 rom134 hrom(
@@ -287,16 +287,19 @@ rom134 hrom(
 // формирователь cигнала подверждения транзакции с задержкой на 1 такт
 always @ (posedge clk_p) begin
    rom_ack0 <= rom_stb;         
-   rom_ack  <= rom_stb & rom_ack0;
+   rom_ack1  <= rom_stb & rom_ack0;
 end
+assign rom_ack=rom_stb & rom_ack1;
 
 //*******************************************
 //*  Теневое ОЗУ
 //*******************************************
 reg[15:0] hram_dat;
-reg hram_ack0;
+reg hram_ack0, hram_ack1;
 wire [7:0] hram_adr;
-assign hram_stb = halt_stb & (wb_adr_o[12:11] == 4'b11);   
+// Строб выбора ОЗУ
+assign hram_stb = halt_stb & (wb_adr_o[12:11] == 2'b11);   
+// Адресные линии ОЗУ
 assign hram_adr=cpu_adr[8:1];
 
 // старший и младший байты теневого ОЗУ
@@ -316,8 +319,10 @@ end
 // формирователь cигнала подверждения транзакции с задержкой на 1 такт
 always @ (posedge clk_p) begin
    hram_ack0 <= hram_stb;         
-   hram_ack  <= hram_stb & hram_ack0;
+   hram_ack1  <= hram_stb & hram_ack0;
 end
+
+assign hram_ack=hram_ack1 & hram_stb;
 
 //*************************************************************************
 //*  Подсистема сетевых часов - LTC
