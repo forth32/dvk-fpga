@@ -211,7 +211,7 @@ wire rkcs1_cerr;          // сборная линия ошибок
 reg[15:0] rkwc; 
 
 // физический адрес буфера в памяти - rkba - 177444
-reg[15:0] rkba; 
+reg[15:1] rkba; 
 
 // 777446  RKDA - адрес дорожки и сектора
 reg [2:0] rkda_hd;       // головка
@@ -360,7 +360,7 @@ always @(posedge wb_clk_i)  begin
       rker_dck <= 1'b0;
       rker_dtype <= 1'b0;
 
-      rkba <= {16{1'b0}} ; 
+      rkba <= {15{1'b0}} ; 
 
       rkcs1_ie <= 1'b0 ; 
       rkcs1_mex <= 2'b00 ; 
@@ -454,7 +454,7 @@ always @(posedge wb_clk_i)  begin
                // 777442  RKWC - счетчик слов для обмена данными
                4'b0001 :   wb_dat_o <= ~(wcp-1'b1); // значение получаем инверсией wcp
                // физический адрес буфера в памяти - rkba - 177444
-               4'b0010 :   wb_dat_o <= rkba;
+               4'b0010 :   wb_dat_o <= {rkba, 1'b0};
                // 777446  RKDA - адрес дорожки и сектора
                4'b0011 :   wb_dat_o <= {5'b00000, rkda_hd, 3'b000, rkda_sc};
                // 777450  rkcs2 - регистр управления/состояния 2
@@ -501,7 +501,7 @@ always @(posedge wb_clk_i)  begin
                               update_rkwc <= 1'b1 ;  // поднимаем признак изменения RKWC 
                            end
                // физический адрес буфера в памяти - rkba - 177444
-               4'b0010 :   rkba[7:0] <= wb_dat_i[7:0];
+               4'b0010 :   rkba[7:1] <= wb_dat_i[7:1];
                // 777446  RKDA - адрес дорожки и сектора
                4'b0011 :   rkda_sc <= wb_dat_i[4:0];
                // 777450  rkcs2 - регистр управления/состояния 2
@@ -649,7 +649,7 @@ always @(posedge wb_clk_i)  begin
                                  if (nxm == 1'b0 & sdcard_error == 1'b0)  begin
                                     // запись окончилась без ошибок 
                                     rkcs1_mex <= ram_phys_addr[17:16] ;    // адрес окончания записи - старшая часть
-                                    rkba <= {ram_phys_addr[15:1], 1'b0} ;  // младшая часть
+                                    rkba <= ram_phys_addr[15:1] ;  // младшая часть
                                     
                                     // ----- переход к следующему сектору -----
                                     if (rkda_sc != 5'd21)  rkda_sc <= rkda_sc + 1'b1 ; // увеличиваем # сектора 
@@ -684,7 +684,7 @@ always @(posedge wb_clk_i)  begin
                                  // обработка ошибок записи
                                  else begin
                                     rkcs1_mex <= ram_phys_addr[17:16] ; 
-                                    rkba <= {ram_phys_addr[15:1], 1'b0} ; 
+                                    rkba <= ram_phys_addr[15:1] ; 
                                     if (nxm == 1'b1)  rkcs2_nem <= 1'b1 ; // ошибка NXM - запись в несуществующую память
                                     if (sdcard_error == 1'b1) rker_dck <= 1'b1 ;   // ошибка SD-карты
                                     start <= 1'b0;  // завершаем обработку команды
@@ -724,7 +724,7 @@ always @(posedge wb_clk_i)  begin
                                  if (nxm == 1'b0 & sdcard_error == 1'b0)   begin
                                     // чтение завершено без ошибок
                                     rkcs1_mex <= ram_phys_addr[17:16] ; 
-                                    rkba <= {ram_phys_addr[15:1], 1'b0} ; // адрес буфера к ОЗУ хоста
+                                    rkba <= ram_phys_addr[15:1] ; // адрес буфера к ОЗУ хоста
                                       
                                     // ----- переход к следующему сектору -----
                                     if (rkda_sc != 5'd21)  rkda_sc <= rkda_sc + 1'b1 ; // увеличиваем # сектора 
@@ -759,7 +759,7 @@ always @(posedge wb_clk_i)  begin
                                  else  begin
                                     // обработка ошибок чтения
                                     rkcs1_mex <= ram_phys_addr[17:16] ; 
-                                    rkba <= {ram_phys_addr[15:1], 1'b0} ; 
+                                    rkba <= ram_phys_addr[15:1] ; 
                                     if (nxm == 1'b1)  rkcs2_nem <= 1'b1 ; // ошибка NXM - запись в несуществующую память
                                     if (sdcard_error == 1'b1) rker_dck <= 1'b1 ;   // ошибка SD-карты
                                     start <= 1'b0;
