@@ -1404,7 +1404,7 @@ assign dn_offset = (unit[1:0] == 2'b00) ? 23'h000000 :
 // дополнительное смещение для дисков 4-7
 assign udn_offset = ((unit[2]) == 1'b1) ? 23'h180000 : 23'h000000;
 
-// полный SD-адрес - цилиндр, головка, сектор
+// полный SD-адрес - цилиндр, головка, сектор  =  dev_offset+cyl*418+hd*22+sc
 assign sdaddr = 
      start_offset +
      udn_offset +
