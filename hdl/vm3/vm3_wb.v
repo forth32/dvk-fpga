@@ -1566,7 +1566,7 @@ begin
       psw_smod_sa <= psw_smod;
 
    if (pswh_inf)
-      psw[15:12] <= {fr[15:14], psw_smod_sa ? psw[15:14] : fr[15:14]};
+      psw[15:12] <= {fr[15:14], psw_smod_sa ? psw[15:14] : fr[13:12]};
    else
       if (pswh_ind)
          psw[15:12] <= fx[15:12];
@@ -2284,7 +2284,6 @@ assign sx_ro = op1_wf & ~mmu_d[2] & mmu_d[1];            // readonly error
 assign sx_nr = ~mmu_d[1] | (mt_mod[5] ^ mt_mod[6]);      // not resident or bad mode
 
 assign a0_reg = ba_fsel ? ba_fr[0] : ba_ax[0];
-//assign ba = (ba_pca | ba_pca_rc) ? pca : (ba_fsel ? ba_fr : ba_ax);
 assign ba = (ba_pca | (ba_pca_rc & ~sa_sxa)) ? pca : (ba_fsel ? ba_fr : ba_ax);
 assign sa77 = ba[15:13] == 3'b111;
 
