@@ -18,6 +18,11 @@
    `undef bootrom_module
 `endif	
 
+// Для платы 1201.04 то же самое
+`ifdef mc1201_04_board
+   `undef bootrom_module
+`endif	
+
 // фиктивный CPUSLOW для неподдерживаемых процессорных плат
 `ifndef CPUSLOW
 	`define CPUSLOW 1          
