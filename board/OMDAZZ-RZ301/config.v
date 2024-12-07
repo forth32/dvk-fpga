@@ -17,8 +17,8 @@
 // Раскомментируйте одну из строк для включения выбранной платы в схему
 
 //`define mc1201_01_board
-//`define mc1201_02_board
-`define mc1201_04_board
+`define mc1201_02_board
+//`define mc1201_04_board
 //`define mc1260_board
 //`define mc1280_board
 //`define kdf11_board
@@ -30,16 +30,16 @@
 //  Закомментируйте ненужные модули, если хотите исключить их из схемы.
 //
 
-//`define KSM_module        // текстовый контроллер КСМ
-//`define KGD_module        // графический контроллер КГД
-`define IRPS2_module      // второй последовательный порт ИРПС
+`define KSM_module        // текстовый контроллер КСМ
+`define KGD_module        // графический контроллер КГД
+//`define IRPS2_module      // второй последовательный порт ИРПС
 //`define IRPR_module       // параллельный порт ИРПР
 `define RK_module         // диск RK-11/RK05
 `define DM_module         // диск RK611/RK07
-`define DB_module         // диск RH70/RP06
+//`define DB_module         // диск RH70/RP06
 `define DX_module         // гибкий диск RX01
-`define DW_module         // жесткий диск DW
-`define MY_module         // гибкий диск двойной плотности MY
+//`define DW_module         // жесткий диск DW
+//`define MY_module         // гибкий диск двойной плотности MY
 //`define bootrom_module    // монитор-загрузчик M9312. Для PDP11/70 включается в конфигурацию всегда.
 
 //======================================================================================================
@@ -156,7 +156,7 @@
  `define BOARD mc1201_04     // имя подключаемого модуля процессорной платы
  `define adr22               // признак 22-битной процессорной платы
  `define PLL_MUL 1          // умножитель PLL
- `define PLL_DIV 1          // делитель PLL
+ `define PLL_DIV 2          // делитель PLL
  `define CPUSLOW 125         // число тактов, пропускаемых процессором в режиме замедления
 // `define RAM256              // ограничение объема памяти до 256К (18-битный адрес)
  `define RAM1M               // ограничение объема памяти до 1M (20-битный адрес)  
