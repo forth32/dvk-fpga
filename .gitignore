@@ -18,5 +18,6 @@ ksm-firmware/*.lst
 *.timing
 *.tsm
 disk/
+rsx/
 
 

@@ -2,7 +2,7 @@
 <Project>
     <Project_Created_Time>2021-03-10 07:42:39</Project_Created_Time>
     <TD_Version>4.6.18154</TD_Version>
-    <UCode>11011101</UCode>
+    <UCode>00101010</UCode>
     <Name>top</Name>
     <HardWare>
         <Family>EG4</Family>
@@ -74,10 +74,15 @@
             <File>../../hdl/pdp2011/mmu.v</File>
             <File>../../hdl/pdp2011/wb_cpu2011.v</File>
             <File>../../hdl/rh70.v</File>
+            <File>ip-components/tang_rom134.v</File>
+            <File>../../hdl/vm3/vm3_mmu.v</File>
+            <File>../../hdl/vm3/vm3_plm.v</File>
+            <File>../../hdl/vm3/vm3_wb.v</File>
+            <File>../../hdl/mc1201-04.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
-        <CWC_FILE>top.cwc</CWC_FILE>
+        <CWC_FILE/>
     </Source_Files>
     <TOP_MODULE>
         <LABEL/>
@@ -87,10 +92,11 @@
     <Property>
         <GlobalProperty/>
         <RtlProperty/>
+        <SimProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2021-09-18 08:04:31</Step_Last_Change>
-        <Current_Step>30</Current_Step>
+        <Step_Last_Change>2024-12-12 19:20:51</Step_Last_Change>
+        <Current_Step>60</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>
