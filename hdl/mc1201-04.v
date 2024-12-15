@@ -65,7 +65,7 @@ wire [15:0] wb_mux;    // сборная шина данных от перифе
 wire [15:0] lks_dat;   // шина данных таймера
 wire        local_stb; // строб данных от процессора
 wire        cpu_stb;   // строб данных на общую шину            
-wire        cpu_cyc;   // не уверен что он нужен
+wire        halt_stb;  // строб обращения к теневому адресному пространству            
 wire        ioaccess;  // признак доступа процессора к периферийной шине
 wire        um_enable; // признак включения режима UNIBUS MAPPING
 wire        mmu_en;    // признак включения режима трансляции адресов
@@ -96,6 +96,7 @@ wire lks_stb;  // таймер
 wire um_stb;   // регистры подсистемы unibus mapping
 wire rom_stb;  // строб обращения к теневому ПЗУ
 wire hram_stb; // строб обращения к теневому OЗУ
+
 
 // шина адреса
 wire [21:0] cpu_adr;
@@ -164,7 +165,6 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(0)) cpu (
    .wbm_adr_o({cpu_sel, cpu_adr}),     // полный физический адрес, сформированный процессором
    .wbm_dat_o(wb_dat_o),    // выход шины данных
    .wbm_dat_i(wb_mux),      // вход шины данных
-   .wbm_cyc_o(cpu_cyc),     
    .wbm_we_o(wb_we_o),      // флаг вывода данных на шину (0-ввод, 1-вывод)
    .wbm_sel_o(wb_sel_o),    // выбор байтов для записи
    .wbm_stb_o(local_stb),     // строб операции на шине
@@ -209,7 +209,7 @@ assign istb_o[5]=vstb[5];
 assign istb_o[4]=vstb[4];
 
 // шина ввода вектора прерывания в процессор
-assign cpu_int_vector= {8'h00, ivec};
+assign cpu_int_vector= {7'h00, ivec};
                   
 // формирователь сигналов DMA
 always @(posedge clk_p)

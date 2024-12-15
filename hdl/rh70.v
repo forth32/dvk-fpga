@@ -707,6 +707,7 @@ always @(posedge wb_clk_i) begin
                                     rher2_dvc <= wb_dat_i[7] ; 
                                     rher2_dpe <= wb_dat_i[3] ; 
                                  end
+`ifdef massbus                  											
                         // rhbae 17776750
                         5'b10100, 5'b11110 :
                                     rhbae <= wb_dat_i[5:0] ; 
@@ -716,7 +717,8 @@ always @(posedge wb_clk_i) begin
                                     rhcs3_dpe <= wb_dat_i[14:13];
                                     rhcs3_wce <= wb_dat_i[12:11];
                                     rhcs3_dbl <= wb_dat_i[10];
-                                  end              
+                                  end
+`endif											 
                         // несуществующие регистры
                         default:      rher1_ilr <= 1'b1 ; 
                      endcase 
@@ -778,11 +780,13 @@ always @(posedge wb_clk_i) begin
                                     rher2_lsc <= wb_dat_i[11] ; 
                                     rher2_lbc <= wb_dat_i[10] ; 
                                  end
+`ifdef massbus                  											
                         // rhcs3 17776752
                         5'b10101: begin
                                     rhcs1_ie <= wb_dat_i[6];
                                     rhcs3_ipck <= wb_dat_i[3:0];
                                   end              
+`endif											 
                      endcase 
                   end 
                end 

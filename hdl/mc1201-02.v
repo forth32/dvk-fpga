@@ -101,11 +101,11 @@ assign istb=(una)? 1'b0: cpu_istb;         // блокировка выдача 
 //*************************************
 // счетчик замедления процессора
 //*************************************
-reg [4:0] cpudelay;
+reg [6:0] cpudelay;
 reg cpu_clk_enable;
 
 always @ (posedge clk_p) begin
-    if (cpudelay != 5'd`CPUSLOW) begin
+    if (cpudelay != 7'd`CPUSLOW) begin
         cpudelay <= cpudelay + 1'b1;  // считаем от 0 до 22
         cpu_clk_enable <= 1'b0;
     end     
