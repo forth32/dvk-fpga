@@ -99,11 +99,11 @@ wire hram_stb; // строб обращения к теневому OЗУ
 
 
 // шина адреса
-wire [21:0] cpu_adr;
+wire [21:0] cpu_adr; // локальная шина адреса процессора
 // коммутатор шины адреса для режимов CPU/DMA
-assign wb_adr_o= dma_ack? um_adr : cpu_adr; // для операций DMA-18 на шину выставляется входной DMA-адрес со старшими нулями
+assign wb_adr_o= dma_ack? um_adr : cpu_adr; 
 
-// Выбор строба теневого режима
+// Стробы основного и теневого режима
 assign cpu_stb = ~cpu_sel & local_stb;
 assign halt_stb = cpu_sel & local_stb;
 
@@ -111,7 +111,7 @@ assign halt_stb = cpu_sel & local_stb;
 wire [7:4] vstb;          // строб приема вектора
 wire [7:4] virq;          // запрос прерывания
 wire cpu_istb;
-wire [15:0]cpu_int_vector;
+wire [15:0]cpu_int_vector; // шина для ввода вектора в процессор
 
 // подсистема отображения пространства 18-битного DMA-адреса на физический адрес (unibus mapping)
 wire[4:0] um_reg;  // текущий используемый UMR-регистр в режиме DMA
@@ -167,20 +167,19 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(0)) cpu (
    .wbm_dat_i(wb_mux),      // вход шины данных
    .wbm_we_o(wb_we_o),      // флаг вывода данных на шину (0-ввод, 1-вывод)
    .wbm_sel_o(wb_sel_o),    // выбор байтов для записи
-   .wbm_stb_o(local_stb),     // строб операции на шине
+   .wbm_stb_o(local_stb),   // строб операции на шине
    .wbm_ack_i(cpu_ack),     // вход подтверждения ввода-вывода (REPLY)
    .vm_umap(um_enable),     // признак включения режима Unibus Mapping
 
    // шина обработки прерываний
    .wbi_dat_i(cpu_int_vector),    // ввод вектора прерывания от устройства
-   .wbi_ack_i(iack_i),   // подтверждение передачи вектора или данных безадресного ввода
-   .wbi_stb_o(cpu_istb),          // строб запроса вектора прцессором
+   .wbi_ack_i(iack_i),      // подтверждение передачи вектора или данных безадресного ввода
+   .wbi_stb_o(cpu_istb),    // строб запроса вектора прцессором
 
    // управление/индикация   
-   .vm_halt(resume),       // запрос перехода в пультовый режим
-   .vm_bsel(1'b1),         // выбор способа пуска процессора
-   .vm_hltm(halt_flag)    // признак включения пультового режима
-//   .mmu_en(mmu_en)         // признак включения MMU
+   .vm_halt(resume),        // запрос перехода в пультовый режим
+   .vm_bsel(1'b1),          // выбор способа пуска процессора
+   .vm_hltm(halt_flag)      // признак включения пультового режима
 
 );
 
@@ -317,9 +316,11 @@ reg [7:0] hram_h[0:255];
 always @ (posedge clk_p) begin
    if (hram_stb)
      if (wb_we_o) begin
+	  // запись в ОЗУ
 			if (wb_sel_o[0]) hram_l[hram_adr] <= wb_dat_o[7:0];
 			if (wb_sel_o[1]) hram_h[hram_adr] <= wb_dat_o[15:8];
 	  end	
+	  // чтение из ОЗУ
      else hram_dat <= {hram_h[hram_adr],hram_l[hram_adr]};
 
 end
@@ -391,15 +392,22 @@ always @(posedge clk_p)
     else lks_ack <= lks_reply;
 
 // сигнал прерывания от таймера   
+`ifdef LTC
 assign bevent = timer_50 & timer_ie;
+`else
+assign bevent = timer_50;
+`endif
 
+// строб выбора регистра управленияпо адресу 177546
+`ifdef LTC
+assign lks_stb  = bus_stb & (wb_adr_o[15:1] == (16'o177546 >> 1));
+`else
+assign lks_stb=1'b0;
+`endif
     
 //*******************************************************************
 //*  Формирователь сигналов выбора устройств на шине
 //*******************************************************************
-
-// стробы выбора периферии
-assign lks_stb  = bus_stb & (wb_adr_o[15:1] == (16'o177546 >> 1));   // LKS (таймер)- 177546
 
 // сигнал ответа
 assign wb_ack     = global_ack | lks_ack | rom_ack | um_ack | rom_ack | hram_ack;
