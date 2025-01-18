@@ -10,6 +10,7 @@
 //
 // ======================================================================================
 
+
 module mc1201_04 ( 
 // Синхросигналы  
    input          clk_p,         // тактовый сигнал, прямая фаза
@@ -40,12 +41,12 @@ module mc1201_04 (
    
 // Ручное управление
    input [15:0] csw,             // регистр консольных переключателей              
-   input resume,                  // кнопка перехода в пультовый режим
+   input bt_halt,                // переключаель программа-пульт
    
 // Информационные индикаторы   
-   output led_idle,              // индикация бездействия (WAIT)
-   output led_run,               // индикация работы процессора (~HALT)
-   output led_mmu,               // индикация включения MMU
+   output led1,                  // признак теневого HALT-режима процессора
+   output led2,               
+   output led3,               
    output led_timer,             // индикация включения таймера
    output reg [15:0] swr_out,    // вывод регистра консольной индикации процессора
    
@@ -70,6 +71,7 @@ wire        ioaccess;  // признак доступа процессора к 
 wire        um_enable; // признак включения режима UNIBUS MAPPING
 wire        mmu_en;    // признак включения режима трансляции адресов
 wire        cpu_sel;   // признак включения процессором теневой адресации пультового режима - сигнал SEL
+wire        halt_flag; // признак пультового режима процессора
 
 // таймер
 reg timer_ie;    // разрешение прерывания
@@ -77,10 +79,9 @@ reg timer_rdy;   // готовность таймера
 wire bevent;     // сигнал запроса прерывания
 
 // индикация
-wire halt_flag;
-assign led_run=halt_flag;
-assign led_idle=1'b0;
-assign led_mmu=~1'b0;
+assign led1=~halt_flag;
+assign led2=~um_enable;
+assign led3=~mmu_en;
 assign led_timer=~timer_ie;
 
 // сигналы подтверждения обмена
@@ -177,9 +178,10 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(0)) cpu (
    .wbi_stb_o(cpu_istb),    // строб запроса вектора прцессором
 
    // управление/индикация   
-   .vm_halt(resume),        // запрос перехода в пультовый режим
-   .vm_bsel(1'b1),          // выбор способа пуска процессора
-   .vm_hltm(halt_flag)      // признак включения пультового режима
+   .vm_halt(bt_halt),        // запрос перехода в пультовый режим
+   .vm_bsel(1'b1),           // выбор способа пуска процессора
+   .vm_hltm(halt_flag),      // признак включения пультового режима
+	.mmu_enable(mmu_en)       // признак включения MMU
 
 );
 
@@ -220,6 +222,11 @@ always @(posedge clk_p)
 //*  Подсистема отображения адресов Unibus Mapping в режиме DMA
 //*****************************************************************
 
+// Отклчение подсистемы в режиме 256К ОЗУ
+`ifdef RAM256
+`undef UMAP
+`endif
+
 // Выбор номера регистра отображения UNIBUS из 18-битного адреса
 assign um_reg = dma_adr18[17:13];                                                                            
     
@@ -231,7 +238,7 @@ assign um_offset={um_h[um_reg], um_m[um_reg], um_l[um_reg], 1'b0};
 
 // Полный физический адрес после отображения UNIBUS 
 assign um_adr = 
-`ifndef RAM256
+`ifdef UMAP
 //                 (dma_iopage_mapped)?  {9'b111111111, dma_adr18[12:0]} :    // доступ к странице ввода-вывода
                  (um_enable)?         um_offset+dma_adr18[12:0] :    // доступ к пространству ОЗУ в режиме Unibus mapping
 `endif					  
@@ -241,7 +248,7 @@ assign um_adr =
 //    17770200-17770366 - регистры отображения Unibus DMA адресов                                         
 
 // Строб выбора регистров отображения Unibus Mapping 170200-177377      
-`ifndef RAM256                  
+`ifdef UMAP                  
 assign um_stb = bus_stb & (wb_adr_o[12:7] == 6'b100001);  
 `else
 assign um_stb=1'b0;   

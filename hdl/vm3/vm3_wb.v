@@ -66,7 +66,8 @@ module vm3_wb
                                  //
    output         vm_umap,       // enable dma address translation
    output         vm_hltm,       // halt mode
-   input          vm_bsel        // boot mode selector 1 - 173000
+   input          vm_bsel,       // boot mode selector 1 - 173000
+	output		   mmu_enable     // признак включение MMU
 );
 
 //______________________________________________________________________________
@@ -604,6 +605,7 @@ assign vm_init = init;
 assign vm_hltm = hltm;
 assign vm_umap = sr3_um;
 assign init = init_out | dclo;
+assign mmu_enable=mmu_en;
 
 always @(posedge vm_clk_p)
 begin

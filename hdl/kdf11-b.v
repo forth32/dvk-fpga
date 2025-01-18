@@ -35,12 +35,12 @@ module kdf11 (
    
 // Ручное управление
    input [15:0] csw,             // регистр консольных переключателей              
-   input resume,                  // кнопка перехода в пультовый режим
+   input bt_halt,                  // кнопка перехода в пультовый режим
    
 // Информационные индикаторы   
-   output led_idle,              // индикация бездействия (WAIT)
-   output led_run,               // индикация работы процессора (~HALT)
-   output led_mmu,               // индикация включения MMU
+   output led1,              // индикация бездействия (WAIT)
+   output led2,               // индикация работы процессора (~HALT)
+   output led3,               // индикация включения MMU
    output led_timer,             // индикация включения таймера
    output reg [15:0] swr_out,    // вывод регистра консольной индикации процессора
    
@@ -66,9 +66,9 @@ wire         um_enable; // признак включения режима UNIBUS
 wire        mmu_en;    // признак включения режима трансляции адресов
 
 // индикация
-assign led_run=cdr_o[0];
-assign led_idle=cdr_o[1];
-assign led_mmu=~mmu_en;
+assign led1=cdr_o[0];
+assign led2=cdr_o[1];
+assign led3=~mmu_en;
 assign led_timer=~timer_ie;
 
 // Слово конфигурации начального пуска - помещается в регистр безадресного ввода
@@ -173,7 +173,7 @@ f11_wb  #(.F11_CORE_FPP(`fpu_present)) cpu (
    .wbi_una_o(fdin_stb),          // строб доступа к регистру безадресного ввода
 
    // управление/индикация   
-   .vm_halt(resume),       // запрос перехода в пультовый ODT
+   .vm_halt(bt_halt),       // запрос перехода в пультовый ODT
    .vm_bsel(2'b01),        // режим пуска процессора
    .mmu_en(mmu_en)         // признак включения MMU
 

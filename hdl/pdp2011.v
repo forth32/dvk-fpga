@@ -33,13 +33,12 @@ module pdp2011 (
    input aclo,                   // Сигнал аварии питания
    
 // сигналы ручного управления   
-   input resume,                 // Сигнал запуска процессора после HALT
+   input bt_halt,                 // Сигнал запуска процессора после HALT
    input [15:0] csw,             // регистр консольных переключателей процессора     
-
 // Информационные индикаторы   
-   output led_idle,              // индикация бездействия (WAIT)
-   output led_run,               // индикация работы процессора (~HALT)
-   output led_mmu,               // индикация включения MMU
+   output led1,                  // индикация бездействия (WAIT)
+   output led2,                  // индикация работы процессора (~HALT)
+   output led3,                  // индикация включения MMU
    output led_timer,             // индикация включения таймера
    output reg [15:0] swr_out,    // вывод регистра консольной индикации процессора
    
@@ -94,9 +93,9 @@ wire [15:0] cpu_stack_limit;
 // индикация состояния
 wire iwait;
 wire run;
-assign led_mmu= ~(cons_map18 | cons_map22);
-assign led_run=~run;
-assign led_idle=~iwait;
+assign led3= ~(cons_map18 | cons_map22);
+assign led2=~run;
+assign led1=~iwait;
 
 // сброс системы
 assign      sys_init = bus_reset;
@@ -202,7 +201,7 @@ cpu2011 cpu (
    .psw_out(cpu_psw_out),             // Вывод PSW , читаемого под адресу 177776
 
    // управление и индикация
-   .sw_cont(resume),              // сигнал продолжения работы
+   .sw_cont(bt_halt),              // сигнал продолжения работы
    .cpuslow(cpuslow),             // Включение замедленного режима процессора
    .iwait(iwait),                 // признак приостановки: 1 - процессор стоит на команде wait и ждет прерывания
    .run(run),                     // признак работы секвенсора

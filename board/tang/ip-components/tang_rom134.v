@@ -34,7 +34,9 @@ module tang_rom134 ( doa, addra, clka, rsta );
             .IMPLEMENT("9K"),
             .DEBUGGABLE("NO"),
             .PACKABLE("NO"),
+	`ifdef vm3_rom	
             .INIT_FILE(`vm3_rom),
+	`endif	
             .FILL_ALL("NONE"))
          inst(
             .dia({16{1'b0}}),
