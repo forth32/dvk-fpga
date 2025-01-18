@@ -70,12 +70,22 @@ assign sw[3]=1'b0;
 //********************************************
 //* Светодиоды
 //********************************************
-wire dm_led, rk_led, dw_led, my_led, dx_led, timer_led;
+wire rk_led, dw_led, dm_led, my_led, dx_led, db_led, timer_led, led2, led1, led3;
 
-assign led[0]=rk_led&dm_led; // запрос обмена диска RK
-assign led[1]=dw_led;        // запрос обмена диска DW
-assign led[2]=my_led&dx_led; // запрос обмена диска MY или DX
+// Распределение светодиодов для 16-битных процессоров
+`ifndef adr22
+assign led[0]=rk_led & dm_led;  // запрос обмена диска RK и DM
+assign led[1]=dx_led;        // запрос обмена диска DX
+assign led[2]=my_led|dw_led;        // запрос обмена диска MY 
 assign led[3]=timer_led;     // индикация включения таймера
+`else
+// Распределение светодиодов для 22-битных процессоров
+assign led[0]=rk_led & dm_led & dx_led & my_led & dw_led & db_led;  // запрос обмена диска 
+assign led[1]=led1;    // Индикатор состояния процессора 1
+assign led[2]=led2;    // Индикатор состояния процессора 2
+assign led[3]=timer_led;  // индикация включения таймера
+
+`endif
 
 //************************************************
 //* тактовый генератор 
@@ -227,11 +237,17 @@ assign vgar = vgared;
    
    // индикаторные светодиоды      
    .rk_led(rk_led),               // запрос обмена диска RK
-   .dm_led(dm_led),               // запрос обмена диска DM
    .dw_led(dw_led),               // запрос обмена диска DW
+   .dm_led(dm_led),               // запрос обмена диска DM
    .my_led(my_led),               // запрос обмена диска MY
    .dx_led(dx_led),               // запрос обмена диска DX
    .timer_led(timer_led),         // индикация включения таймера
+`ifdef adr22
+   .db_led(db_led),               // запрос обмена диска DB
+   .led1(led1),               // признак ожидания прерывания по WAIT
+   .led3(led3),                // признак включения MMU 
+   .led2(led2),                // признак ативности секвенсера
+`endif   
    
    // Интерфейс SDRAM
    .sdram_reset(sdram_reset),     // сброс

@@ -48,7 +48,7 @@ module tang(
 //********************************************
 //* Светодиоды
 //********************************************
-wire rk_led, dw_led, dm_led, my_led, dx_led, db_led, timer_led, run_led, idle_led, mmu_led;
+wire rk_led, dw_led, dm_led, my_led, dx_led, db_led, timer_led, led2, led1, led3;
 
 // Распределение светодиодов для 16-битных процессоров
 `ifndef adr22
@@ -60,10 +60,10 @@ assign led[4]=timer_led;     // индикация включения тайме
 `else
 // Распределение светодиодов для 22-битных процессоров
 assign led[0]=rk_led & dm_led & dx_led & my_led & dw_led & db_led;  // запрос обмена диска 
-assign led[1]=run_led;    // признак работы секвенсера команд
-assign led[2]=idle_led;   // признак ожидания прерывания по инструкции WAIT
-assign led[3]=mmu_led;    // признак включения MMU
-assign led[4]=timer_led;     // индикация включения таймера
+assign led[1]=led1;    // Индикатор состояния процессора 1
+assign led[2]=led2;    // Индикатор состояния процессора 2
+assign led[3]=led3;    // Индикатор состояния процессора 3
+assign led[4]=timer_led;  // индикация включения таймера
 
 `endif
 
@@ -244,9 +244,9 @@ assign vgar = vgared;
    .timer_led(timer_led),         // индикация включения таймера
 `ifdef adr22
    .db_led(db_led),               // запрос обмена диска DB
-   .idle_led(idle_led),           // признак ожидания прерывания по WAIT
-   .mmu_led(mmu_led),             // признак включения MMU 
-   .run_led(run_led),             // признак ативности секвенсера
+   .led1(led1),               // признак ожидания прерывания по WAIT
+   .led3(led3),                // признак включения MMU 
+   .led2(led2),                // признак ативности секвенсера
 `endif   
    
    // Интерфейс SDRAM
