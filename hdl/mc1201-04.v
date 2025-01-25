@@ -151,7 +151,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(0)) cpu (
    .vm_clk_p(clk_p),        // прямой тактовый сигнал
    .vm_clk_n(clk_n),        // инверсный тактовый сигнал
    .vm_clk_ena(cpu_clk_enable),  // сигнал разрешения работы в данном такте
-   .vm_clk_slow(1'b0),      // включение режима замедления  
+   .vm_clk_slow(cpuslow),        // включение режима замедления  
 
    // сбросы и прерывания   
    .vm_init(bus_reset),     // выход сигнала сброса устройств на шине
@@ -164,6 +164,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(0)) cpu (
    .wbm_gnt_i(~dma_ack),    // запрос на приостановку работы процессора
    .wbm_ios_o(ioaccess),    // флаг доступа к странице ввода-вывода
    .wbm_adr_o({cpu_sel, cpu_adr}),     // полный физический адрес, сформированный процессором
+	                                    // бит 22 - признак работы с теневой памятью
    .wbm_dat_o(wb_dat_o),    // выход шины данных
    .wbm_dat_i(wb_mux),      // вход шины данных
    .wbm_we_o(wb_we_o),      // флаг вывода данных на шину (0-ввод, 1-вывод)
@@ -174,7 +175,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(0)) cpu (
 
    // шина обработки прерываний
    .wbi_dat_i(cpu_int_vector),    // ввод вектора прерывания от устройства
-   .wbi_ack_i(iack_i),      // подтверждение передачи вектора или данных безадресного ввода
+   .wbi_ack_i(iack_i),      // подтверждение передачи вектора
    .wbi_stb_o(cpu_istb),    // строб запроса вектора прцессором
 
    // управление/индикация   
@@ -190,7 +191,7 @@ vm3_wb  #(.VM3_CORE_FIX_SR3_RESERVED(0)) cpu (
 //* Преобразования управляющих сигналов процессора
 //*****************************************************
 
-assign ram_stb = dma_ack? dma_stb : cpu_stb & ~ioaccess; // строб доступа к памяти
+assign ram_stb = dma_ack? dma_stb : cpu_stb & ~ioaccess;  // строб доступа к памяти
 assign bus_stb = ~dma_ack &         cpu_stb & ioaccess;   // строб доступа к странице ввода-вывода
 assign cpu_ack = wb_ack & ~dma_ack;  // сигнал подтверждения обмена, в режиме DMA неактивен
 
@@ -239,10 +240,10 @@ assign um_offset={um_h[um_reg], um_m[um_reg], um_l[um_reg], 1'b0};
 // Полный физический адрес после отображения UNIBUS 
 assign um_adr = 
 `ifdef UMAP
-//                 (dma_iopage_mapped)?  {9'b111111111, dma_adr18[12:0]} :    // доступ к странице ввода-вывода
-                 (um_enable)?         um_offset+dma_adr18[12:0] :    // доступ к пространству ОЗУ в режиме Unibus mapping
+//         (dma_iopage_mapped)?  {9'b111111111, dma_adr18[12:0]} :    // доступ к странице ввода-вывода
+           (um_enable)?         um_offset+dma_adr18[12:0] :    // доступ к пространству ОЗУ в режиме Unibus mapping
 `endif					  
-                                         {4'b0000, dma_adr18[17:0]};          // доступ к пространству ОЗУ без mapping
+                          {4'b0000, dma_adr18[17:0]};          // доступ к пространству ОЗУ без mapping
                                          
 // Обработка шинных транзакций
 //    17770200-17770366 - регистры отображения Unibus DMA адресов                                         
@@ -285,12 +286,12 @@ always @(posedge clk_p)
     else um_ack <= um_reply;
     
 //*******************************************
-//* Теневое ПЗУ 134
+//* Теневое ПЗУ 134/377
 //*******************************************
 wire [15:0] rom_dat;
 reg rom_ack0, rom_ack1;
 // Строб выбора ПЗУ
-assign rom_stb  = halt_stb & (wb_adr_o[12:11] != 2'b11);   // теневой ROM
+assign rom_stb  = halt_stb & (wb_adr_o[12:11] != 2'b11);   
 
 rom134 hrom(
    .address(cpu_adr[12:1]),
@@ -316,9 +317,9 @@ assign hram_stb = halt_stb & (wb_adr_o[12:11] == 2'b11);
 // Адресные линии ОЗУ
 assign hram_adr=cpu_adr[8:1];
 
-// старший и младший байты теневого ОЗУ
-reg [7:0] hram_l[0:255];
-reg [7:0] hram_h[0:255];
+// выделение памяти для теневого ОЗУ
+reg [7:0] hram_l[0:255];  // младший байт
+reg [7:0] hram_h[0:255];  // старший байт
 
 always @ (posedge clk_p) begin
    if (hram_stb)
