@@ -326,9 +326,9 @@ user_rom rom(
 // формирователь cигнала подверждения транзакции с задержкой на 1 такт
 always @ (posedge wb_clk)  begin
    rom_ack0 <= rom_stb & ~wb_we;
-   rom_ack1 <= rom_ack0 & ~wb_we;
+   rom_ack1 <= rom_stb & rom_ack0 & ~wb_we;
 end
-assign rom_ack=rom_ack1;
+assign rom_ack=rom_stb & rom_ack1;
 `else
 assign rom_ack=1'b0;
 `endif
