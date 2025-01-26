@@ -35,11 +35,11 @@
 //`define IRPS2_module      // второй последовательный порт ИРПС
 
 //`define IRPR_module       // параллельный порт ИРПР
-//`define RK_module         // диск RK-11/RK05
-//`define DM_module         // диск RK611/RK07
-//`define DB_module         // диск RH70/RP06
+`define RK_module         // диск RK-11/RK05
+`define DM_module         // диск RK611/RK07
+//`define DB_module         // диск RH70/RP06 - только для 22-битных плат
 `define DX_module         // гибкий диск RX01
-//`define DW_module         // жесткий диск DW
+`define DW_module         // жесткий диск DW
 `define MY_module         // гибкий диск двойной плотности MY
 //`define bootrom_module    // монитор-загрузчик M9312. Для PDP11/70 включается в конфигурацию всегда,
                           // для остальных плат можно включить по желанию.
@@ -137,8 +137,8 @@
 
   // Выбор версии теневого ПЗУ - 055 или 279
   
-  //`define mc1201_02_rom "../../rom/055.mif"
- `define mc1201_02_rom "../../rom/279.mif"
+ `define mc1201_02_rom "../../rom/055.mif"
+// `define mc1201_02_rom "../../rom/279.mif"
 
 //--------------------------------------------------
 `elsif mc1201_01_board
