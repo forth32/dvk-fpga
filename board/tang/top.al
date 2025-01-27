@@ -2,7 +2,7 @@
 <Project>
     <Project_Created_Time>2021-03-10 07:42:39</Project_Created_Time>
     <TD_Version>4.6.18154</TD_Version>
-    <UCode>01010110</UCode>
+    <UCode>11000010</UCode>
     <Name>top</Name>
     <HardWare>
         <Family>EG4</Family>
@@ -79,6 +79,7 @@
             <File>../../hdl/vm3/vm3_plm.v</File>
             <File>../../hdl/vm3/vm3_wb.v</File>
             <File>../../hdl/mc1201-04.v</File>
+            <File>../../hdl/common-config.v</File>
         </Verilog>
         <ADC_FILE>top.adc</ADC_FILE>
         <SDC_FILE>top.sdc</SDC_FILE>
@@ -95,7 +96,7 @@
         <SimProperty/>
     </Property>
     <Project_Settings>
-        <Step_Last_Change>2025-01-18 19:34:49</Step_Last_Change>
+        <Step_Last_Change>2025-01-27 21:37:38</Step_Last_Change>
         <Current_Step>60</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
