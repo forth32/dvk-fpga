@@ -30,12 +30,12 @@
 //  Закомментируйте ненужные модули, если хотите исключить их из схемы.
 //
 
-//`define KSM_module        // текстовый контроллер КСМ
+`define KSM_module        // текстовый контроллер КСМ
 //`define KGD_module        // графический контроллер КГД
 //`define IRPS2_module      // второй последовательный порт ИРПС
 //`define IRPR_module       // параллельный порт ИРПР
-`define RK_module         // диск RK-11/RK05
-`define DM_module         // диск RK611/RK07
+//`define RK_module         // диск RK-11/RK05
+//`define DM_module         // диск RK611/RK07
 //`define DB_module         // диск RH70/RP06
 `define DX_module         // гибкий диск RX01
 //`define DW_module         // жесткий диск DW
@@ -168,8 +168,8 @@
  `define RAM1M               // ограничение объема памяти до 1M (20-битный адрес) МС1201.04 
  
  // выбор версии теневого ПЗУ - 134 или 377. 
-// `define vm3_rom "../../rom/377.mif"  
- `define vm3_rom "../../rom/134.mif" 
+ `define vm3_rom "../../rom/377.mif"  
+// `define vm3_rom "../../rom/134.mif" 
  
  
 //--------------------------------------------------
