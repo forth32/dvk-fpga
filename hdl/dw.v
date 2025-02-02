@@ -183,7 +183,10 @@ sdspi sd1 (
 reg reply;
 always @(posedge wb_clk_i or posedge wb_rst_i)
     if (wb_rst_i == 1) reply <= 1'b0;
-    else if (wb_stb_i) reply <= 1'b1;
+    else if (wb_stb_i) 
+	         // регистр РСНУ 174020 доступен всегда, остальные - только при снятом busy 
+				if (wb_adr_i[4] | (~busy)) reply <= 1'b1;
+				else reply <= 1'b0;
     else reply <= 1'b0;
 
 assign wb_ack_o = reply & wb_stb_i;    
@@ -335,6 +338,8 @@ always @(posedge wb_clk_i)
                   8'o20:    begin
                               start <= 1'b0;
                               rqa <= 1'b1;
+										cyl <= 10'o0;
+										hd <= 3'o0;
                               interrupt_trigger <= 1'b1;
                            end   
                         
