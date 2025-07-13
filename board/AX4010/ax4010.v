@@ -75,10 +75,9 @@ wire rk_led, dw_led, dm_led, my_led, dx_led, db_led, timer_led, led2, led1, led3
 // Распределение светодиодов для 16-битных процессоров
 `ifndef adr22
 assign led[0]=rk_led & dm_led;  // запрос обмена диска RK и DM
-assign led[1]=dx_led;        // запрос обмена диска DX
-assign led[2]=my_led;        // запрос обмена диска MY 
-assign led[3]=dw_led;        // запрос обмена диска DW
-assign led[4]=timer_led;     // индикация включения таймера
+assign led[1]=dx_led & my_led;  // запрос обмена диска DX и MY
+assign led[2]=dw_led;        // запрос обмена диска DW
+assign led[3]=timer_led;     // индикация включения таймера
 `else
 // Распределение светодиодов для 22-битных процессоров
 assign led[0]=rk_led & dm_led & dx_led & my_led & dw_led & db_led;  // запрос обмена диска 

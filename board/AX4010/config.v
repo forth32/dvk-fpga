@@ -17,8 +17,8 @@
 // Раскомментируйте одну из строк для включения выбранной платы в схему
 
 //`define mc1201_01_board
-//`define mc1201_02_board
-`define mc1201_04_board
+`define mc1201_02_board
+//`define mc1201_04_board
 //`define mc1260_board
 //`define mc1280_board
 //`define kdf11_board
